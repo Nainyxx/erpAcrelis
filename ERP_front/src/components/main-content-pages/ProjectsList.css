@@ -1,0 +1,252 @@
+.projects-container {
+    padding: 20px;
+    width: 100%;
+}
+
+.projects-title {
+    color: #5B5B5B;
+    margin-bottom: 30px;
+    font-size: 28px;
+    font-weight: 600;
+}
+
+.filters-container {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 25px;
+    margin-bottom: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    width: 100%;
+}
+
+.filters {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    flex: 1;
+}
+
+.filter-group {
+    position: relative;
+}
+
+.filter-select, .search-input {
+    background: #E7F6F6;
+    border: 1px solid #D1ECEC;
+    border-radius: 10px;
+    padding: 12px 20px;
+    font-size: 14px;
+    min-width: 200px;
+    outline: none;
+    transition: border-color 0.3s;
+}
+
+.filter-select:focus, .search-input:focus {
+    border-color: #4ECDC4;
+}
+
+.search-input {
+    width: 300px;
+}
+
+.search-input::placeholder {
+    color: #888;
+}
+
+.create-project-btn {
+    background: #FFFFFF;
+    color: #333;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 12px 30px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+    white-space: nowrap;
+    margin-left: auto; /* это прижмет кнопку вправо внутри контейнера */
+}
+
+.create-project-btn:hover {
+    background: #f5f5f5;
+}
+
+.projects-table {
+    background: #ffffff;
+    border-radius: 20px;
+    overflow: hidden;
+    width: 100%;
+}
+
+.table-header {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+    background: #F8F9FA;
+    padding: 20px;
+    font-weight: 600;
+    color: #333;
+    border-bottom: 2px solid #E7F6F6;
+}
+
+.project-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.3s;
+    border-bottom: 1px dashed #E0E0E0;
+}
+
+.project-row:hover {
+    background: #F9F9F9;
+}
+
+.project-row.selected {
+    background: #F0F9FF;
+    font-weight: 500;
+    transform: scale(1.01);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.table-cell {
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+}
+
+.project-name-text {
+    font-weight: 500;
+    color: #333;
+}
+
+.project-description {
+    display: none;
+}
+
+.team-avatars {
+    display: flex;
+    align-items: center;
+}
+
+.avatar-wrapper {
+    margin-left: -8px;
+}
+
+.avatar-wrapper:first-child {
+    margin-left: 0;
+}
+
+.avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 12px;
+    font-weight: 500;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.extra-avatar {
+    background: #6C757D;
+    margin-left: -8px;
+}
+
+.project-status {
+    display: inline-block;
+    padding: 6px 0px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    background: #f0f0f0;
+    color: #333;
+    border: 1px solid #ddd;
+}
+
+.project-type {
+    display: inline-block;
+    padding: 6px 0px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    background: #f0f0f0;
+    color: #333;
+    border: 1px solid #ddd;
+}
+
+.project-hours {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+}
+
+.loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 200px;
+    font-size: 18px;
+    color: #666;
+    width: 100%;
+}
+
+/* Убрать лишнее */
+.hours-header {
+    display: none;
+}
+
+.filter-select, .search-input {
+    background: #E7F6F6;
+    border: 1px solid #D1ECEC;
+    border-radius: 10px;
+    padding: 12px 20px;
+    font-size: 14px;
+    min-width: 200px;
+    outline: none;
+    transition: border-color 0.3s;
+    color: #333; /* Добавить черный цвет текста */
+}
+
+.filter-select option {
+    color: #333; /* Черный для опций в выпадающем списке */
+    background: white;
+}
+
+.search-input::placeholder {
+    color: #888; /* Серый только для placeholder */
+}
+
+/* Если нужна кастомизация скролла и выпадающего списка */
+.filter-select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 15px center;
+    background-size: 15px;
+    padding-right: 45px;
+}
+
+.projects-container {
+    padding: 20px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.projects-table {
+    background: #ffffff;
+    border-radius: 20px;
+    overflow: hidden;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}

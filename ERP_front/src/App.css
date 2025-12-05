@@ -1,0 +1,42 @@
+* {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.header-container {
+  position: absolute;
+  width: 100%;
+  top: 0;
+}
+
+body {
+  background-color: #F6F6FE;
+}
+
+.main-container {
+    display: flex;
+    margin-top: 90px;
+    min-height: calc(100vh - 90px);
+    width: 100%;
+}
+
+.SideBar {
+    width: 250px;
+    flex-shrink: 0;
+    background: #ffffff;
+    border-right: 1px solid #e0e0e0;
+    padding: 20px 0;
+    height: calc(100vh - 90px);
+    overflow-y: auto;
+    position: sticky;
+    top: 90px;
+}
+
+.content {
+    flex: 1;
+    padding: 30px;
+    background: #F6F6FE;
+    min-width: 0; /* важно для растягивания */
+    width: 100%;
+} 
