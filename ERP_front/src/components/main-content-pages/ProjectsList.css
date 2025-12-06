@@ -1,19 +1,21 @@
 .projects-container {
-    padding: 20px;
+    padding: 20px 30px;
     width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .projects-title {
     color: #5B5B5B;
     margin-bottom: 30px;
-    font-size: 28px;
+    font-size: clamp(24px, 2vw, 32px); /* адаптивный шрифт */
     font-weight: 600;
 }
 
 .filters-container {
     background: #ffffff;
     border-radius: 20px;
-    padding: 25px;
+    padding: 25px 30px;
     margin-bottom: 30px;
     display: flex;
     justify-content: space-between;
@@ -21,6 +23,8 @@
     flex-wrap: wrap;
     gap: 20px;
     width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .filters {
@@ -39,10 +43,13 @@
     border: 1px solid #D1ECEC;
     border-radius: 10px;
     padding: 12px 20px;
-    font-size: 14px;
-    min-width: 200px;
+    font-size: clamp(13px, 1vw, 16px); /* адаптивный шрифт */
+    min-width: 120px;
+    width: auto;
     outline: none;
     transition: border-color 0.3s;
+    color: #333;
+    box-sizing: border-box;
 }
 
 .filter-select:focus, .search-input:focus {
@@ -50,7 +57,7 @@
 }
 
 .search-input {
-    width: 300px;
+    width: clamp(250px, 30vw, 400px); /* адаптивная ширина */
 }
 
 .search-input::placeholder {
@@ -62,13 +69,13 @@
     color: #333;
     border: 1px solid #ddd;
     border-radius: 10px;
-    padding: 12px 30px;
-    font-size: 14px;
+    padding: 12px clamp(20px, 2vw, 30px);
+    font-size: clamp(13px, 1vw, 16px);
     font-weight: 500;
     cursor: pointer;
     transition: all 0.3s;
     white-space: nowrap;
-    margin-left: auto; /* это прижмет кнопку вправо внутри контейнера */
+    margin-left: auto;
 }
 
 .create-project-btn:hover {
@@ -80,32 +87,36 @@
     border-radius: 20px;
     overflow: hidden;
     width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    min-width: 800px; /* минимальная ширина таблицы */
 }
 
 .table-header {
     display: grid;
     grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
-    background: #F8F9FA;
-    padding: 20px;
-    font-weight: 600;
+    padding: 20px 30px;
+    font-weight: 750;
     color: #333;
     border-bottom: 2px solid #E7F6F6;
+    font-size: clamp(14px, 1.1vw, 18px);
 }
 
 .project-row {
     display: grid;
     grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
-    padding: 20px;
+    padding: 20px 30px;
     cursor: pointer;
     transition: all 0.3s;
     border-bottom: 1px dashed #E0E0E0;
+    font-size: clamp(13px, 1vw, 16px);
 }
+
+/* .project-row:hover {
+    background: #F9F9F9;
+} */
 
 .project-row:hover {
-    background: #F9F9F9;
-}
-
-.project-row.selected {
     background: #F0F9FF;
     font-weight: 500;
     transform: scale(1.01);
@@ -115,12 +126,18 @@
 .table-cell {
     display: flex;
     align-items: center;
-    padding: 0 10px;
+    padding: 0 15px;
+    min-width: 0; /* важно для длинного текста */
+    overflow: hidden;
 }
 
 .project-name-text {
     font-weight: 500;
     color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: inherit;
 }
 
 .project-description {
@@ -130,6 +147,8 @@
 .team-avatars {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 5px;
 }
 
 .avatar-wrapper {
@@ -141,14 +160,14 @@
 }
 
 .avatar {
-    width: 32px;
-    height: 32px;
+    width: clamp(28px, 2.5vw, 36px);
+    height: clamp(28px, 2.5vw, 36px);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
-    font-size: 12px;
+    font-size: clamp(10px, 0.9vw, 14px);
     font-weight: 500;
     border: 2px solid white;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -163,28 +182,27 @@
     display: inline-block;
     padding: 6px 0px;
     border-radius: 6px;
-    font-size: 13px;
+    font-size: clamp(12px, 0.9vw, 14px);
     font-weight: 500;
-    background: #f0f0f0;
     color: #333;
-    border: 1px solid #ddd;
+    white-space: nowrap;
 }
 
 .project-type {
     display: inline-block;
     padding: 6px 0px;
     border-radius: 6px;
-    font-size: 13px;
+    font-size: clamp(12px, 0.9vw, 14px);
     font-weight: 500;
-    background: #f0f0f0;
     color: #333;
-    border: 1px solid #ddd;
+    white-space: nowrap;
 }
 
 .project-hours {
-    font-size: 18px;
+    font-size: clamp(16px, 1.5vw, 20px);
     font-weight: 600;
     color: #333;
+    white-space: nowrap;
 }
 
 .loading {
@@ -192,38 +210,18 @@
     justify-content: center;
     align-items: center;
     height: 200px;
-    font-size: 18px;
+    font-size: clamp(16px, 1.5vw, 20px);
     color: #666;
     width: 100%;
 }
 
-/* Убрать лишнее */
-.hours-header {
-    display: none;
-}
-
-.filter-select, .search-input {
-    background: #E7F6F6;
-    border: 1px solid #D1ECEC;
-    border-radius: 10px;
-    padding: 12px 20px;
-    font-size: 14px;
-    min-width: 200px;
-    outline: none;
-    transition: border-color 0.3s;
-    color: #333; /* Добавить черный цвет текста */
-}
-
 .filter-select option {
-    color: #333; /* Черный для опций в выпадающем списке */
+    color: #333;
     background: white;
+    padding: 10px;
+    font-size: clamp(13px, 1vw, 16px);
 }
 
-.search-input::placeholder {
-    color: #888; /* Серый только для placeholder */
-}
-
-/* Если нужна кастомизация скролла и выпадающего списка */
 .filter-select {
     appearance: none;
     -webkit-appearance: none;
@@ -231,22 +229,90 @@
     background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
     background-repeat: no-repeat;
     background-position: right 15px center;
-    background-size: 15px;
+    background-size: clamp(12px, 1vw, 16px);
     padding-right: 45px;
 }
 
-.projects-container {
-    padding: 20px;
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
+/* Адаптивность для маленьких экранов */
+@media (max-width: 1400px) {
+    .projects-container {
+        padding: 15px 20px;
+    }
+    
+    .filters-container {
+        padding: 20px;
+    }
+    
+    .table-header, .project-row {
+        padding: 15px 20px;
+    }
 }
 
-.projects-table {
-    background: #ffffff;
+/* Для очень больших экранов (4K) */
+@media (min-width: 2560px) {
+    .projects-container {
+        padding: 40px 60px;
+    }
+    
+    .projects-title {
+        font-size: 40px;
+        margin-bottom: 40px;
+    }
+    
+    .filters-container {
+        padding: 35px 40px;
+        border-radius: 25px;
+    }
+    
+    .projects-table {
+        border-radius: 25px;
+    }
+    
+    .table-header, .project-row {
+        padding: 25px 40px;
+    }
+}
+
+/* Убираем горизонтальный скролл на средних экранах */
+@media (max-width: 1200px) {
+    .projects-table {
+        overflow-x: auto;
+        min-width: 100%;
+    }
+    
+    .table-header, .project-row {
+        min-width: 1000px;
+    }
+}
+
+.project-not-found {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 400px;
+    background: white;
     border-radius: 20px;
-    overflow: hidden;
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
+    padding: 40px;
+}
+
+.project-not-found h2 {
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.back-btn {
+    padding: 12px 24px;
+    background: #4ECDC4;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.back-btn:hover {
+    background: #3db8af;
 }

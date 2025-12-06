@@ -1,3 +1,4 @@
+/* App.css */
 * {
   padding: 0;
   margin: 0;
@@ -21,22 +22,21 @@ body {
     width: 100%;
 }
 
-.SideBar {
+.sidebar-wrapper {
     width: 250px;
     flex-shrink: 0;
-    background: #ffffff;
-    border-right: 1px solid #e0e0e0;
-    padding: 20px 0;
-    height: calc(100vh - 90px);
-    overflow-y: auto;
-    position: sticky;
-    top: 90px;
+}
+
+.content-wrapper {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+    background: #F6F6FE;
 }
 
 .content {
-    flex: 1;
-    padding: 30px;
-    background: #F6F6FE;
-    min-width: 0; /* важно для растягивания */
     width: 100%;
-} 
+    min-width: 0;
+    box-sizing: border-box;
+    height: 100%;
+}
