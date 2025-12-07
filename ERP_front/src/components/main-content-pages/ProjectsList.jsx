@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getProjectsList } from '../../services/workWithData';
 import './ProjectsList.css';
 
 const ProjectsList = ({ useMockData = true, onProjectSelect }) => {
@@ -16,62 +17,15 @@ const ProjectsList = ({ useMockData = true, onProjectSelect }) => {
       setError(null);
       
       try {
-        if (useMockData) {
-          const mockModule = await import('../../MockData/projects.js');
-          const mockData = mockModule.projectsData || [];
-          const mockTypes = mockModule.projectTypes || [];
-          
-          await new Promise(resolve => setTimeout(resolve, 300));
-          
-          setProjects(mockData);
-          setProjectTypes(mockTypes);
-        } else {
-          const response = await fetch('/api/projects');
-          
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          
-          const data = await response.json();
-          
-          const formattedProjects = data.projects?.map(project => ({
-            id: project.id,
-            name: project.name,
-            type: project.type || 'website',
-            typeLabel: project.typeLabel || getTypeLabel(project.type),
-            status: project.status || 'Планирование',
-            hours: project.hours || 0,
-            price: project.price || "0.00",
-            teamSize: project.team?.length || 0,
-            team: project.team?.map(member => ({
-              id: member.id,
-              name: member.name
-            })) || [],
-            description: project.description || '',
-            createdAt: project.createdAt || new Date().toISOString()
-          })) || [];
-          
-          const formattedTypes = data.types?.map(type => ({
-            id: type.id,
-            label: type.label,
-            count: type.count || 0
-          })) || [];
-          
-          setProjects(formattedProjects);
-          setProjectTypes(formattedTypes);
-        }
+        const { projects: loadedProjects, projectTypes: loadedTypes } = await getProjectsList(useMockData);
+        
+        setProjects(loadedProjects);
+        setProjectTypes(loadedTypes);
       } catch (error) {
         console.error('Ошибка загрузки данных:', error);
         setError('Не удалось загрузить данные проектов');
-        
-        try {
-          const mockModule = await import('../../MockData/projects.js');
-          setProjects(mockModule.projectsData || []);
-          setProjectTypes(mockModule.projectTypes || []);
-        } catch (mockError) {
-          setProjects([]);
-          setProjectTypes([]);
-        }
+        setProjects([]);
+        setProjectTypes([]);
       } finally {
         setLoading(false);
       }
@@ -79,17 +33,6 @@ const ProjectsList = ({ useMockData = true, onProjectSelect }) => {
 
     loadData();
   }, [useMockData]);
-
-  const getTypeLabel = (type) => {
-    const typeMap = {
-      'website': 'Веб-сайт',
-      'mobile': 'Мобильное приложение',
-      'dashboard': 'Дашборд',
-      'ecommerce': 'Интернет-магазин',
-      'system': 'Система'
-    };
-    return typeMap[type] || 'Проект';
-  };
 
   const statuses = [
     { id: 'all', label: 'Все статусы' },
