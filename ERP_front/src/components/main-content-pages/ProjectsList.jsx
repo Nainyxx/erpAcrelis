@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getProjectsList } from '../../services/workWithData';
+import { getProjectsList } from '../../services/projectsService';
 import './ProjectsList.css';
 
 const ProjectsList = ({ useMockData = true, onProjectSelect }) => {

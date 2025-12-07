@@ -1,5 +1,4 @@
 // Сервис для работы с данными проектов
-// Централизованная загрузка данных из API или моковых данных
 
 const CONFIG = {
   API_BASE_URL: '/api',
@@ -32,7 +31,14 @@ export const getProjectsList = async (useMockData = true) => {
             name: member.name
           })) || [],
           description: project.description || '',
-          createdAt: project.createdAt || new Date().toISOString()
+          createdAt: project.createdAt || new Date().toISOString(),
+          // Для совместимости с ProjectCard
+          startDate: project.startDate,
+          deadline: project.deadline,
+          customer: project.customer,
+          files: project.files,
+          progress: project.progress,
+          priority: project.priority
         })),
         projectTypes: [
           { id: 'all', label: 'Все типы', count: projects.length },
@@ -68,7 +74,13 @@ export const getProjectsList = async (useMockData = true) => {
             name: member.name
           })) || [],
           description: project.description || '',
-          createdAt: project.createdAt || new Date().toISOString()
+          createdAt: project.createdAt || new Date().toISOString(),
+          startDate: project.startDate,
+          deadline: project.deadline,
+          customer: project.customer,
+          files: project.files,
+          progress: project.progress,
+          priority: project.priority
         })) || [],
         projectTypes: data.types?.map(type => ({
           id: type.id,
@@ -101,7 +113,13 @@ export const getProjectsList = async (useMockData = true) => {
             name: member.name
           })) || [],
           description: project.description || '',
-          createdAt: project.createdAt || new Date().toISOString()
+          createdAt: project.createdAt || new Date().toISOString(),
+          startDate: project.startDate,
+          deadline: project.deadline,
+          customer: project.customer,
+          files: project.files,
+          progress: project.progress,
+          priority: project.priority
         })),
         projectTypes: [
           { id: 'all', label: 'Все типы', count: projects.length },
@@ -121,8 +139,58 @@ export const getProjectsList = async (useMockData = true) => {
 
 // Функция для получения данных конкретного проекта (для ProjectCard)
 export const getProjectById = async (projectId, useMockData = true) => {
-  console.log('getProjectById called for:', projectId);
-  return null;
+  try {
+    if (useMockData) {
+      // Ищем проект в моковых данных
+      const mockModule = await import('../MockData/projects.js');
+      const projects = mockModule.projectsData || [];
+      const project = projects.find(p => p.id === projectId);
+      
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      if (!project) {
+        throw new Error(`Проект с ID ${projectId} не найден`);
+      }
+      
+      return {
+        ...project,
+        typeLabel: getTypeLabel(project.type),
+        files: project.files || mockModule.projectCardData?.defaultFiles || []
+      };
+    } else {
+      // Загружаем с сервера
+      const response = await fetch(`${CONFIG.API_BASE_URL}/projects/${projectId}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      return {
+        ...data,
+        typeLabel: getTypeLabel(data.type)
+      };
+    }
+  } catch (error) {
+    console.error('Ошибка в getProjectById:', error);
+    
+    // Fallback
+    try {
+      const mockModule = await import('../MockData/projects.js');
+      const projects = mockModule.projectsData || [];
+      const project = projects.find(p => p.id === projectId) || projects[0];
+      
+      return {
+        ...project,
+        typeLabel: getTypeLabel(project.type),
+        files: project.files || mockModule.projectCardData?.defaultFiles || []
+      };
+    } catch (mockError) {
+      console.error('Ошибка загрузки моковых данных:', mockError);
+      return null;
+    }
+  }
 };
 
 // Вспомогательная функция для получения названия типа проекта

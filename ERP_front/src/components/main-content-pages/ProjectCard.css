@@ -1,167 +1,309 @@
-/* src/components/main-content-pages/ProjectCard.css */
 .projectcard-container {
-    background: white;
-    border-radius: 20px;
-    padding: 30px;
-    width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-}
-
-.projectcard-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 30px;
-    border-bottom: 2px solid #E7F6F6;
-    padding-bottom: 20px;
+  padding: 24px;
+  background-color: #F8F9FA;
+  min-height: 100vh;
+  width: 100%;
 }
 
 .projectcard-title {
-    color: #333;
-    font-size: 28px;
-    font-weight: 600;
-    margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: #5B5B5B;
+  margin: 0 0 24px 0;
+  padding: 0;
 }
 
-.projectcard-close {
-    background: none;
-    border: none;
-    font-size: 32px;
-    color: #666;
-    cursor: pointer;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    transition: all 0.3s;
+.projectcard-main-content {
+  width: 100%;
 }
 
-.projectcard-close:hover {
-    background: #f0f0f0;
-    color: #333;
+/* Основная секция с сеткой и файлами */
+.projectcard-grid-section {
+  display: flex;
+  gap: 16px;
+  width: 100%;
 }
 
-.projectcard-section {
-    margin-bottom: 30px;
+/* Сетка 2x2 */
+.projectcard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 140px 180px; /* Вторая строка выше для кнопок */
+  gap: 16px;
+  flex: 1;
+  min-width: 0;
 }
 
-.projectcard-section h3 {
-    color: #5B5B5B;
-    font-size: 20px;
-    margin-bottom: 15px;
-    font-weight: 600;
+.projectcard-tile {
+  background: #FFFFFF;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
 }
 
-.projectcard-info {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 20px;
-    background: #F8F9FA;
-    padding: 20px;
-    border-radius: 10px;
+/* Заказчик с кнопками */
+.customer-tile {
+  justify-content: space-between;
 }
 
-.info-item {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
+/* Даты */
+.date-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
 }
 
-.info-label {
-    font-size: 14px;
-    color: #666;
-    font-weight: 500;
+.date-label {
+  font-size: 13px;
+  color: #6C757D;
 }
 
-.projectcard-type,
-.projectcard-status {
-    display: inline-block;
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-size: 14px;
-    font-weight: 500;
+.date-value {
+  font-size: 15px;
+  font-weight: 500;
+  color: #333;
 }
 
-.projectcard-type {
-    background: #f0f0f0;
-    color: #333;
-    border: 1px solid #ddd;
+.date-value.deadline {
+  color: #DC3545;
 }
 
-.projectcard-status.ready {
-    background: #E8F5E9;
-    color: #2E7D32;
+/* Исполнители */
+.tile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
 }
 
-.projectcard-status.in-progress {
-    background: #E3F2FD;
-    color: #1565C0;
+.tile-header span {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
 }
 
-.projectcard-status.planning {
-    background: #FFF3E0;
-    color: #EF6C00;
+.add-btn {
+  background: none;
+  border: 1px solid #DEE2E6;
+  color: #6C757D;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
 }
 
-.projectcard-hours {
-    font-size: 20px;
-    font-weight: 600;
-    color: #333;
+.team-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
 }
 
-.projectcard-price {
-    font-size: 18px;
-    font-weight: 500;
-    color: #2E7D32;
+.team-avatars {
+  display: flex;
+  align-items: center;
+  position: relative;
 }
 
-.projectcard-date {
-    font-size: 16px;
-    color: #666;
-}
-
-.projectcard-description {
-    background: #F8F9FA;
-    padding: 20px;
-    border-radius: 10px;
-    line-height: 1.6;
-    color: #333;
-    font-size: 16px;
-}
-
-.projectcard-team {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
-}
-
-.team-member {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: #F8F9FA;
-    padding: 10px 15px;
-    border-radius: 10px;
-    min-width: 200px;
+.avatar-wrapper {
+  margin-right: -8px;
 }
 
 .projectcard-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: 500;
-    font-size: 14px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 12px;
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
-.member-name {
-    font-weight: 500;
-    color: #333;
+.avatar.extra-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #6C757D;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  border: 2px solid white;
+  margin-left: 4px;
+}
+
+/* Тип и счет */
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.info-label {
+  font-size: 13px;
+  color: #6C757D;
+}
+
+.project-type {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  padding: 4px 10px;
+  background: #E9ECEF;
+  border-radius: 16px;
+  display: inline-block;
+  width: fit-content;
+}
+
+.project-price {
+  font-size: 15px;
+  font-weight: 500;
+  color: #28A745;
+}
+
+/* Заказчик */
+.customer-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.customer-icon {
+  font-size: 20px;
+}
+
+.customer-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+/* Маленькая панель кнопок под заказчиком */
+.actions-panel-small {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.action-btn {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  background-color: #EAF6F7;
+  color: #333;
+  width: 100%;
+  text-align: center;
+}
+
+/* Файлы */
+.files-panel {
+  flex: 0 0 354px;
+  background: #FFFFFF;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.files-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.files-header span {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+}
+
+.files-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.file-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border: 1px solid #E9ECEF;
+  border-radius: 6px;
+  min-height: 50px;
+}
+
+.file-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.file-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.file-name {
+  font-size: 13px;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-size {
+  font-size: 11px;
+  color: #6C757D;
+}
+
+/* Адаптивность */
+@media (max-width: 1440px) {
+  .projectcard-grid-section {
+    flex-direction: column;
+  }
+  
+  .files-panel {
+    flex: 1;
+    width: 100%;
+  }
+  
+  .projectcard-grid {
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .projectcard-container {
+    padding: 16px;
+  }
+  
+  .projectcard-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
 }
