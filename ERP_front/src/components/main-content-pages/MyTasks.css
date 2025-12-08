@@ -1,11 +1,11 @@
-.projects-container {
+.mytasks-container {
     padding: 30px;
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
 }
 
-.projects-title {
+.mytasks-title {
     color: #5B5B5B;
     margin-bottom: 28px;
     font-size: clamp(24px, 2vw, 32px);
@@ -43,8 +43,8 @@
     border: 1px solid #D1ECEC;
     border-radius: 10px;
     padding: 12px 20px;
-    font-size: clamp(13px, 1vw, 16px); /* адаптивный шрифт */
-    min-width: 120px;
+    font-size: clamp(13px, 1vw, 16px);
+    min-width: 150px;
     width: auto;
     outline: none;
     transition: border-color 0.3s;
@@ -57,14 +57,14 @@
 }
 
 .search-input {
-    width: clamp(250px, 30vw, 400px); /* адаптивная ширина */
+    width: clamp(300px, 40vw, 500px);
 }
 
 .search-input::placeholder {
     color: #888;
 }
 
-.create-project-btn {
+.create-task-btn {
     background: #FFFFFF;
     color: #333;
     border: 1px solid #ddd;
@@ -78,23 +78,23 @@
     margin-left: auto;
 }
 
-.create-project-btn:hover {
+.create-task-btn:hover {
     background: #f5f5f5;
 }
 
-.projects-table {
+.tasks-table {
     background: #ffffff;
     border-radius: 20px;
     overflow: hidden;
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
-    min-width: 800px; /* минимальная ширина таблицы */
+    min-width: 900px;
 }
 
 .table-header {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+    grid-template-columns: 2.5fr 2.5fr 2.5fr 2.5fr;
     padding: 20px 30px;
     font-weight: 750;
     color: #333;
@@ -102,9 +102,9 @@
     font-size: clamp(14px, 1.1vw, 18px);
 }
 
-.project-row {
+.task-row {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+    grid-template-columns: 2.5fr 2.5fr 2.5fr 2.5fr;
     padding: 20px 30px;
     cursor: pointer;
     transition: all 0.3s;
@@ -112,11 +112,7 @@
     font-size: clamp(13px, 1vw, 16px);
 }
 
-/* .project-row:hover {
-    background: #F9F9F9;
-} */
-
-.project-row:hover {
+.task-row:hover {
     background: #F0F9FF;
     font-weight: 500;
     transform: scale(1.01);
@@ -127,11 +123,42 @@
     display: flex;
     align-items: center;
     padding: 0 15px;
-    min-width: 0; /* важно для длинного текста */
+    min-width: 0;
     overflow: hidden;
 }
 
-.project-name-text {
+.task-name {
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.task-name-text {
+    font-weight: 500;
+    color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+    font-size: inherit;
+}
+
+.deadline {
+    font-weight: 500;
+    color: #333;
+    font-size: clamp(14px, 1vw, 16px);
+}
+
+.deadline.completed {
+    color: #10B981;
+}
+
+.project-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.project-name {
     font-weight: 500;
     color: #333;
     white-space: nowrap;
@@ -140,69 +167,59 @@
     font-size: inherit;
 }
 
-.project-description {
-    display: none;
-}
-
-.team-avatars {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 5px;
-}
-
-.avatar-wrapper {
-    margin-left: -8px;
-}
-
-.avatar-wrapper:first-child {
-    margin-left: 0;
-}
-
-.avatar {
-    width: clamp(28px, 2.5vw, 36px);
-    height: clamp(28px, 2.5vw, 36px);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: clamp(10px, 0.9vw, 14px);
-    font-weight: 500;
-    border: 2px solid white;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.extra-avatar {
-    background: #6C757D;
-    margin-left: -8px;
-}
-
-.project-status {
-    display: inline-block;
-    padding: 6px 0px;
-    border-radius: 6px;
-    font-size: clamp(12px, 0.9vw, 14px);
-    font-weight: 500;
-    color: #333;
-    white-space: nowrap;
-}
-
 .project-type {
-    display: inline-block;
-    padding: 6px 0px;
-    border-radius: 6px;
     font-size: clamp(12px, 0.9vw, 14px);
+    color: #666;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.manager-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.manager-name {
     font-weight: 500;
     color: #333;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: inherit;
 }
 
-.project-hours {
-    font-size: clamp(16px, 1.5vw, 20px);
-    font-weight: 600;
-    color: #333;
+.task-status {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: clamp(12px, 0.9vw, 14px);
+    font-weight: 500;
     white-space: nowrap;
+    text-align: center;
+}
+
+.task-status.ready {
+    background: #DCFCE7;
+    color: #166534;
+}
+
+.task-status.in-progress {
+    background: #FEF3C7;
+    color: #92400E;
+}
+
+.task-status.planning {
+    background: #E0F2FE;
+    color: #075985;
+}
+
+.no-tasks {
+    padding: 60px 20px;
+    text-align: center;
+    color: #666;
+    font-size: clamp(16px, 1.2vw, 18px);
 }
 
 .loading {
@@ -215,11 +232,31 @@
     width: 100%;
 }
 
-.filter-select option {
-    color: #333;
-    background: white;
-    padding: 10px;
-    font-size: clamp(13px, 1vw, 16px);
+.error-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    color: #DC2626;
+    font-size: clamp(16px, 1.2vw, 18px);
+    gap: 20px;
+}
+
+.retry-btn {
+    padding: 10px 20px;
+    background: #4ECDC4;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.retry-btn:hover {
+    background: #3db8af;
 }
 
 .filter-select {
@@ -233,9 +270,9 @@
     padding-right: 45px;
 }
 
-/* Адаптивность для маленьких экранов */
+/* Адаптивность */
 @media (max-width: 1400px) {
-    .projects-container {
+    .mytasks-container {
         padding: 15px 20px;
     }
     
@@ -243,18 +280,18 @@
         padding: 20px;
     }
     
-    .table-header, .project-row {
+    .table-header, .task-row {
         padding: 15px 20px;
     }
 }
 
 /* Для очень больших экранов (4K) */
 @media (min-width: 2560px) {
-    .projects-container {
+    .mytasks-container {
         padding: 40px 60px;
     }
     
-    .projects-title {
+    .mytasks-title {
         font-size: 40px;
         margin-bottom: 40px;
     }
@@ -264,55 +301,23 @@
         border-radius: 25px;
     }
     
-    .projects-table {
+    .tasks-table {
         border-radius: 25px;
     }
     
-    .table-header, .project-row {
+    .table-header, .task-row {
         padding: 25px 40px;
     }
 }
 
 /* Убираем горизонтальный скролл на средних экранах */
 @media (max-width: 1200px) {
-    .projects-table {
+    .tasks-table {
         overflow-x: auto;
         min-width: 100%;
     }
     
-    .table-header, .project-row {
-        min-width: 1000px;
+    .table-header, .task-row {
+        min-width: 800px;
     }
-}
-
-.project-not-found {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 400px;
-    background: white;
-    border-radius: 20px;
-    padding: 40px;
-}
-
-.project-not-found h2 {
-    color: #333;
-    margin-bottom: 20px;
-}
-
-.back-btn {
-    padding: 12px 24px;
-    background: #4ECDC4;
-    color: white;
-    border: none;
-    border-radius: 10px;
-    font-size: 16px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.3s;
-}
-
-.back-btn:hover {
-    background: #3db8af;
 }

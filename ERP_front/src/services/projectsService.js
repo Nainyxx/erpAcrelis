@@ -5,6 +5,19 @@ const CONFIG = {
   MOCK_DELAY: 300
 };
 
+// Функция для получения текущего пользователя
+export const getCurrentUser = () => {
+  // В реальном приложении это должно приходить из контекста/редакса или localStorage
+  // Пока используем мокового пользователя для демонстрации
+  return {
+    id: 1,
+    name: 'Иван Иванов',
+    email: 'ivan.ivanov@example.com',
+    role: 'Разработчик',
+    avatar: 'https://via.placeholder.com/40'
+  };
+};
+
 // Функция для получения ID проекта из URL
 export const getProjectIdFromUrl = () => {
   const path = window.location.pathname;
@@ -319,4 +332,63 @@ export const getProjectFromUrl = async (useMockData = true) => {
   if (!projectId) return null;
   
   return await getProjectById(projectId, useMockData);
+};
+
+// Функция для получения задач текущего пользователя
+export const getMyTasks = async (userId, useMockData = true) => {
+  console.log('🔄 getMyTasks запущен, userId:', userId);
+  
+  try {
+    const projects = await loadMockData();
+    
+    await new Promise(resolve => setTimeout(resolve, CONFIG.MOCK_DELAY));
+    
+    const userTasks = [];
+    
+    projects.forEach(project => {
+      if (project.ganttTasks) {
+        project.ganttTasks.forEach(task => {
+          if (task.assignedTo?.includes(userId)) {
+            userTasks.push({
+              id: task.id,
+              projectId: project.id,
+              projectName: project.name,
+              projectType: project.type,
+              projectTypeLabel: getTypeLabel(project.type),
+              projectData: project, // Добавляем полные данные проекта
+              taskName: task.name,
+              description: task.description || '',
+              status: task.status,
+              progress: task.progress || 0,
+              startDate: formatDate(task.start),
+              deadline: formatDate(task.end),
+              priority: project.priority,
+              assignees: project.team?.filter(member => 
+                task.assignedTo?.includes(member.id)
+              ).map(member => member.name) || []
+            });
+          }
+        });
+      }
+    });
+    
+    console.log(`✅ Найдено ${userTasks.length} задач для пользователя ${userId}`);
+    return userTasks;
+    
+  } catch (error) {
+    console.error('❌ Ошибка в getMyTasks:', error);
+    return [];
+  }
+};
+
+// Опционально: функция для получения всех пользователей (для выпадающих списков и т.д.)
+export const getAllUsers = () => {
+  // Моковые данные пользователей
+  return [
+    { id: 1, name: 'Иван Иванов', email: 'ivan.ivanov@example.com', role: 'Разработчик' },
+    { id: 2, name: 'Мария Петрова', email: 'maria.petrova@example.com', role: 'Дизайнер' },
+    { id: 3, name: 'Алексей Сидоров', email: 'alexey.sidorov@example.com', role: 'Project Manager' },
+    { id: 4, name: 'Елена Кузнецова', email: 'elena.kuznetsova@example.com', role: 'Тестировщик' },
+    { id: 5, name: 'Дмитрий Васильев', email: 'dmitry.vasilyev@example.com', role: 'Аналитик' }
+  ];
 };

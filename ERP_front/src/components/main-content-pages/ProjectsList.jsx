@@ -213,3 +213,4 @@ const ProjectsList = ({ useMockData = true, onProjectSelect }) => {
 };
 
 export default ProjectsList;
+

@@ -6,6 +6,7 @@ import SideBar from './components/main-comps/SideBar';
 import ProjectsList from './components/main-content-pages/ProjectsList';
 import ProjectCard from './components/main-content-pages/ProjectCard';
 import GanttChart from './components/main-content-pages/GanttChart';
+import MyTasks from './components/main-content-pages/MyTasks'; // Импорт компонента
 import { projectsData } from './MockData/projects.js';
 
 const CONFIG = {
@@ -63,7 +64,7 @@ function AppContent() {
               
               {/* Страница моих задач */}
               <Route path="/my-tasks" element={
-                <div style={{padding: '30px'}}>Мои задачи (в разработке)</div>
+                <MyTasks useMockData={CONFIG.USE_MOCK_DATA} />
               } />
               
               {/* Бухгалтерия */}
