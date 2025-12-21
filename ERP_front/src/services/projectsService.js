@@ -334,11 +334,116 @@ export const getProjectFromUrl = async (useMockData = true) => {
   return await getProjectById(projectId, useMockData);
 };
 
-// Функция для получения задач текущего пользователя
+
+// Опционально: функция для получения всех пользователей (для выпадающих списков и т.д.)
+export const getAllUsers = () => {
+  // Моковые данные пользователей
+  return [
+    { id: 1, name: 'Иван Иванов', email: 'ivan.ivanov@example.com', role: 'Разработчик' },
+    { id: 2, name: 'Мария Петрова', email: 'maria.petrova@example.com', role: 'Дизайнер' },
+    { id: 3, name: 'Алексей Сидоров', email: 'alexey.sidorov@example.com', role: 'Project Manager' },
+    { id: 4, name: 'Елена Кузнецова', email: 'elena.kuznetsova@example.com', role: 'Тестировщик' },
+    { id: 5, name: 'Дмитрий Васильев', email: 'dmitry.vasilyev@example.com', role: 'Аналитик' }
+  ];
+};
+
+// Функция для получения задач из API
+export const getTasksFromAPI = async () => {
+  try {
+    // Получаем токен из localStorage или другого места
+    const token = localStorage.getItem('apiToken') || '';
+    
+    if (!token) {
+      throw new Error('Token not found. Please set API token.');
+    }
+
+    const response = await fetch('https://api.acrelis.ru/tasks/', {
+      method: 'GET',
+      headers: {
+        'accept': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'X-CSRFTOKEN': 'ihWOS66R6dgk3NEAGW2HR1O7Z6qqFj19'
+      }
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error('Unauthorized: Invalid or missing token');
+      }
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const apiTasks = await response.json();
+    
+    // Преобразуем данные из API в наш формат
+    return apiTasks.map(task => ({
+      id: task.id,
+      taskName: task.name,
+      deadline: task.deadline ? new Date(task.deadline).toLocaleDateString('ru-RU') : 'Не указан',
+      projectName: task.project_name || 'Без проекта',
+      projectId: task.project || 0,
+      status: mapApiStatusToLocal(task.status),
+      assignee: task.performer_name || 'Не назначен',
+      description: `Статус: ${task.status_display || task.status}`,
+      progress: calculateProgressFromStatus(task.status),
+      startDate: task.created ? new Date(task.created).toLocaleDateString('ru-RU') : 'Не указана',
+      isOverdue: task.is_overdue === 'true' || false,
+      hours: task.hours || 0
+    }));
+    
+  } catch (error) {
+    console.error('API Error in getTasksFromAPI:', error);
+    throw error;
+  }
+};
+// Вспомогательная функция для маппинга статусов из API
+const mapApiStatusToLocal = (apiStatus) => {
+  const statusMap = {
+    'new': 'planned',
+    'in_progress': 'in-progress', 
+    'completed': 'completed',
+    'pending': 'planned',
+    'overdue': 'in-progress'
+  };
+  
+  return statusMap[apiStatus] || 'planned';
+};
+
+// Вспомогательная функция для расчета прогресса
+const calculateProgressFromStatus = (status) => {
+  if (status === 'completed') return 100;
+  if (status === 'in_progress') return 50;
+  if (status === 'new') return 0;
+  return 25;
+};
+
+// Обновленная функция getMyTasks с поддержкой API
 export const getMyTasks = async (userId, useMockData = true) => {
-  console.log('🔄 getMyTasks запущен, userId:', userId);
+  console.log('🔄 getMyTasks запущен, userId:', userId, 'useMockData:', useMockData);
   
   try {
+    if (!useMockData) {
+      // Пробуем получить данные из API
+      try {
+        const apiTasks = await getTasksFromAPI();
+        
+        // Фильтруем задачи для текущего пользователя
+        const currentUser = getCurrentUser();
+        const userTasks = apiTasks.filter(task => 
+          task.assignee.includes(currentUser.name.split(' ')[0]) || 
+          task.assignee === currentUser.name
+        );
+        
+        console.log(`✅ Загружено ${userTasks.length} задач из API`);
+        return userTasks;
+        
+      } catch (apiError) {
+        console.warn('⚠️ Не удалось загрузить из API, используем моковые данные:', apiError);
+        // При ошибке API используем моковые данные
+      }
+    }
+    
+    // Используем моковые данные
     const projects = await loadMockData();
     
     await new Promise(resolve => setTimeout(resolve, CONFIG.MOCK_DELAY));
@@ -355,7 +460,7 @@ export const getMyTasks = async (userId, useMockData = true) => {
               projectName: project.name,
               projectType: project.type,
               projectTypeLabel: getTypeLabel(project.type),
-              projectData: project, // Добавляем полные данные проекта
+              projectData: project,
               taskName: task.name,
               description: task.description || '',
               status: task.status,
@@ -372,23 +477,11 @@ export const getMyTasks = async (userId, useMockData = true) => {
       }
     });
     
-    console.log(`✅ Найдено ${userTasks.length} задач для пользователя ${userId}`);
+    console.log(`✅ Найдено ${userTasks.length} моковых задач для пользователя ${userId}`);
     return userTasks;
     
   } catch (error) {
     console.error('❌ Ошибка в getMyTasks:', error);
     return [];
   }
-};
-
-// Опционально: функция для получения всех пользователей (для выпадающих списков и т.д.)
-export const getAllUsers = () => {
-  // Моковые данные пользователей
-  return [
-    { id: 1, name: 'Иван Иванов', email: 'ivan.ivanov@example.com', role: 'Разработчик' },
-    { id: 2, name: 'Мария Петрова', email: 'maria.petrova@example.com', role: 'Дизайнер' },
-    { id: 3, name: 'Алексей Сидоров', email: 'alexey.sidorov@example.com', role: 'Project Manager' },
-    { id: 4, name: 'Елена Кузнецова', email: 'elena.kuznetsova@example.com', role: 'Тестировщик' },
-    { id: 5, name: 'Дмитрий Васильев', email: 'dmitry.vasilyev@example.com', role: 'Аналитик' }
-  ];
 };

@@ -12,7 +12,7 @@ function Header() {
                 <button className="navButt">
                     <img src={NotificationIcon} alt="Уведомления" />
                 </button>
-                <button className="navButt">
+                <button className="navButt1">
                     <img 
                         src={AccountIcon} 
                         alt="Аккаунт"

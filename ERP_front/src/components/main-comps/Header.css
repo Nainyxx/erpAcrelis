@@ -1,28 +1,28 @@
 .HeaderCont {
-    height: 90px;
+    height: 9vh; /* 90px */
     width: 100%;
     display: flex;
     align-items: center;
-    padding: 0 20px;
+    padding: 0 2vh; /* 20px */
 }
 
 .logo {
     display: flex;
     align-items: center;
-    min-width: 175px;
+    height: 60%; /* 175px */
 }
 
 .navCont {
     margin-left: auto;
     display: flex;
     align-items: center;
-    gap: 15px;
-    padding-right: 20px;
+    gap: 1.5vh; /* 15px */
+    padding-right: 2vh; /* 20px */
 }
 
 .navButt {
-    width: 40px;
-    height: 40px;
+    width: 4vh; /* 40px */
+    height: 4vh; /* 40px */
     border-radius: 50%;
     background: #B2E9EF;
     cursor: pointer;
@@ -37,15 +37,37 @@
     transform: scale(1.05);
 }
 
-
-
 .navButt img {
-    width: 20px;
-    height: 20px;
+    width: 2vh; /* 20px */
+    height: 2vh; /* 20px */
     object-fit: contain;
 }
 
+.navButt1 {
+    width: 4vh; /* 40px */
+    height: 4vh; /* 40px */
+    border-radius: 50%;
+    background: #B2E9EF;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.navButt1:hover {
+    background: #B2E9EF;
+    transform: scale(1.05);
+}
+
+.navButt1 img {
+    width: 4vh; /* 20px */
+    height: 4vh; /* 20px */
+    object-fit: contain;
+}
+
+
 .navButt svg {
-    width: 20px;
-    height: 20px;
+    width: 2vh; /* 20px */
+    height: 2vh; /* 20px */
 }

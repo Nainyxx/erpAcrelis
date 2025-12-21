@@ -6,7 +6,7 @@ import MyTasksIcon from "../../assets/sidebar-mytasks.svg";
 import AccountingIcon from "../../assets/sidebar-accounting.svg";
 import StaffIcon from "../../assets/sidebar-staff.svg";
 
-function SideBar() {
+function SideBar({ currentPath }) {
   const navigate = useNavigate();
   
   const menuItems = [
@@ -18,12 +18,24 @@ function SideBar() {
 
   // Получаем активную страницу из URL
   const getActivePage = () => {
-    const path = window.location.pathname;
-    if (path.startsWith('/project')) return 'projects'; // Проекты активны, когда мы на странице проекта
-    if (path.startsWith('/my-tasks')) return 'mytasks';
-    if (path.startsWith('/accounting')) return 'accounting';
-    if (path.startsWith('/staff')) return 'staff';
-    if (path === '/projects') return 'projects';
+    const path = currentPath || window.location.pathname;
+    
+    // Проверяем пути для "Мои задачи"
+    if (path === '/my-tasks' || path.startsWith('/tasks/')) {
+      return 'mytasks';
+    }
+    // Проверяем пути для "Проекты"
+    else if (path === '/projects' || path.startsWith('/projects/')) {
+      return 'projects';
+    }
+    // Проверяем пути для "Сотрудники" (включая карточку сотрудника)
+    else if (path === '/staff' || path.startsWith('/staff/')) {
+      return 'staff';
+    }
+    else if (path === '/accounting') {
+      return 'accounting';
+    }
+    
     return 'projects'; // По умолчанию
   };
 
@@ -31,12 +43,14 @@ function SideBar() {
     navigate(path);
   };
 
+  const activePage = getActivePage();
+
   return (
     <div className="SideBar">
       {menuItems.map((item) => (
         <button
           key={item.id}
-          className={`sidebar-item ${getActivePage() === item.id ? 'active' : ''}`}
+          className={`sidebar-item ${activePage === item.id ? 'active' : ''}`}
           onClick={() => handleItemClick(item.path)}
         >
           <img src={item.icon} alt={item.name} className="sidebar-icon" />

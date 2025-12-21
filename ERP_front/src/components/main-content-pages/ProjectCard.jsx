@@ -1,7 +1,38 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './ProjectCard.css';
 
-const ProjectCard = ({ project, onClose, onShowGantt }) => {
+const ProjectCard = ({ project, onShowGantt, navigate }) => {
+  const [startDate, setStartDate] = useState(project.startDate || '');
+  const [deadline, setDeadline] = useState(project.deadline || '');
+  const [projectType, setProjectType] = useState(project.type || '');
+  const [price, setPrice] = useState(project.price || '');
+  const [customer, setCustomer] = useState(project.customer || 'ООО Рога и Копыта');
+  const [changes, setChanges] = useState([]);
+  const [isUserInProject, setIsUserInProject] = useState(false);
+  const [currentUser] = useState('Иван Петров');
+  
+  useEffect(() => {
+    const mockChanges = [
+      { id: 1, action: 'Изменил сроки проекта', date: '15.12.2023 14:30' },
+      { id: 2, action: 'Добавил файл "ТЗ_финальное.docx"', date: '15.12.2023 11:15' },
+      { id: 3, action: 'Обновил бюджет проекта', date: '13.12.2023 09:45' },
+      { id: 4, action: 'Добавил исполнителя: Елена Кузнецова', date: '12.12.2023 16:20' },
+      { id: 5, action: 'Проект создан', date: '10.12.2023 10:00' },
+      { id: 6, action: 'Изменила тип проекта', date: '09.12.2023 15:30' },
+    ];
+    setChanges(mockChanges);
+  }, []);
+  
+  useEffect(() => {
+    if (project.team) {
+      const userInTeam = project.team.some(member => 
+        member.name === currentUser
+      );
+      setIsUserInProject(userInTeam);
+    }
+  }, [project.team, currentUser]);
+  
   if (!project) return null;
 
   const generateAvatar = (name) => {
@@ -19,25 +50,11 @@ const ProjectCard = ({ project, onClose, onShowGantt }) => {
   const formatDate = (dateString) => {
     if (!dateString) return 'Не указана';
     
-    // Пытаемся разобрать дату в разных форматах
-    let date;
-    
-    // Если дата уже в формате dd.mm.yyyy
     if (typeof dateString === 'string' && dateString.includes('.')) {
-      const parts = dateString.split('.');
-      if (parts.length === 3) {
-        const day = parseInt(parts[0], 10);
-        const month = parseInt(parts[1], 10) - 1;
-        const year = parseInt(parts[2], 10);
-        date = new Date(year, month, day);
-      }
+      return dateString;
     }
     
-    // Если не удалось разобрать как dd.mm.yyyy, пробуем стандартный парсинг
-    if (!date || isNaN(date.getTime())) {
-      date = new Date(dateString);
-    }
-    
+    const date = new Date(dateString);
     if (isNaN(date.getTime())) return 'Неверная дата';
     
     const day = date.getDate().toString().padStart(2, '0');
@@ -45,6 +62,83 @@ const ProjectCard = ({ project, onClose, onShowGantt }) => {
     const year = date.getFullYear();
     
     return `${day}.${month}.${year}`;
+  };
+
+  const handleSaveChanges = () => {
+    console.log('Сохранение изменений:', {
+      startDate,
+      deadline,
+      projectType,
+      price,
+      customer
+    });
+    
+    const newChange = {
+      id: changes.length + 1,
+      action: 'Сохранил изменения проекта',
+      date: new Date().toLocaleString('ru-RU', { 
+        day: '2-digit', 
+        month: '2-digit', 
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }),
+    };
+    
+    setChanges([newChange, ...changes]);
+    alert('Изменения сохранены!');
+  };
+
+  const handleJoinProject = () => {
+    if (!isUserInProject) {
+      console.log('Пользователь добавлен в проект:', currentUser);
+      setIsUserInProject(true);
+      
+      const newChange = {
+        id: changes.length + 1,
+        action: `${currentUser} присоединился к проекту`,
+        date: new Date().toLocaleString('ru-RU', { 
+          day: '2-digit', 
+          month: '2-digit', 
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }),
+      };
+      setChanges([newChange, ...changes]);
+      
+      alert(`Вы присоединились к проекту "${project.name}"`);
+    } else {
+      console.log('Пользователь удален из проекта:', currentUser);
+      setIsUserInProject(false);
+      
+      const newChange = {
+        id: changes.length + 1,
+        action: `${currentUser} покинул проект`,
+        date: new Date().toLocaleString('ru-RU', { 
+          day: '2-digit', 
+          month: '2-digit', 
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }),
+      };
+      setChanges([newChange, ...changes]);
+      
+      alert(`Вы покинули проект "${project.name}"`);
+    }
+  };
+
+  const handleAddTeamMember = () => {
+    console.log('Добавить исполнителя');
+  };
+
+  const handleAddFile = () => {
+    console.log('Добавить файл');
+  };
+
+  const handleDownloadFile = (file) => {
+    console.log('Скачать файл:', file.name);
   };
 
   const renderTeamAvatars = (team) => {
@@ -71,7 +165,7 @@ const ProjectCard = ({ project, onClose, onShowGantt }) => {
       </div>
     );
   };
-
+  
   const formatPrice = (price) => {
     const num = parseFloat(price);
     return new Intl.NumberFormat('ru-RU', {
@@ -80,98 +174,169 @@ const ProjectCard = ({ project, onClose, onShowGantt }) => {
     }).format(num) + ' ₽';
   };
 
+  const groupChangesByDate = () => {
+    const grouped = {};
+    changes.forEach(change => {
+      const date = change.date.split(' ')[0];
+      if (!grouped[date]) {
+        grouped[date] = [];
+      }
+      grouped[date].push(change);
+    });
+    return grouped;
+  };
+
+  const groupedChanges = groupChangesByDate();
+  const sortedDates = Object.keys(groupedChanges).sort((a, b) => {
+    const dateA = a.split('.').reverse().join('-');
+    const dateB = b.split('.').reverse().join('-');
+    return new Date(dateB) - new Date(dateA);
+  });
+
   return (
     <div className="projectcard-container">
-      {/* Добавляем крестик справа сверху */}
+      {/* Контейнер для кнопок */}
+      <div className="projectcard-buttons">
+        
+        <button className="save-changes-btn" onClick={handleSaveChanges}>
+          Сохранить изменения
+        </button>
+      </div>
+
       <div className="projectcard-header">
-        <h1 className="projectcard-title">Проекты — Карточка проекта</h1>
-        <button className="close-btn" onClick={onClose}>×</button>
+        <h1 className="projectcard-title">
+          <span 
+            className="projects-link" 
+            onClick={() => navigate('/projects')}
+          >
+            Проекты
+          </span>
+          {' — Карточка проекта'}
+        </h1>
       </div>
 
       <div className="projectcard-main-content">
         <div className="projectcard-layout">
-          {/* Левая часть - 2 колонки по 2 строки */}
           <div className="main-cards-section">
-            {/* Верхний ряд */}
             <div className="top-row">
-              {/* Даты */}
               <div className="projectcard-tile">
                 <div className="date-item">
                   <span className="date-label">Начало проекта</span>
-                  <span className="date-value">{formatDate(project.startDate || project.createdAt)}</span>
+                  <span 
+                    className="date-value1 editable" 
+                    contentEditable
+                    suppressContentEditableWarning
+                    onBlur={(e) => setStartDate(e.target.textContent)}
+                  >
+                    {formatDate(startDate)}
+                  </span>
                 </div>
                 <div className="date-item">
                   <span className="date-label">Дедлайн</span>
-                  <span className="date-value deadline">{formatDate(project.deadline || project.createdAt)}</span>
+                  <span 
+                    className="date-value deadline editable" 
+                    contentEditable
+                    suppressContentEditableWarning
+                    onBlur={(e) => setDeadline(e.target.textContent)}
+                  >
+                    {formatDate(deadline)}
+                  </span>
                 </div>
               </div>
 
-              {/* Исполнители */}
               <div className="projectcard-tile">
                 <div className="tile-header">
                   <h3>Исполнители</h3>
-                  <button className="add-btn">+ Добавить исполнителя</button>
+                  <button className="add-btn" onClick={handleAddTeamMember}>
+                    + Добавить исполнителя
+                  </button>
                 </div>
                 <div className="team-container">
                   {renderTeamAvatars(project.team)}
                 </div>
-                <div className="team-count">
-                  Всего: {project.team?.length || 0} человек
-                </div>
               </div>
             </div>
 
-            {/* Средний ряд */}
             <div className="middle-row">
-              {/* Тип проекта */}
               <div className="projectcard-tile">
                 <div className="info-item">
                   <span className="info-label">Тип проекта</span>
-                  <span className={`project-type ${project.type}`}>
-                    {project.typeLabel}
-                  </span>
+                  <span 
+                      className="project-type1 editable" 
+                      contentEditable
+                      suppressContentEditableWarning
+                      onBlur={(e) => setProjectType(e.target.textContent)}
+                    >
+                  {projectType || project.type || 'Не указан'}
+                </span>
                 </div>
                 <div className="info-item">
                   <span className="info-label">Бюджет проекта</span>
-                  <span className="project-price">
-                    {formatPrice(project.price)}
+                  <span 
+                    className="project-price editable" 
+                    contentEditable
+                    suppressContentEditableWarning
+                    onBlur={(e) => setPrice(e.target.textContent)}
+                  >
+                    {formatPrice(price)}
                   </span>
                 </div>
               </div>
 
-              {/* Заказчик */}
               <div className="projectcard-tile">
                 <h3>Заказчик</h3>
                 <div className="customer-info">
-                  <div className="customer-avatar">
-                    <div className="customer-icon">🏢</div>
-                  </div>
                   <div className="customer-details">
-                    <span className="customer-name">{project.customer || 'ООО Рога и Копыта'}</span>
-                    <span className="customer-contact">Контактное лицо: Иван Иванов</span>
-                    <span className="customer-email">ivanov@company.ru</span>
-                    <span className="customer-phone">+7 (999) 123-45-67</span>
+                    <span 
+                      className="customer-name editable" 
+                      contentEditable
+                      suppressContentEditableWarning
+                      onBlur={(e) => setCustomer(e.target.textContent)}
+                    >
+                      {customer}
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Нижний ряд - Изменения и Кнопки */}
             <div className="bottom-row">
-              {/* Изменения */}
               <div className="projectcard-tile">
                 <h3>Изменения</h3>
-                <div className="empty-state">
-                  <span className="empty-icon">📋</span>
-                  <span className="empty-text">История изменений будет отображаться здесь</span>
+                <div className="changes-container">
+                  {changes.length === 0 ? (
+                    <div className="empty-state">
+                      <span className="empty-icon">📋</span>
+                      <span className="empty-text">История изменений будет отображаться здесь</span>
+                    </div>
+                  ) : (
+                    <div className="changes-chat">
+                      {sortedDates.map(date => (
+                        <React.Fragment key={date}>
+                          <div className="change-date-header">{date}</div>
+                          {groupedChanges[date].map(change => {
+                            const time = change.date.split(' ')[1];
+                            return (
+                              <div key={change.id} className="change-message">
+                                <div className="change-content">{change.action}</div>
+                                <div className="change-time">{time}</div>
+                              </div>
+                            );
+                          })}
+                        </React.Fragment>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Управление проектом - МЕНЯЕМ ТОЛЬКО КНОПКУ */}
               <div className="projectcard-tile">
-                <h3>Управление проектом</h3>
-                <button className="action-btn kanban-btn">Открыть канбан</button>
-                {/* Делаем кнопку нажимаемой */}
+                <button 
+                  className="action-btn kanban-btn" 
+                  onClick={() => navigate(`/projects/${project.id}/kanban`)}
+                >
+                  Открыть канбан
+                </button>
                 <button className="action-btn gantt-btn" onClick={onShowGantt}>
                   Диаграмма ганта
                 </button>
@@ -179,26 +344,25 @@ const ProjectCard = ({ project, onClose, onShowGantt }) => {
             </div>
           </div>
 
-          {/* Правая часть - Файлы */}
           <div className="files-panel">
             <div className="files-header">
               <h3>Файлы проекта</h3>
-              <button className="add-btn">+ Загрузить файлы</button>
+              <button className="add-btn" onClick={handleAddFile}>
+                + Загрузить файлы
+              </button>
             </div>
             <div className="files-list">
               {project.files?.map(file => (
                 <div key={file.id} className="file-item">
-                  <div className="file-icon">
-                    {file.name.endsWith('.pdf') ? '📄' : 
-                     file.name.endsWith('.docx') ? '📝' : 
-                     file.name.endsWith('.xlsx') ? '📊' : 
-                     file.name.endsWith('.fig') || file.name.endsWith('.sketch') ? '🎨' : '📁'}
-                  </div>
                   <div className="file-details">
                     <span className="file-name">{file.name}</span>
-                    <span className="file-size">{file.size} • {file.date || 'Без даты'}</span>
                   </div>
-                  <button className="file-download">↓</button>
+                  <button 
+                    className="file-download" 
+                    onClick={() => handleDownloadFile(file)}
+                  >
+                    ↓
+                  </button>
                 </div>
               ))}
             </div>

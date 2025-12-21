@@ -5,7 +5,6 @@ import './ProjectsList.css';
 const ProjectsList = ({ useMockData = true, onProjectSelect }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState('all');
-  const [selectedStatus, setSelectedStatus] = useState('all');
   const [projects, setProjects] = useState([]);
   const [projectTypes, setProjectTypes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -34,19 +33,10 @@ const ProjectsList = ({ useMockData = true, onProjectSelect }) => {
     loadData();
   }, [useMockData]);
 
-  const statuses = [
-    { id: 'all', label: 'Все статусы' },
-    { id: 'В работе', label: 'В работе' },
-    { id: 'Готов', label: 'Готов' },
-    { id: 'Планирование', label: 'Планирование' }
-  ];
-
   const filteredProjects = projects.filter(project => {
-    const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         (project.description && project.description.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesType = selectedType === 'all' || project.type === selectedType;
-    const matchesStatus = selectedStatus === 'all' || project.status === selectedStatus;
-    return matchesSearch && matchesType && matchesStatus;
+    return matchesSearch && matchesType;
   });
 
   const generateAvatar = (name) => {
@@ -127,20 +117,6 @@ const ProjectsList = ({ useMockData = true, onProjectSelect }) => {
             </select>
           </div>
 
-          <div className="filter-group">
-            <select 
-              className="filter-select" 
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-            >
-              {statuses.map(status => (
-                <option key={status.id} value={status.id}>
-                  {status.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
           <div className="filter-group search-group">
             <input
               type="text"
@@ -157,55 +133,50 @@ const ProjectsList = ({ useMockData = true, onProjectSelect }) => {
         </button>
       </div>
 
+      {/* ЕДИНЫЙ ГРИД */}
       <div className="projects-table">
+        {/* ЗАГОЛОВКИ - первые 5 элементов в гриде */}
+        <div className="header-cell" id="123name">Название</div>
+        <div className="header-cell">Исполнитель</div>
+        <div className="header-cell">Тип</div>
+        <div className="header-cell">Статус</div>
+        <div className="header-cell">Часы</div>
+
         {filteredProjects.length === 0 ? (
           <div className="no-projects">
-            {searchQuery || selectedType !== 'all' || selectedStatus !== 'all' 
+            {searchQuery || selectedType !== 'all' 
               ? 'Проекты не найдены по заданным фильтрам' 
               : 'Нет доступных проектов'}
           </div>
         ) : (
-          <>
-            <div className="table-header">
-              <div className="table-cell">Название проекта</div>
-              <div className="table-cell">Исполнитель</div>
-              <div className="table-cell">Тип</div>
-              <div className="table-cell">Статус</div>
-              <div className="table-cell">Часы</div>
-            </div>
-
-            {filteredProjects.map((project) => (
-              <div 
-                key={project.id}
-                className="project-row"
-                onClick={() => onProjectSelect(project)}
-              >
-                <div className="table-cell project-name">
-                  <div className="project-name-text">{project.name}</div>
-                </div>
-
-                <div className="table-cell">
-                  {renderTeamAvatars(project.team)}
-                </div>
-
-                <div className="table-cell">
-                  <span className={`project-type ${project.type}`}>
-                    {project.typeLabel}
-                  </span>
-                </div>
-                
-                <div className="table-cell">
-                  <span className={`project-status ${project.status === 'Готов' ? 'ready' : project.status === 'В работе' ? 'in-progress' : 'planning'}`}>
-                    {project.status}
-                  </span>
-                </div>
-
-                <div className="table-cell">
-                  <div className="project-hours">{project.hours} ч</div>
-                </div>
+          filteredProjects.map((project) => (
+            // КАЖДАЯ СТРОКА - 5 элементов в гриде
+            <div className="project-row" key={project.id}>
+              <div onClick={() => onProjectSelect(project)}>
+                <div className="project-name-text">{project.name}</div>
               </div>
-            ))}
-          </>
+              
+              <div onClick={() => onProjectSelect(project)}>
+                {renderTeamAvatars(project.team)}
+              </div>
+              
+              <div onClick={() => onProjectSelect(project)}>
+                <span className={`project-type ${project.type}`}>
+                  {project.typeLabel}
+                </span>
+              </div>
+              
+              <div onClick={() => onProjectSelect(project)}>
+                <span className={`project-status ${project.status === 'completed' ? 'ready' : project.status === 'in_progress' || project.status === 'tests' ? 'in-progress' : 'planning'}`}>
+                  {project.status_display || 'Не указан'}
+                </span>
+              </div>
+              
+              <div onClick={() => onProjectSelect(project)}>
+                <div className="project-hours">{project.hours} ч</div>
+              </div>
+            </div>
+          ))
         )}
       </div>
     </div>
@@ -213,4 +184,3 @@ const ProjectsList = ({ useMockData = true, onProjectSelect }) => {
 };
 
 export default ProjectsList;
-

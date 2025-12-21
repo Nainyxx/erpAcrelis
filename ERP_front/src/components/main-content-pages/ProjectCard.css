@@ -1,38 +1,74 @@
 .projectcard-container {
-  padding: 30px;
+  padding: 2vh; /* 30px */
+  position: relative;
   background-color: #F6F6FE;
-  min-height: calc(100vh - 90px);
+  min-height: calc(90vh - 9vh); /* 90px */
   width: 100%;
   box-sizing: border-box;
 }
 
+/* Header с кнопкой сохранения */
+.projectcard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2vh; /* 20px */
+  position: relative;
+}
+
 .projectcard-title {
-  font-size: clamp(24px, 2vw, 32px);
+  font-size: 2.2vh; /* 32px */
   font-weight: 600;
   color: #5B5B5B;
-  margin: 0 0 32px 0;
+  margin: 0;
   padding: 0;
+  flex: 1;
+}
+
+/* Кнопка сохранения изменений - в header справа */
+.save-changes-btn {
+  display: flex;
+  float: right;
+  justify-content: flex-end;
+  color: #26262C;
+  background-color: #FFFFFF;
+  border: 1px solid #E5E5E5; /* Исправлено border */
+  margin-bottom: 1vh;
+  border-radius: 1vh; /* 10px */
+  padding: 1vh 2vh; /* 10px 20px */
+  font-size: 2vh; /* 20px */
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+  white-space: nowrap;
+  align-self: center;
+}
+
+.save-changes-btn:hover {
+  background: #dadada;
+  transform: translateY(-0.2vh); /* 2px */
+  box-shadow: 0 0.4vh 0.8vh rgba(0, 0, 0, 0.1); /* 4px 8px */
 }
 
 .projectcard-main-content {
   width: 100%;
-  height: calc(100vh - 180px);
+  height: calc(100vh - 18vh); /* 180px */
 }
 
 /* Основная структура */
 .projectcard-layout {
   display: flex;
-  gap: 24px;
+  gap: 2.4vh; /* 24px */
   width: 100%;
-  height: 100%;
+  height: 85%;
 }
 
-/* Левая часть - карточки */
+/* Левая часть - карточки (66%) */
 .main-cards-section {
-  flex: 3;
+  width: 66%; /* 2/3 ширины */
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 2.4vh; /* 24px */
   min-width: 0;
 }
 
@@ -42,65 +78,81 @@
 .bottom-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 24px;
+  gap: 2.4vh; /* 24px */
   width: 100%;
+  height: 22vh;
 }
 
-/* Карточки имеют фиксированную высоту */
+/* Карточки имеют фиксированную высота */
 .projectcard-tile {
   background: #FFFFFF;
-  border-radius: 16px;
-  padding: 28px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-radius: 1.6vh; /* 16px */
+  padding: 2.8vh; /* 28px */
+  box-shadow: 0 0.4vh 1.2vh rgba(0, 0, 0, 0.08); /* 4px 12px */
   display: flex;
   flex-direction: column;
   transition: transform 0.2s, box-shadow 0.2s;
-  height: 200px; /* Фиксированная высота всех карточек */
+  height: 100%; /* Фиксированная высота всех карточек */
 }
 
+/* Правая часть - файлы (33%) */
+.files-panel {
+  width: 33%; /* 1/3 ширины */
+  background: #FFFFFF;
+  border-radius: 1.6vh; /* 16px */
+  padding: 2.8vh; /* 28px */
+  box-shadow: 0 0.4vh 1.2vh rgba(0, 0, 0, 0.08); /* 4px 12px */
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 90%; /* Занимает всю высоту контейнера */
+}
+
+.projects-link:hover {
+  text-decoration: underline;
+}
+
+/* Остальные стили остаются без изменений */
 .projectcard-tile:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+  transform: translateY(-0.2vh); /* 2px */
+  box-shadow: 0 0.6vh 1.6vh rgba(0, 0, 0, 0.12); /* 6px 16px */
 }
 
 .projectcard-tile h3 {
-  font-size: 20px;
-  font-weight: 600;
-  color: #333;
-  margin: 0 0 16px 0;
+  font-size: 1.5vh; /* 15px */
+  color: #6C757D;
+  margin: 0 0 1.6vh 0; /* 16px */
 }
 
-/* Даты */
 .date-item {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: 0.8vh; /* 8px */
+  margin-bottom: 1.6vh; /* 16px */
 }
 
 .date-label {
-  font-size: 14px;
+  font-size: 1.5vh; /* 15px */
   color: #6C757D;
   font-weight: 500;
 }
 
-.date-value {
-  font-size: 18px;
+.date-value1 {
+  font-size: 2vh;
   font-weight: 600;
   color: #333;
 }
 
 .date-value.deadline {
-  color: #DC3545;
-  font-weight: 700;
+  font-size: 2vh; /* 20px */
+  font-weight: 600;
 }
 
-/* Исполнители */
 .tile-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 1.6vh; /* 16px */
 }
 
 .tile-header h3 {
@@ -109,12 +161,13 @@
 
 .add-btn {
   background: none;
-  border: 2px solid #DEE2E6;
+  border: 0.2vh solid #DEE2E6; /* 2px */
   color: #6C757D;
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-size: 14px;
+  padding: 0.8vh 1.6vh; /* 8px 16px */
+  border-radius: 0.8vh; /* 8px */
+  font-size: 1.4vh; /* 14px */
   font-weight: 500;
+  width: vh;
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.2s;
@@ -129,98 +182,96 @@
   flex: 1;
   display: flex;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 1.2vh; /* 12px */
 }
 
 .team-avatars {
   display: flex;
   align-items: center;
   position: relative;
-  padding-left: 8px;
+  padding-left: 0.8vh; /* 8px */
 }
 
 .avatar-wrapper {
-  margin-right: -10px;
+  margin-right: -1vh; /* -10px */
 }
 
 .projectcard-avatar {
-  width: 40px;
-  height: 40px;
+  width: 4vh; /* 40px */
+  height: 4vh; /* 40px */
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
   font-weight: 600;
-  font-size: 14px;
-  border: 2px solid white;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  font-size: 1.5vh; /* 15px */
+  border: 0.2vh solid white; /* 2px */
+  box-shadow: 0 0.2vh 0.6vh rgba(0,0,0,0.1); /* 2px 6px */
 }
 
 .avatar.extra-avatar {
-  width: 40px;
-  height: 40px;
+  width: 4vh; /* 40px */
+  height: 4vh; /* 40px */
   border-radius: 50%;
   background: #6C757D;
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 1.2vh; /* 12px */
   font-weight: 600;
-  border: 2px solid white;
-  margin-left: 6px;
+  border: 0.2vh solid white; /* 2px */
+  margin-left: 0.6vh; /* 6px */
 }
 
 .team-count {
-  font-size: 14px;
+  font-size: 1.4vh; /* 14px */
   color: #6C757D;
   font-weight: 500;
   text-align: center;
-  margin-top: 8px;
+  margin-top: 0.8vh; /* 8px */
 }
 
-/* Тип и счет */
 .info-item {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: 0.8vh; /* 8px */
+  margin-bottom: 1.6vh; /* 16px */
 }
 
 .info-label {
-  font-size: 14px;
+  font-size: 1.5vh; /* 15px */
   color: #6C757D;
   font-weight: 500;
 }
 
-.project-type {
-  font-size: 18px;
+.project-type1 {
+  font-size: 2vh; /* 18px */
   font-weight: 600;
-  color: #333;
-  padding: 8px 0;
+  color: #000000;
+  padding: 0.8vh 0; /* 8px */
   display: inline-block;
   width: fit-content;
 }
 
 .project-price {
-  font-size: 20px;
+  font-size: 2vh; /* 20px */
   font-weight: 700;
-  color: #28A745;
+  color: #333333;
 }
 
-/* Заказчик */
 .customer-info {
   display: flex;
   align-items: flex-start;
-  gap: 16px;
-  margin-top: 8px;
+  gap: 1.6vh; /* 16px */
+  margin-top: 0.8vh; /* 8px */
 }
 
 .customer-avatar {
-  width: 50px;
-  height: 50px;
-  border-radius: 10px;
+  width: 3vh; /* 30px */
+  height: 3vh; /* 30px */
+  border-radius: 1vh; /* 10px */
   background-color: #E9ECEF;
   display: flex;
   align-items: center;
@@ -229,67 +280,56 @@
 }
 
 .customer-icon {
-  font-size: 24px;
+  font-size: 2.4vh; /* 24px */
 }
 
 .customer-details {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 0.6vh; /* 6px */
   flex: 1;
 }
 
 .customer-name {
-  font-size: 18px;
+  font-size: 2vh; /* 20px */
   font-weight: 700;
   color: #333;
 }
 
-.customer-contact,
-.customer-email,
-.customer-phone {
-  font-size: 13px;
-  color: #6C757D;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
 
-/* Изменения */
 .empty-state {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 1.2vh; /* 12px */
   color: #6C757D;
 }
 
 .empty-icon {
-  font-size: 36px;
+  font-size: 3.6vh; /* 36px */
   opacity: 0.5;
 }
 
 .empty-text {
-  font-size: 14px;
+  font-size: 1.4vh; /* 14px */
   text-align: center;
-  max-width: 250px;
+  max-width: 25vh; /* 250px */
   line-height: 1.4;
 }
 
-/* Кнопки управления */
 .action-btn {
-  padding: 12px 20px;
+  padding: 1.2vh 2vh; /* 12px 20px */
   border: none;
-  border-radius: 10px;
-  font-size: 16px;
-  font-weight: 600;
+  border-radius: 1vh; /* 10px */
+  font-size: 2vh; /* 20px */
+  height: 40%;
   cursor: pointer;
   width: 100%;
   text-align: center;
   transition: all 0.2s;
-  margin-bottom: 10px;
+  margin-bottom: 1vh; /* 10px */
 }
 
 .action-btn:last-child {
@@ -303,64 +343,50 @@
 
 .kanban-btn:hover, .gantt-btn:hover {
   background-color: #D1ECF1;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-/* Файлы - занимают всю высоту левой части */
-.files-panel {
-  flex: 1;
-  background: #FFFFFF;
-  border-radius: 16px;
-  padding: 28px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  max-width: 400px;
-  height: 80%; /* Занимает всю высоту контейнера */
+  transform: translateY(-0.2vh); /* 2px */
+  box-shadow: 0 0.4vh 0.8vh rgba(0, 0, 0, 0.1); /* 4px 8px */
 }
 
 .files-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 2vh; /* 20px */
 }
 
 .files-header h3 {
-  font-size: 20px;
+  font-size: 1.5vh; /* 15px */
   font-weight: 600;
-  color: #333;
+  color: #6C757D;
   margin: 0;
 }
 
 .files-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 1.2vh; /* 12px */
   flex: 1;
   overflow-y: auto;
-  padding-right: 8px;
+  padding-right: 0.8vh; /* 8px */
 }
 
 .file-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px;
-  border-radius: 10px;
+  gap: 1.2vh; /* 12px */
+  padding: 1.2vh; /* 12px */
+  border-radius: 1vh; /* 10px */
   transition: all 0.2s;
 }
 
 .file-item:hover {
   border-color: #4ECDC4;
   background-color: #F8F9FA;
-  transform: translateY(-2px);
+  transform: translateY(-0.2vh); /* 2px */
 }
 
 .file-icon {
-  font-size: 24px;
+  font-size: 2.4vh; /* 24px */
   flex-shrink: 0;
 }
 
@@ -368,12 +394,12 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 0.4vh; /* 4px */
   min-width: 0;
 }
 
 .file-name {
-  font-size: 15px;
+  font-size: 1.8vh; /* 18px */
   font-weight: 600;
   color: #333;
   white-space: nowrap;
@@ -382,40 +408,59 @@
 }
 
 .file-size {
-  font-size: 13px;
+  font-size: 1.3vh; /* 13px */
   color: #6C757D;
 }
 
 .file-download {
   background: none;
-  border: 2px solid #DEE2E6;
+  border: 0.2vh solid #DEE2E6; /* 2px */
   color: #6C757D;
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
+  width: 3.6vh; /* 36px */
+  height: 3.6vh; /* 36px */
+  border-radius: 0.8vh; /* 8px */
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 18px;
+  font-size: 1.8vh; /* 18px */
   transition: all 0.2s;
   flex-shrink: 0;
 }
 
 .file-download:hover {
   background-color: #F8F9FA;
-  border-color: #4ECDC4;
-  color: #4ECDC4;
+  border-color: #868686;
 }
 
 .files-count {
-  font-size: 14px;
+  font-size: 1.4vh; /* 14px */
   color: #6C757D;
   font-weight: 500;
   text-align: center;
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 2px solid #E9ECEF;
+  margin-top: 1.6vh; /* 16px */
+  padding-top: 1.6vh; /* 16px */
+  border-top: 0.2vh solid #E9ECEF; /* 2px */
+}
+
+/* Editable элементы */
+.editable {
+  cursor: text;
+  outline: none;
+  border-radius: 0.4vh; /* 4px */
+  padding: 0.2vh 0.4vh; /* 2px 4px */
+  transition: all 0.2s;
+}
+
+.editable:hover {
+  text-decoration: underline;
+  text-decoration-color: black;
+  text-underline-offset: 0.3vh; /* 3px */
+}
+
+.editable:focus {
+  text-decoration: underline;
+  text-decoration-color: black;
 }
 
 /* Адаптивность */
@@ -424,10 +469,14 @@
     flex-direction: column;
   }
   
+  .main-cards-section,
   .files-panel {
-    max-width: 100%;
-    height: 400px;
-    margin-top: 24px;
+    width: 100%;
+  }
+  
+  .files-panel {
+    height: 40vh; /* 400px */
+    margin-top: 2.4vh; /* 24px */
   }
   
   .projectcard-main-content {
@@ -435,97 +484,76 @@
   }
 }
 
-@media (max-width: 1200px) {
-  .top-row,
-  .middle-row,
-  .bottom-row {
-    grid-template-columns: 1fr;
-  }
-  
-  .projectcard-tile {
-    height: 180px;
-  }
-  
-  .projectcard-container {
-    padding: 24px;
-  }
+/* Контейнер для изменений */
+.changes-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
 }
 
-@media (max-width: 768px) {
-  .projectcard-container {
-    padding: 20px;
-    min-height: calc(100vh - 90px);
-  }
-  
-  .projectcard-title {
-    font-size: 24px;
-    margin-bottom: 24px;
-  }
-  
-  .tile-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-    margin-bottom: 12px;
-  }
-  
-  .customer-info {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: 12px;
-  }
-  
-  .customer-avatar {
-    width: 40px;
-    height: 40px;
-  }
-  
-  .customer-icon {
-    font-size: 20px;
-  }
-  
-  .action-btn {
-    padding: 10px 16px;
-    font-size: 14px;
-  }
-  
-  .projectcard-tile,
-  .files-panel {
-    padding: 20px;
-    height: auto;
-    min-height: 180px;
-  }
-  
-  .projectcard-tile h3,
-  .files-header h3 {
-    font-size: 18px;
-    margin-bottom: 16px;
-  }
-  
-  .date-value,
-  .project-price {
-    font-size: 16px;
-  }
-  
-  .projectcard-avatar {
-    width: 32px;
-    height: 32px;
-    font-size: 12px;
-  }
-  
-  .avatar.extra-avatar {
-    width: 32px;
-    height: 32px;
-    font-size: 10px;
-  }
-  
-  .empty-icon {
-    font-size: 28px;
-  }
-  
-  .empty-text {
-    font-size: 12px;
-  }
+/* Чат изменений */
+.changes-chat {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 0.8vh;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8vh;
+  max-height: 15vh;
 }
 
+/* Заголовок даты */
+.change-date-header {
+  font-size: 1.2vh;
+  color: #6C757D;
+  font-weight: 500;
+  margin-top: 0.5vh;
+}
+
+/* Сообщение об изменении */
+.change-message {
+  background: #EAF6F7;
+  border-radius: 0.6vh;
+  padding: 0.8vh 1vh;
+  position: relative;
+  font-size: 1.3vh;
+  color: #333;
+  line-height: 1.4;
+}
+
+.change-content {
+  padding-right: 4vh;
+}
+
+.change-time {
+  position: absolute;
+  right: 0.8vh;
+  bottom: 0.5vh;
+  font-size: 1.1vh;
+  color: #6C757D;
+}
+
+/* Пустое состояние */
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.2vh;
+  color: #6C757D;
+}
+
+.empty-icon {
+  font-size: 3.6vh;
+  opacity: 0.5;
+}
+
+.empty-text {
+  font-size: 1.4vh;
+  text-align: center;
+  max-width: 25vh;
+  line-height: 1.4;
+}

@@ -1,5 +1,5 @@
 .mytasks-container {
-    padding: 30px;
+    padding: 3vh;
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
@@ -7,21 +7,21 @@
 
 .mytasks-title {
     color: #5B5B5B;
-    margin-bottom: 28px;
-    font-size: clamp(24px, 2vw, 32px);
+    margin-bottom: 2.8vh;
+    font-size: clamp(2.4vh, 2vw, 3.2vh);
     font-weight: 600;
 }
 
 .filters-container {
     background: #ffffff;
-    border-radius: 20px;
-    padding: 25px 30px;
-    margin-bottom: 30px;
+    border-radius: 2vh;
+    padding: 2.5vh 3vh;
+    margin-bottom: 3vh;
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 20px;
+    gap: 2vh;
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
@@ -29,7 +29,7 @@
 
 .filters {
     display: flex;
-    gap: 15px;
+    gap: 1.5vh;
     flex-wrap: wrap;
     flex: 1;
 }
@@ -40,12 +40,11 @@
 
 .filter-select, .search-input {
     background: #E7F6F6;
-    border: 1px solid #D1ECEC;
-    border-radius: 10px;
-    padding: 12px 20px;
-    font-size: clamp(13px, 1vw, 16px);
-    min-width: 150px;
-    width: auto;
+    border: 0.1vh solid #D1ECEC;
+    border-radius: 1vh;
+    padding: 1.2vh 2vh;
+    font-size: clamp(1.3vh, 1vw, 1.6vh);
+    height: 4vh;
     outline: none;
     transition: border-color 0.3s;
     color: #333;
@@ -57,7 +56,7 @@
 }
 
 .search-input {
-    width: clamp(300px, 40vw, 500px);
+    width: clamp(30vh, 40vw, 50vh);
 }
 
 .search-input::placeholder {
@@ -67,10 +66,10 @@
 .create-task-btn {
     background: #FFFFFF;
     color: #333;
-    border: 1px solid #ddd;
-    border-radius: 10px;
-    padding: 12px clamp(20px, 2vw, 30px);
-    font-size: clamp(13px, 1vw, 16px);
+    border: 0.1vh solid #ddd;
+    border-radius: 1vh;
+    padding: 1.2vh clamp(2vh, 2vw, 3vh);
+    font-size: clamp(1.3vh, 1vw, 1.6vh);
     font-weight: 500;
     cursor: pointer;
     transition: all 0.3s;
@@ -84,47 +83,57 @@
 
 .tasks-table {
     background: #ffffff;
-    border-radius: 20px;
+    border-radius: 2vh;
     overflow: hidden;
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
-    min-width: 900px;
+    min-width: 90vh;
+    display: grid;
+    grid-template-columns: 2.5fr 2.5fr 2.5fr 2.5fr;
 }
 
 .table-header {
-    display: grid;
-    grid-template-columns: 2.5fr 2.5fr 2.5fr 2.5fr;
-    padding: 20px 30px;
-    font-weight: 750;
-    color: #333;
-    border-bottom: 2px solid #E7F6F6;
-    font-size: clamp(14px, 1.1vw, 18px);
+    display: contents;
+}
+
+.header-row {
+    display: contents;
 }
 
 .task-row {
-    display: grid;
-    grid-template-columns: 2.5fr 2.5fr 2.5fr 2.5fr;
-    padding: 20px 30px;
-    cursor: pointer;
-    transition: all 0.3s;
-    border-bottom: 1px dashed #E0E0E0;
-    font-size: clamp(13px, 1vw, 16px);
+    display: contents;
 }
 
-.task-row:hover {
-    background: #F0F9FF;
-    font-weight: 500;
-    transform: scale(1.01);
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-}
-
-.table-cell {
+.header-cell {
+    padding: 2vh 3vh;
+    font-weight: 750;
+    color: #333;
+    border-bottom: 0.2vh solid #E7F6F6;
+    font-size: clamp(1.4vh, 1.1vw, 1.8vh);
     display: flex;
     align-items: center;
-    padding: 0 15px;
-    min-width: 0;
-    overflow: hidden;
+    white-space: nowrap;
+    grid-column: span 1;
+    height: 6vh;
+}
+
+.task-cell {
+    padding: 2vh 3vh;
+    padding-left: 3vh;
+    border-bottom: 0.1vh dashed #E0E0E0;
+    font-size: clamp(1.3vh, 1vw, 1.6vh);
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    grid-column: span 1;
+}
+
+.task-row:hover .task-cell {
+    font-weight: 500;
+    background-color: rgba(0,0,0,0.02);
+    transform: scale(1.002);
 }
 
 .task-name {
@@ -145,17 +154,18 @@
 .deadline {
     font-weight: 500;
     color: #333;
-    font-size: clamp(14px, 1vw, 16px);
+    font-size: clamp(1.4vh, 1vw, 1.6vh);
+    white-space: nowrap;
 }
 
 .deadline.completed {
-    color: #10B981;
+    color: #333;
 }
 
 .project-info {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 0.4vh;
 }
 
 .project-name {
@@ -168,7 +178,7 @@
 }
 
 .project-type {
-    font-size: clamp(12px, 0.9vw, 14px);
+    font-size: clamp(1.2vh, 0.9vw, 1.4vh);
     color: #666;
     white-space: nowrap;
     overflow: hidden;
@@ -178,7 +188,7 @@
 .manager-info {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 0.4vh;
 }
 
 .manager-name {
@@ -192,9 +202,9 @@
 
 .task-status {
     display: inline-block;
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-size: clamp(12px, 0.9vw, 14px);
+    padding: 0.8vh 1.6vh;
+    border-radius: 2vh;
+    font-size: clamp(1.2vh, 0.9vw, 1.4vh);
     font-weight: 500;
     white-space: nowrap;
     text-align: center;
@@ -216,18 +226,19 @@
 }
 
 .no-tasks {
-    padding: 60px 20px;
+    grid-column: 1 / -1;
+    padding: 6vh 2vh;
     text-align: center;
     color: #666;
-    font-size: clamp(16px, 1.2vw, 18px);
+    font-size: clamp(1.6vh, 1.2vw, 1.8vh);
 }
 
 .loading {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 200px;
-    font-size: clamp(16px, 1.5vw, 20px);
+    height: 20vh;
+    font-size: clamp(1.6vh, 1.5vw, 2vh);
     color: #666;
     width: 100%;
 }
@@ -237,19 +248,19 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 200px;
+    height: 20vh;
     color: #DC2626;
-    font-size: clamp(16px, 1.2vw, 18px);
-    gap: 20px;
+    font-size: clamp(1.6vh, 1.2vw, 1.8vh);
+    gap: 2vh;
 }
 
 .retry-btn {
-    padding: 10px 20px;
+    padding: 1vh 2vh;
     background: #4ECDC4;
     color: white;
     border: none;
-    border-radius: 8px;
-    font-size: 14px;
+    border-radius: 0.8vh;
+    font-size: 1.4vh;
     font-weight: 500;
     cursor: pointer;
     transition: background 0.3s;
@@ -265,59 +276,8 @@
     -moz-appearance: none;
     background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
     background-repeat: no-repeat;
-    background-position: right 15px center;
-    background-size: clamp(12px, 1vw, 16px);
-    padding-right: 45px;
-}
-
-/* Адаптивность */
-@media (max-width: 1400px) {
-    .mytasks-container {
-        padding: 15px 20px;
-    }
-    
-    .filters-container {
-        padding: 20px;
-    }
-    
-    .table-header, .task-row {
-        padding: 15px 20px;
-    }
-}
-
-/* Для очень больших экранов (4K) */
-@media (min-width: 2560px) {
-    .mytasks-container {
-        padding: 40px 60px;
-    }
-    
-    .mytasks-title {
-        font-size: 40px;
-        margin-bottom: 40px;
-    }
-    
-    .filters-container {
-        padding: 35px 40px;
-        border-radius: 25px;
-    }
-    
-    .tasks-table {
-        border-radius: 25px;
-    }
-    
-    .table-header, .task-row {
-        padding: 25px 40px;
-    }
-}
-
-/* Убираем горизонтальный скролл на средних экранах */
-@media (max-width: 1200px) {
-    .tasks-table {
-        overflow-x: auto;
-        min-width: 100%;
-    }
-    
-    .table-header, .task-row {
-        min-width: 800px;
-    }
+    background-position: right 1.5vh center;
+    background-size: clamp(1.2vh, 1vw, 1.6vh);
+    padding-right: 4.5vh;
+    width: auto;
 }

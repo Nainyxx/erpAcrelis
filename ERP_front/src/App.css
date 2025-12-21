@@ -9,6 +9,7 @@
   position: absolute;
   width: 100%;
   top: 0;
+  height: 10vh;
 }
 
 body {
@@ -17,13 +18,13 @@ body {
 
 .main-container {
     display: flex;
-    margin-top: 90px;
-    min-height: calc(100vh - 90px);
+    margin-top: 10vh;
+    min-height: 85vh;
     width: 100%;
 }
 
 .sidebar-wrapper {
-    width: 250px;
+    width: 25vh;
     flex-shrink: 0;
 }
 
@@ -35,7 +36,7 @@ body {
 }
 
 .content {
-    width: 100%;
+    width: calc(100%-25vh);
     min-width: 0;
     box-sizing: border-box;
     height: 100%;

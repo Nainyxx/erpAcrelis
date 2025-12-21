@@ -1,0 +1,239 @@
+.kanban-container {
+  padding: 3vh;
+  background-color: #F6F6FE;
+  min-height: calc(100vh - 9vh);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Хлебные крошки */
+.kanban-header {
+  margin-bottom: 2vh;
+}
+
+.kanban-title {
+  font-size: 2.2vh;
+  font-weight: 600;
+  color: #5B5B5B;
+  margin: 0;
+  padding: 0;
+}
+
+.breadcrumb-link {
+  color: #5B5B5B;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.breadcrumb-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.3vh;
+}
+
+/* Кнопка создания задачи */
+.create-task-section {
+  margin-bottom: 2vh;
+}
+
+.create-task-btn {
+  background: #FFFFFF;
+  color: #333;
+  border: 0.1vh solid #ddd;
+  border-radius: 1vh;
+  padding: 1.2vh 2.5vh;
+  font-size: 2.6vh;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.create-task-btn:hover {
+  background: #f5f5f5;
+  transform: translateY(-0.2vh);
+  box-shadow: 0 0.2vh 0.5vh rgba(0,0,0,0.1);
+}
+
+/* Канбан доска - ОТДЕЛЬНЫЕ столбцы */
+.kanban-board {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1vh;
+}
+
+/* Колонка - ОТДЕЛЬНАЯ */
+.kanban-column {
+  background: #FFFFFF;
+  border-radius: 1vh;
+  padding: 0.2vh;
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0.2vh 0.5vh rgba(0,0,0,0.1);
+}
+
+.column-header {
+  padding: 1.5vh;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  justify-content: center;
+}
+
+.column-header h3 {
+  margin: 0;
+  font-size: 1.8vh;
+  color: #333;
+  font-weight: 600;
+  
+}
+
+/* Список задач - БЕЗ СКРОЛЛА */
+.tasks-list {
+  flex: 1;
+  padding: 1vh;
+  display: flex;
+  flex-direction: column;
+  gap: 1vh;
+  min-height: 0;
+  width: 100%;
+}
+
+.task-card {
+  border-radius: 0.8vh;
+  padding: 1.2vh;
+  border: 0.1vh solid #E0E0E0;
+  cursor: move;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.8vh;
+}
+
+/* Цвета для разных статусов */
+.task-card-new {
+  background: #F3D8F3 !important;
+}
+
+.task-card-in_progress {
+  background: #F1D8D0 !important;
+}
+
+.task-card-waiting {
+  background: #DCEBF4 !important;
+}
+
+.task-card-done {
+  background: #D3F1D0 !important;
+}
+
+/* Стиль при перетаскивании */
+.task-card-dragging {
+  opacity: 0.5;
+  transform: scale(0.95);
+  box-shadow: 0 0.5vh 1.5vh rgba(0,0,0,0.2) !important;
+}
+
+.task-card:hover {
+  box-shadow: 0 0.2vh 0.5vh rgba(78, 205, 196, 0.2);
+}
+
+/* Название задачи - по центру */
+.task-title {
+  font-size: 1.6vh;
+  font-weight: 600;
+  color: #333;
+  width: 100%;
+  text-align: center;
+  margin-bottom: 0.5vh;
+}
+
+/* Даты - ОДНА СТРОКА ОБА ЭЛЕМЕНТА */
+.task-dates {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4vh;
+  width: 100%;
+  text-align: left;
+}
+
+.date-row {
+  display: flex;
+  font-size: 1.3vh;
+  width: 100%;
+}
+
+.date-label {
+  color: #333;
+  font-weight: 400;
+  font-size: 1.3vh;
+
+}
+
+.date-value {
+  color: #333;
+  font-weight: 600;
+  font-size: 1.3vh;
+}
+
+/* Исполнитель в виде кружка как в ProjectList */
+.task-assignee {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin: 0.5vh 0;
+}
+
+.assignee-avatar {
+  width: 3.5vh;
+  height: 3.5vh;
+  border-radius: 50%;
+  background: #4ECDC4;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3vh;
+  font-weight: 600;
+  border: 0.2vh solid white;
+  box-shadow: 0 0.2vh 0.4vh rgba(0,0,0,0.1);
+}
+
+/* Комментарий - прямоугольник белый с закругленными краями */
+.task-comment {
+  background: #FFFFFF;
+  border-radius: 0.6vh;
+  padding: 0.8vh;
+  font-size: 1.2vh;
+  color: #333;
+  border: 0.1vh solid #E0E0E0;
+  width: 100%;
+  min-height: 3vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.5vh;
+}
+
+/* Кнопка добавления комментария */
+.add-comment-btn {
+  background-color: #FFFFFF;
+  background: none;
+  border: 0.1vh dashed #E0E0E0;
+  color: #333;
+  border-radius: 0.6vh;
+  padding: 0.5vh;
+  font-size: 1.2vh;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+  margin-top: 0.5vh;
+  width: 100%;
+}
+
+.add-comment-btn:hover {
+  background: #F8F9FA;
+  border-color: #575757;
+  color: #333;
+}

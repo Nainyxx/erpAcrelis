@@ -1,21 +1,20 @@
 .SideBar {
-    width: 250px;
+    width: 25vh;
     background: #F6F6FE;
     min-height: 90vh;
-    padding: 20px 0;
 }
 
 .sidebar-item {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 12px 20px;
+    gap: 1.2vh;
+    padding: 1.2vh 2vh;
     background: none;
     border: none;
     width: 100%;
     text-align: left;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 1.6vh;
     color: #333;
     transition: all 0.3s ease;
 }
@@ -27,10 +26,10 @@
 .sidebar-item.active {
     background: #B2E9EF;
     color: black;
-    border-right: 4px solid #1a73e8;
+    border-right: 0.4vh solid #1a73e8;
 }
 
 .sidebar-icon {
-    width: 20px;
-    height: 20px;
+    width: 2vh;
+    height: 2vh;
 }

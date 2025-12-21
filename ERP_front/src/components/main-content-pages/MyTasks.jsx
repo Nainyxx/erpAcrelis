@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // Добавляем useNavigate
+import { useNavigate } from 'react-router-dom';
 import { getMyTasks, getCurrentUser } from '../../services/projectsService';
 import './MyTasks.css';
 
 const MyTasks = ({ useMockData = true }) => {
-  const navigate = useNavigate(); // Используем useNavigate вместо window.location
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [tasks, setTasks] = useState([]);
@@ -32,7 +32,6 @@ const MyTasks = ({ useMockData = true }) => {
 
     loadData();
   }, [currentUser.id, useMockData]);
-
 
   const getProjectManager = (projectId) => {
     const project = tasks.find(t => t.projectId === projectId)?.projectData;
@@ -66,18 +65,8 @@ const MyTasks = ({ useMockData = true }) => {
     }
   };
 
-  const getStatusClass = (status) => {
-    switch(status) {
-      case 'completed': return 'ready';
-      case 'in-progress': return 'in-progress';
-      case 'planned': return 'planning';
-      default: return '';
-    }
-  };
-
   const handleTaskClick = (task) => {
-    // Используем navigate вместо window.location
-    navigate(`/projects/${task.projectId}`);
+    navigate(`/tasks/${task.id}`);
   };
 
   const handleRefresh = () => {
@@ -142,6 +131,12 @@ const MyTasks = ({ useMockData = true }) => {
       </div>
 
       <div className="tasks-table">
+        {/* Заголовки таблицы - первые 4 элемента в гриде */}
+        <div className="header-cell">Название задачи</div>
+        <div className="header-cell">Дедлайн</div>
+        <div className="header-cell">Проект</div>
+        <div className="header-cell">Руководитель</div>
+
         {filteredTasks.length === 0 ? (
           <div className="no-tasks">
             {searchQuery || selectedStatus !== 'all' 
@@ -149,45 +144,43 @@ const MyTasks = ({ useMockData = true }) => {
               : 'У вас нет назначенных задач'}
           </div>
         ) : (
-          <>
-            <div className="table-header">
-              <div className="table-cell">Название задачи</div>
-              <div className="table-cell">Дедлайн</div>
-              <div className="table-cell">Проект</div>
-              <div className="table-cell">Руководитель</div>
-            </div>
-
-            {filteredTasks.map((task) => (
+          filteredTasks.map((task) => (
+            <React.Fragment key={`${task.projectId}-${task.id}`}>
               <div 
-                key={`${task.projectId}-${task.id}`}
-                className="task-row"
+                className="task-cell task-name"
                 onClick={() => handleTaskClick(task)}
-                style={{ cursor: 'pointer' }}
               >
-                <div className="table-cell task-name">
-                  <div className="task-name-text">{task.taskName}</div>
-                </div>
+                <div className="task-name-text">{task.taskName}</div>
+              </div>
 
-                <div className="table-cell">
-                  <div className={`deadline ${task.status === 'completed' ? 'completed' : ''}`}>
-                    {task.deadline}
-                  </div>
-                </div>
-
-                <div className="table-cell">
-                  <div className="project-info">
-                    <div className="project-name">{task.projectName}</div>
-                  </div>
-                </div>
-
-                <div className="table-cell">
-                  <div className="manager-info">
-                    <div className="manager-name">{getProjectManager(task.projectId)}</div>
-                  </div>
+              <div 
+                className="task-cell"
+                onClick={() => handleTaskClick(task)}
+              >
+                <div className={`deadline ${task.status === 'completed' ? 'completed' : ''}`}>
+                  {task.deadline}
                 </div>
               </div>
-            ))}
-          </>
+
+              <div 
+                className="task-cell"
+                onClick={() => handleTaskClick(task)}
+              >
+                <div className="project-info">
+                  <div className="project-name">{task.projectName}</div>
+                </div>
+              </div>
+
+              <div 
+                className="task-cell"
+                onClick={() => handleTaskClick(task)}
+              >
+                <div className="manager-info">
+                  <div className="manager-name">{getProjectManager(task.projectId)}</div>
+                </div>
+              </div>
+            </React.Fragment>
+          ))
         )}
       </div>
     </div>
