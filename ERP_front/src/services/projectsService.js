@@ -1,7 +1,7 @@
 // Сервис для работы с данными проектов
 
 const CONFIG = {
-  API_BASE_URL: '/api',
+  API_BASE_URL: 'https://api.acrelis.ru/',
   MOCK_DELAY: 300
 };
 

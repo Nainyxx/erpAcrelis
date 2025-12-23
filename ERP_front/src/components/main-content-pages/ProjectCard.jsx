@@ -1,39 +1,88 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import './ProjectCard.css';
+import { getProjectById, updateProject } from '../../services/api/api';
 
-const ProjectCard = ({ project, onShowGantt, navigate }) => {
-  const [startDate, setStartDate] = useState(project.startDate || '');
-  const [deadline, setDeadline] = useState(project.deadline || '');
-  const [projectType, setProjectType] = useState(project.type || '');
-  const [price, setPrice] = useState(project.price || '');
-  const [customer, setCustomer] = useState(project.customer || 'ООО Рога и Копыта');
+const ProjectCard = ({ useMockData }) => {
+  const navigate = useNavigate();
+  const { projectId } = useParams();
+  
+  const [project, setProject] = useState(null);
+  const [startDate, setStartDate] = useState('');
+  const [deadline, setDeadline] = useState('');
+  const [projectType, setProjectType] = useState('');
+  const [price, setPrice] = useState('');
+  const [customer, setCustomer] = useState('');
   const [changes, setChanges] = useState([]);
   const [isUserInProject, setIsUserInProject] = useState(false);
   const [currentUser] = useState('Иван Петров');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   
   useEffect(() => {
-    const mockChanges = [
-      { id: 1, action: 'Изменил сроки проекта', date: '15.12.2023 14:30' },
-      { id: 2, action: 'Добавил файл "ТЗ_финальное.docx"', date: '15.12.2023 11:15' },
-      { id: 3, action: 'Обновил бюджет проекта', date: '13.12.2023 09:45' },
-      { id: 4, action: 'Добавил исполнителя: Елена Кузнецова', date: '12.12.2023 16:20' },
-      { id: 5, action: 'Проект создан', date: '10.12.2023 10:00' },
-      { id: 6, action: 'Изменила тип проекта', date: '09.12.2023 15:30' },
-    ];
-    setChanges(mockChanges);
-  }, []);
+    const loadProject = async () => {
+      if (!projectId) return;
+      
+      setIsLoading(true);
+      try {
+        const projectData = await getProjectById(parseInt(projectId), useMockData);
+        setProject(projectData);
+        setStartDate(projectData.startDate || '');
+        setDeadline(projectData.deadline || '');
+        setProjectType(projectData.type || '');
+        setPrice(projectData.price || '');
+        setCustomer(projectData.customer || '');
+        setChanges(projectData.changes || []);
+        
+        if (projectData.team) {
+          const userInTeam = projectData.team.some(member => 
+            member.name === currentUser
+          );
+          setIsUserInProject(userInTeam);
+        }
+      } catch (error) {
+        console.error('Ошибка загрузки проекта:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadProject();
+  }, [projectId, useMockData, currentUser]);
   
-  useEffect(() => {
-    if (project.team) {
-      const userInTeam = project.team.some(member => 
-        member.name === currentUser
-      );
-      setIsUserInProject(userInTeam);
-    }
-  }, [project.team, currentUser]);
+  if (isLoading) {
+    return (
+      <div className="projectcard-container">
+        <div style={{padding: '50px', textAlign: 'center'}}>
+          Загрузка проекта...
+        </div>
+      </div>
+    );
+  }
   
-  if (!project) return null;
+  if (!project) {
+    return (
+      <div className="projectcard-container">
+        <div style={{padding: '50px', textAlign: 'center'}}>
+          <h2>Проект не найден</h2>
+          <button 
+            onClick={() => navigate('/projects')}
+            style={{
+              padding: '10px 20px',
+              background: '#0066CC',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              marginTop: '20px'
+            }}
+          >
+            Вернуться к списку проектов
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const generateAvatar = (name) => {
     const colors = ['#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0', '#118AB2', '#EF476F'];
@@ -64,29 +113,61 @@ const ProjectCard = ({ project, onShowGantt, navigate }) => {
     return `${day}.${month}.${year}`;
   };
 
-  const handleSaveChanges = () => {
-    console.log('Сохранение изменений:', {
-      startDate,
-      deadline,
-      projectType,
-      price,
-      customer
-    });
+  const handleSaveChanges = async () => {
+    if (!project) return;
     
-    const newChange = {
-      id: changes.length + 1,
-      action: 'Сохранил изменения проекта',
-      date: new Date().toLocaleString('ru-RU', { 
-        day: '2-digit', 
-        month: '2-digit', 
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      }),
-    };
-    
-    setChanges([newChange, ...changes]);
-    alert('Изменения сохранены!');
+    setIsSaving(true);
+    try {
+      const updateData = {};
+      
+      if (startDate !== project.startDate) {
+        updateData.startDate = startDate;
+      }
+      
+      if (deadline !== project.deadline) {
+        updateData.deadline = deadline;
+      }
+      
+      if (projectType !== project.type) {
+        updateData.type = projectType;
+      }
+      
+      if (price !== project.price) {
+        updateData.price = price;
+      }
+      
+      if (customer !== project.customer) {
+        updateData.customer = customer;
+      }
+      
+      if (Object.keys(updateData).length > 0) {
+        const updatedProject = await updateProject(project.id, updateData, useMockData);
+        setProject(updatedProject);
+        
+        const newChange = {
+          id: changes.length + 1,
+          action: 'Сохранил изменения проекта',
+          date: new Date().toLocaleString('ru-RU', { 
+            day: '2-digit', 
+            month: '2-digit', 
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          }),
+        };
+        
+        setChanges([newChange, ...changes]);
+        alert('Изменения сохранены!');
+      } else {
+        alert('Нет изменений для сохранения');
+      }
+      
+    } catch (error) {
+      console.error('Ошибка сохранения:', error);
+      alert('Ошибка при сохранении изменений');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleJoinProject = () => {
@@ -197,9 +278,12 @@ const ProjectCard = ({ project, onShowGantt, navigate }) => {
     <div className="projectcard-container">
       {/* Контейнер для кнопок */}
       <div className="projectcard-buttons">
-        
-        <button className="save-changes-btn" onClick={handleSaveChanges}>
-          Сохранить изменения
+        <button 
+          className="save-changes-btn" 
+          onClick={handleSaveChanges}
+          disabled={isSaving}
+        >
+          {isSaving ? 'Сохранение...' : 'Сохранить изменения'}
         </button>
       </div>
 
@@ -337,9 +421,12 @@ const ProjectCard = ({ project, onShowGantt, navigate }) => {
                 >
                   Открыть канбан
                 </button>
-                <button className="action-btn gantt-btn" onClick={onShowGantt}>
-                  Диаграмма ганта
-                </button>
+<button 
+  className="action-btn gantt-btn" 
+  onClick={() => window.location.href = `/projects/${project.id}/gantt`}
+>
+  Диаграмма ганта
+</button>
               </div>
             </div>
           </div>

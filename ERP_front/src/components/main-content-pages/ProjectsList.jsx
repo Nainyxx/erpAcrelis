@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getProjectsList } from '../../services/projectsService';
+import { getProjects } from '../../services/api/api';
 import './ProjectsList.css';
 
 const ProjectsList = ({ useMockData = true, onProjectSelect }) => {
@@ -10,27 +10,47 @@ const ProjectsList = ({ useMockData = true, onProjectSelect }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      setError(null);
+  // Функция загрузки проектов
+  const loadProjects = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      console.log(`🔄 Загружаю проекты: useMockData = ${useMockData}`);
       
-      try {
-        const { projects: loadedProjects, projectTypes: loadedTypes } = await getProjectsList(useMockData);
-        
-        setProjects(loadedProjects);
-        setProjectTypes(loadedTypes);
-      } catch (error) {
-        console.error('Ошибка загрузки данных:', error);
-        setError('Не удалось загрузить данные проектов');
-        setProjects([]);
-        setProjectTypes([]);
-      } finally {
-        setLoading(false);
-      }
-    };
+      // Используем нашу функцию getProjects из api.js
+      const { projects: loadedProjects, projectTypes: loadedTypes } = await getProjects(useMockData);
+      
+      console.log(`✅ Получено ${loadedProjects.length} проектов`);
+      
+      setProjects(loadedProjects);
+      setProjectTypes(loadedTypes);
+      
+    } catch (error) {
+      console.error('❌ Ошибка загрузки проектов:', error);
+      setError('Не удалось загрузить проекты. Проверьте подключение.');
+      setProjects([]);
+      setProjectTypes([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    loadData();
+  // Получить метку для типа проекта
+  const getTypeLabel = (type) => {
+    const typeMap = {
+      'website': 'Веб-сайт',
+      'mobile': 'Мобильное приложение',
+      'dashboard': 'Дашборд',
+      'ecommerce': 'Интернет-магазин',
+      'system': 'Система',
+      'other': 'Другой'
+    };
+    return typeMap[type] || 'Проект';
+  };
+
+  useEffect(() => {
+    loadProjects();
   }, [useMockData]);
 
   const filteredProjects = projects.filter(project => {
@@ -89,7 +109,7 @@ const ProjectsList = ({ useMockData = true, onProjectSelect }) => {
       <div className="projects-container">
         <div className="error-message">
           {error}
-          <button onClick={() => window.location.reload()} className="retry-btn">
+          <button onClick={loadProjects} className="retry-btn">
             Повторить попытку
           </button>
         </div>
@@ -162,13 +182,13 @@ const ProjectsList = ({ useMockData = true, onProjectSelect }) => {
               
               <div onClick={() => onProjectSelect(project)}>
                 <span className={`project-type ${project.type}`}>
-                  {project.typeLabel}
+                  {project.typeLabel || getTypeLabel(project.type)}
                 </span>
               </div>
               
               <div onClick={() => onProjectSelect(project)}>
-                <span className={`project-status ${project.status === 'completed' ? 'ready' : project.status === 'in_progress' || project.status === 'tests' ? 'in-progress' : 'planning'}`}>
-                  {project.status_display || 'Не указан'}
+                <span className={`project-status ${project.status}`}>
+                  {project.status_display || 'Планирование'}
                 </span>
               </div>
               

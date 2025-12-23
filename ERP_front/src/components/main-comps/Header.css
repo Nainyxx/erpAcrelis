@@ -24,6 +24,7 @@
     width: 4vh; /* 40px */
     height: 4vh; /* 40px */
     border-radius: 50%;
+    border: 0px;
     background: #B2E9EF;
     cursor: pointer;
     display: flex;
@@ -48,6 +49,7 @@
     height: 4vh; /* 40px */
     border-radius: 50%;
     background: #B2E9EF;
+    border: 0px;
     cursor: pointer;
     display: flex;
     align-items: center;

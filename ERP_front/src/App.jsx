@@ -1,11 +1,11 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useState } from 'react';
 import './App.css';
 import Header from './components/main-comps/Header';
 import SideBar from './components/main-comps/SideBar';
 import ProjectsList from './components/main-content-pages/ProjectsList';
 import ProjectCard from './components/main-content-pages/ProjectCard';
-import GanttChart from './components/main-content-pages/GanttChart';
+import GanttChart2 from './components/main-content-pages/GanttChart2';
 import KanbanTasks from './components/main-content-pages/KanbanTasks';
 import MyTasks from './components/main-content-pages/MyTasks';
 import TaskCard from './components/main-content-pages/TaskCard';
@@ -13,114 +13,129 @@ import StaffList from './components/main-content-pages/StaffList';
 import EmployeeCard from './components/main-content-pages/EmployeeCard';
 import { projectsData } from './MockData/projects.js';
 
+// Конфигурация
 const CONFIG = {
-  USE_MOCK_DATA: true
+  USE_MOCK_DATA: false,
+  API_BASE_URL: 'https://api.acrelis.ru/'
 };
 
-// Главный компонент
-function AppContent() {
-  const navigate = useNavigate();
-  const location = useLocation();
+function App() {
   const [projects] = useState(projectsData);
+  const [useMockData] = useState(CONFIG.USE_MOCK_DATA);
 
   return (
-    <div className='App'>
-      <div className='header-container'>
-        <Header />
-      </div>
-      
-      <div className='main-container'>
-        <div className="sidebar-wrapper">
-          <SideBar currentPath={location.pathname} />
+    <Router>
+      <div className='App'>
+        <div className='header-container'>
+          <Header />
         </div>
+        
+        <div className='main-container'>
+          <div className="sidebar-wrapper">
+            <SideBar />
+          </div>
 
-        <div className='content-wrapper'>
-          <div className='content'>
-            <Routes>
-              {/* Главная страница */}
-              <Route path="/" element={<Navigate to="/projects" replace />} />
-              
-              {/* Список проектов */}
-              <Route path="/projects" element={
-                <ProjectsList 
-                  useMockData={CONFIG.USE_MOCK_DATA} 
-                  onProjectSelect={(project) => {
-                    navigate(`/projects/${project.id}`);
-                  }} 
-                />
-              } />
-              
-              {/* Карточка проекта */}
-              <Route path="/projects/:projectId" element={
-                <ProjectCardWrapper 
-                  projects={projects}
-                  navigate={navigate}
-                />
-              } />
-              
-              {/* Канбан задач */}
-              <Route path="/projects/:projectId/kanban" element={
-                <KanbanWrapper 
-                  projects={projects}
-                  navigate={navigate}
-                />
-              } />
-              
-              {/* Диаграмма Ганта */}
-              <Route path="/projects/:projectId/gantt" element={
-                <GanttChartWrapper 
-                  projects={projects}
-                  navigate={navigate}
-                />
-              } />
-              
-              {/* Страница моих задач */}
-              <Route path="/my-tasks" element={
-                <MyTasksWrapper navigate={navigate} />
-              } />
-              
-              {/* Карточка задачи */}
-              <Route path="/tasks/:taskId" element={
-                <TaskCard />
-              } />
-              
-              {/* Бухгалтерия */}
-              <Route path="/accounting" element={
-                <AccountingPage />
-              } />
-              
-              {/* Список сотрудников */}
-              <Route path="/staff" element={
-                <StaffPage navigate={navigate} />
-              } />
-              
-              {/* Карточка сотрудника */}
-              <Route path="/staff/:employeeId" element={
-                <EmployeeCard 
-                  useMockData={CONFIG.USE_MOCK_DATA}
-                />
-              } />
-              
-              {/* 404 */}
-              <Route path="*" element={<Navigate to="/projects" replace />} />
-            </Routes>
+          <div className='content-wrapper'>
+            <div className='content'>
+              <Routes>
+                {/* Главная страница */}
+                <Route path="/" element={<Navigate to="/projects" replace />} />
+                
+                {/* Список проектов */}
+                <Route path="/projects" element={
+                  <ProjectsList 
+                    useMockData={useMockData} // ← Передаем в ProjectsList
+                    onProjectSelect={(project) => {
+                      // Простая навигация через window.location
+                      window.location.href = `/projects/${project.id}`;
+                    }} 
+                  />
+                } />
+                
+                {/* Карточка проекта */}
+                <Route path="/projects/:projectId" element={
+  <ProjectCard 
+    useMockData={useMockData}
+  />
+} />
+                
+                {/* Канбан задач */}
+                <Route path="/projects/:projectId/kanban" element={
+                  <KanbanWrapper 
+                    projects={projects}
+                    useMockData={useMockData}
+                  />
+                } />
+                
+                {/* Диаграмма Ганта */}
+                <Route path="/projects/:projectId/gantt" element={
+                  <GanttChartWrapper 
+                    projects={projects}
+                    useMockData={useMockData}
+                  />
+                } />
+                
+                {/* Страница моих задач */}
+                <Route path="/my-tasks" element={
+                  <MyTasksWrapper useMockData={useMockData} />
+                } />
+                
+                {/* Карточка задачи */}
+                <Route path="/tasks/:taskId" element={
+                  <TaskCard />
+                } />
+                
+                {/* Бухгалтерия */}
+                <Route path="/accounting" element={
+                  <AccountingPage />
+                } />
+                
+                {/* Список сотрудников */}
+                <Route path="/staff" element={
+                  <StaffPage />
+                } />
+                
+                {/* Карточка сотрудника */}
+                <Route path="/staff/:employeeId" element={
+                  <EmployeeCard 
+                    useMockData={useMockData}
+                  />
+                } />
+                
+                {/* 404 */}
+                <Route path="*" element={<Navigate to="/projects" replace />} />
+              </Routes>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </Router>
   );
 }
 
 // Обертка для ProjectCard
-function ProjectCardWrapper({ projects, navigate }) {
-  const projectId = parseInt(window.location.pathname.split('/')[2]);
+function ProjectCardWrapper({ projects, useMockData }) {
+  const projectId = parseInt(window.location.pathname.split('/projects/')[1]);
   const project = projects.find(p => p.id === projectId);
   
   if (!project) {
     return (
       <div style={{padding: '30px'}}>
         <h2>Проект не найден</h2>
-        <button onClick={() => navigate('/projects')}>Вернуться к списку проектов</button>
+        <button 
+          onClick={() => window.location.href = '/projects'}
+          style={{
+            padding: '10px 20px',
+            background: '#0066CC',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            marginTop: '20px'
+          }}
+        >
+          Вернуться к списку проектов
+        </button>
       </div>
     );
   }
@@ -128,23 +143,36 @@ function ProjectCardWrapper({ projects, navigate }) {
   return (
     <ProjectCard 
       project={project}
-      onClose={() => navigate('/projects')}
-      onShowGantt={() => navigate(`/projects/${projectId}/gantt`)}
-      navigate={navigate}
+      useMockData={useMockData} // ← Передаем в ProjectCard
     />
   );
 }
 
 // Обертка для KanbanTasks
-function KanbanWrapper({ projects, navigate }) {
-  const projectId = parseInt(window.location.pathname.split('/')[2]);
+function KanbanWrapper({ projects, useMockData }) {
+  const path = window.location.pathname;
+  const parts = path.split('/');
+  const projectId = parts[2] ? parseInt(parts[2]) : null;
   const project = projects.find(p => p.id === projectId);
   
   if (!project) {
     return (
       <div style={{padding: '30px'}}>
         <h2>Проект не найден</h2>
-        <button onClick={() => navigate('/projects')}>Вернуться к списку проектов</button>
+        <button 
+          onClick={() => window.location.href = '/projects'}
+          style={{
+            padding: '10px 20px',
+            background: '#0066CC',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            marginTop: '20px'
+          }}
+        >
+          Вернуться к списку проектов
+        </button>
       </div>
     );
   }
@@ -152,37 +180,53 @@ function KanbanWrapper({ projects, navigate }) {
   return (
     <KanbanTasks 
       project={project}
+      useMockData={useMockData} // ← Передаем в KanbanTasks
     />
   );
 }
 
 // Обертка для GanttChart
-function GanttChartWrapper({ projects, navigate }) {
-  const projectId = parseInt(window.location.pathname.split('/')[2]);
+function GanttChartWrapper({ projects, useMockData }) {
+  const path = window.location.pathname;
+  const parts = path.split('/');
+  const projectId = parts[2] ? parseInt(parts[2]) : null;
   const project = projects.find(p => p.id === projectId);
   
   if (!project) {
-    return <div>Проект не найден</div>;
+    return (
+      <div style={{padding: '30px'}}>
+        <h2>Проект не найден</h2>
+        <button 
+          onClick={() => window.location.href = '/projects'}
+          style={{
+            padding: '10px 20px',
+            background: '#0066CC',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            marginTop: '20px'
+          }}
+        >
+          Вернуться к списку проектов
+        </button>
+      </div>
+    );
   }
   
   return (
-    <GanttChart 
+    <GanttChart2 
       project={project}
-      onBack={() => navigate(`/projects/${projectId}`)}
+      useMockData={useMockData} // ← Передаем в GanttChart2
     />
   );
 }
 
 // Обертка для MyTasks
-function MyTasksWrapper({ navigate }) {
-  const handleTaskClick = (task) => {
-    navigate(`/tasks/${task.id}`);
-  };
-  
+function MyTasksWrapper({ useMockData }) {
   return (
     <MyTasks 
-      useMockData={CONFIG.USE_MOCK_DATA}
-      onTaskClick={handleTaskClick}
+      useMockData={useMockData} // ← Передаем в MyTasks
     />
   );
 }
@@ -214,30 +258,9 @@ function AccountingPage() {
 }
 
 // Страница Сотрудники
-function StaffPage({ navigate }) {
-  const handleEmployeeSelect = (employee) => {
-    navigate(`/staff/${employee.id}`);
-  };
-
+function StaffPage() {
   return (
-    <StaffList 
-      useMockData={CONFIG.USE_MOCK_DATA}
-      onEmployeeSelect={handleEmployeeSelect}
-    />
-  );
-}
-
-// Главный компонент App с Router и future flags
-function App() {
-  return (
-    <Router 
-      future={{
-        v7_startTransition: true,
-        v7_relativeSplatPath: true,
-      }}
-    >
-      <AppContent />
-    </Router>
+    <StaffList />
   );
 }
 

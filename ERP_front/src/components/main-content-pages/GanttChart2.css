@@ -1,0 +1,395 @@
+/* Стили для кастомной диаграммы Ганта с гридами */
+
+.time-period2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.period-label2 {
+  font-size: 14px;
+  color: #666;
+}
+
+.period-value2 {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+.today-btn2 {
+  padding: 8px 16px;
+  background: #FF9800;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.today-btn2:hover {
+  background: #F57C00;
+}
+
+/* Контейнер таймлайна */
+.timeline-container2 {
+  position: relative;
+  flex: 1;
+  overflow: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background: white;
+}
+
+/* Заголовки месяцев */
+.month-headers2 {
+  display: flex;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: white;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.month-header2 {
+  padding: 8px 0;
+  text-align: center;
+  border-right: 1px solid #e9ecef;
+  min-height: 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.month-name2 {
+  font-weight: 600;
+  color: #495057;
+  font-size: 14px;
+  text-transform: capitalize;
+}
+
+.month-days-count2 {
+  font-size: 11px;
+  color: #6c757d;
+  margin-top: 2px;
+}
+
+/* Заголовки дней */
+.day-headers2 {
+  display: flex;
+  position: sticky;
+  top: 40px;
+  z-index: 25;
+  background: white;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.day-header2 {
+  padding: 6px 0;
+  text-align: center;
+  border-right: 1px solid #e9ecef;
+  min-height: 50px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.day-number2 {
+  font-weight: 600;
+  color: #333;
+  font-size: 16px;
+  margin-bottom: 2px;
+}
+
+.day-weekday2 {
+  font-size: 11px;
+  color: #666;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.day-month2 {
+  font-size: 11px;
+  color: #999;
+}
+
+/* Сетка дней */
+.day-grid2 {
+  display: flex;
+  position: absolute;
+  top: 90px;
+  left: 0;
+  right: 0;
+  z-index: 5;
+}
+
+.day-grid-cell2 {
+  height: calc(100% - 90px);
+  border-right: 1px solid #f0f0f0;
+  min-height: 400px;
+}
+
+.day-grid-cell2:nth-child(even) {
+  background-color: #fafafa;
+}
+
+/* Контент таймлайна */
+.timeline-content2 {
+  position: relative;
+  margin-top: 90px;
+  min-height: 400px;
+}
+
+/* Строки участников */
+.member-row2 {
+  position: relative;
+  height: 60px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.member-row-background2 {
+  display: flex;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+}
+
+.day-cell2 {
+  height: 100%;
+  border-right: 1px solid #f0f0f0;
+}
+
+/* Задачи */
+.gantt-task2 {
+  position: absolute;
+  top: 10px;
+  height: 40px;
+  border-radius: 8px;
+  cursor: pointer;
+  z-index: 20;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: all 0.2s;
+  overflow: hidden;
+}
+
+.gantt-task2:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  z-index: 25;
+}
+
+.task-content2 {
+  padding: 8px 12px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  color: white;
+  position: relative;
+  z-index: 2;
+}
+
+.task-title2 {
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+}
+
+.task-progress2 {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.progress-fill2 {
+  height: 100%;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 2px;
+}
+
+.task-dates2 {
+  font-size: 10px;
+  opacity: 0.9;
+}
+
+/* Линия сегодняшнего дня */
+.today-line2 {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: #FF5722;
+  z-index: 15;
+  pointer-events: none;
+}
+
+.today-line2::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -3px;
+  width: 8px;
+  height: 8px;
+  background-color: #FF5722;
+  border-radius: 50%;
+}
+
+.today-line2::after {
+  content: 'Сегодня';
+  position: absolute;
+  top: -25px;
+  left: -20px;
+  background: #FF5722;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+/* Легенда с линией */
+.legend-line2 {
+  width: 20px;
+  height: 3px;
+  border-radius: 2px;
+}
+
+.legend-line2.today2 {
+  background-color: #FF5722;
+}
+
+/* Детали задачи */
+.task-details-content2 {
+  margin-top: 15px;
+}
+
+.detail-row2 {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.detail-row2:last-child {
+  margin-bottom: 0;
+}
+
+.detail-label2 {
+  font-size: 14px;
+  color: #666;
+  min-width: 100px;
+}
+
+.detail-value2 {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+}
+
+.progress-container2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.progress-bar-bg2 {
+  flex: 1;
+  height: 8px;
+  background: #e9ecef;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-bar-fill2 {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.progress-value2 {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  min-width: 40px;
+}
+
+.status-badge2 {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status-completed2 {
+  background: #4CAF50;
+  color: white;
+}
+
+.status-in-progress2 {
+  background: #2196F3;
+  color: white;
+}
+
+.status-planned2 {
+  background: #FF9800;
+  color: white;
+}
+
+/* Полоса прокрутки */
+.timeline-container2::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.timeline-container2::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 5px;
+}
+
+.timeline-container2::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 5px;
+}
+
+.timeline-container2::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Адаптивность */
+@media (max-width: 1024px) {
+  .gantt-content2 {
+    flex-direction: column;
+  }
+  
+  .gantt-sidebar2 {
+    width: 100%;
+    max-height: 300px;
+  }
+  
+  .timeline-container2 {
+    min-width: 800px;
+  }
+  
+  .month-header2 {
+    min-width: 200px;
+  }
+  
+  .day-header2 {
+    min-width: 60px;
+  }
+}
