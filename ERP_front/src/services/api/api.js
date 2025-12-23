@@ -1165,3 +1165,202 @@ export async function getTaskById(taskId, USE_MOCK_DATA) {
     throw error;
   }
 }
+
+// В api.js добавьте эти функции:
+
+export async function updateTask(taskId, updateData, USE_MOCK_DATA) {
+  console.log(`🔄 updateTask: ID=${taskId}, данные:`, updateData);
+  
+  if (USE_MOCK_DATA) {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    // Получаем текущую задачу для мока
+    const currentTask = await getTaskById(taskId, true);
+    const updated = { ...currentTask, ...updateData };
+    
+    // Обновляем отображаемые поля
+    if (updateData.status) {
+      const statusMap = {
+        'draft': 'Черновик',
+        'new': 'Новая',
+        'active': 'В работе',
+        'paused': 'Приостановлена',
+        'completed': 'Завершена'
+      };
+      updated.status_display = statusMap[updateData.status] || 'Новая';
+    }
+    
+    console.log('✅ Моковое обновление задачи:', updated);
+    return updated;
+  }
+  
+  const formData = new FormData();
+  
+  // Добавляем поля для обновления
+  if (updateData.name !== undefined) {
+    formData.append('name', updateData.name);
+  }
+  
+  if (updateData.description !== undefined) {
+    formData.append('description', updateData.description);
+  }
+  
+  if (updateData.project !== undefined) {
+    formData.append('project', updateData.project === null ? '' : updateData.project.toString());
+  }
+  
+  if (updateData.status !== undefined) {
+    formData.append('status', updateData.status);
+  }
+  
+  if (updateData.deadline !== undefined) {
+    formData.append('deadline', updateData.deadline || '');
+  }
+  
+  if (updateData.performer !== undefined) {
+    formData.append('performer', updateData.performer === null ? '' : updateData.performer.toString());
+  }
+  
+  if (updateData.director !== undefined) {
+    formData.append('director', updateData.director === null ? '' : updateData.director.toString());
+  }
+  
+  if (updateData.hours !== undefined) {
+    formData.append('hours', updateData.hours.toString());
+  }
+  
+  console.log('Отправляемые поля FormData для задачи:');
+  for (let [key, value] of formData.entries()) {
+    console.log(`${key}: ${value}`);
+  }
+  
+  try {
+    const response = await fetch(`${API_CONFIG.BASE_URL}tasks/${taskId}/`, {
+      method: 'PATCH',
+      headers: {
+        'accept': 'application/json',
+        'Authorization': `Bearer ${API_CONFIG.ACCESS_TOKEN}`,
+        'X-CSRFTOKEN': API_CONFIG.CSRF_TOKEN
+      },
+      body: formData
+    });
+
+    console.log('Статус ответа обновления задачи:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Ошибка API:', errorText);
+      throw new Error(`API Error: ${response.status}`);
+    }
+
+    const responseData = await response.json();
+    console.log('✅ Ответ API обновления задачи:', responseData);
+    
+    return responseData;
+    
+  } catch (error) {
+    console.error(`❌ Ошибка обновления задачи:`, error);
+    throw error;
+  }
+}
+
+export async function uploadFileToTask(taskId, file, USE_MOCK_DATA) {
+  console.log(`📤 uploadFileToTask: задача ${taskId}, файл ${file.name}`);
+  
+  if (USE_MOCK_DATA) {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    const mockFile = {
+      id: Math.floor(Math.random() * 1000),
+      file: `https://api.acrelis.ru/media/task_files/${file.name}`,
+      uploaded_at: new Date().toISOString()
+    };
+    
+    console.log('✅ Моковая загрузка файла задачи:', mockFile);
+    return mockFile;
+  }
+  
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  console.log('Отправляю файл задачи на сервер:', file.name);
+  
+  try {
+    const response = await fetch(`${API_CONFIG.BASE_URL}tasks/${taskId}/files/`, {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'Authorization': `Bearer ${API_CONFIG.ACCESS_TOKEN}`,
+        'X-CSRFTOKEN': API_CONFIG.CSRF_TOKEN
+      },
+      body: formData
+    });
+
+    console.log('Статус ответа загрузки файла задачи:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Ошибка загрузки файла задачи:', errorText);
+      throw new Error(`Ошибка загрузки файла задачи: ${response.status}`);
+    }
+
+    const responseData = await response.json();
+    console.log('✅ Файл задачи загружен:', responseData);
+    
+    return responseData;
+    
+  } catch (error) {
+    console.error('❌ Ошибка загрузки файла задачи:', error);
+    throw error;
+  }
+}
+
+export async function addCommentToTask(taskId, commentData, USE_MOCK_DATA) {
+  console.log(`💬 addCommentToTask: задача ${taskId}, комментарий:`, commentData);
+  
+  if (USE_MOCK_DATA) {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    const mockComment = {
+      id: Math.floor(Math.random() * 1000),
+      author_name: 'Текущий пользователь',
+      content: commentData.content,
+      created: new Date().toISOString()
+    };
+    
+    console.log('✅ Моковый комментарий добавлен:', mockComment);
+    return mockComment;
+  }
+  
+  try {
+    const response = await fetch(`${API_CONFIG.BASE_URL}tasks/${taskId}/comments/`, {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${API_CONFIG.ACCESS_TOKEN}`,
+        'X-CSRFTOKEN': API_CONFIG.CSRF_TOKEN
+      },
+      body: JSON.stringify({
+        content: commentData.content
+      })
+    });
+
+    console.log('Статус ответа добавления комментария:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Ошибка добавления комментария:', errorText);
+      throw new Error(`Ошибка: ${response.status}`);
+    }
+
+    const responseData = await response.json();
+    console.log('✅ Комментарий добавлен:', responseData);
+    
+    return responseData;
+    
+  } catch (error) {
+    console.error('❌ Ошибка добавления комментария:', error);
+    throw error;
+  }
+}

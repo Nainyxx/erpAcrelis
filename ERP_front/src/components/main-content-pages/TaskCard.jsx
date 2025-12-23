@@ -1,249 +1,343 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getTaskById } from '../../services/api/api'; // ТОЛЬКО ИМПОРТ
+import { getTaskById, updateTask, uploadFileToTask, addCommentToTask } from '../../services/api/api';
 import './TaskCard.css';
 
 const TaskCard = ({ useMockData = false }) => {
   const navigate = useNavigate();
   const { taskId } = useParams();
   const chatContainerRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const patchTimeoutRef = useRef(null);
   
-  // ДОБАВЛЕНО: Получение данных задачи
+  // Данные задачи
   const [task, setTask] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
+  // Состояния для полей
   const [comment, setComment] = useState('');
   const [newComment, setNewComment] = useState('');
   const [replyToCommentId, setReplyToCommentId] = useState(null);
-  const [commentsList, setCommentsList] = useState([
-    {
-      id: 1,
-      userId: '123',
-      userName: 'Иван Петров',
-      userInitials: 'ИП',
-      userColor: '#FF6B6B',
-      text: 'Вчера согласовали API с заказчиком, можно приступать к реализации.',
-      date: '15.12.2023',
-      time: '14:30',
-      replies: [
-        {
-          id: 101,
-          userId: '456',
-          userName: 'Алексей Иванов',
-          userInitials: 'АИ',
-          userColor: '#4ECDC4',
-          text: 'Спасибо, приступаю.',
-          date: '15.12.2023',
-          time: '14:45'
-        }
-      ]
-    },
-    {
-      id: 2,
-      userId: '456',
-      userName: 'Алексей Иванов',
-      userInitials: 'АИ',
-      userColor: '#4ECDC4',
-      text: 'Сделал основную логику, осталось добавить валидацию.',
-      date: '16.12.2023',
-      time: '09:15'
-    },
-    {
-      id: 3,
-      userId: '789',
-      userName: 'Елена Кузнецова',
-      userInitials: 'ЕК',
-      userColor: '#FFD166',
-      text: 'Дизайн1макеты готовы, отправляю на согласование.',
-      date: '16.12.2023',
-      time: '11:45'
-    },
-    {
-      id: 4,
-      userId: '456',
-      userName: 'Алексей Иванов',
-      userInitials: 'АИ',
-      userColor: '#4ECDC4',
-      text: 'Добавил валидацию полей, нужно протестировать.',
-      date: '17.12.2023',
-      time: '10:20'
-    },
-    {
-      id: 5,
-      userId: '123',
-      userName: 'Иван Петров',
-      userInitials: 'ИП',
-      userColor: '#FF6B6B',
-      text: 'Замечания по дизайну исправлены, жду фидбэк.',
-      date: '18.12.2023',
-      time: '16:10'
-    }
-  ]);
+  const [commentsList, setCommentsList] = useState([]);
+  const [files, setFiles] = useState([]);
   
-  const [files, setFiles] = useState([
-    { id: 1, name: 'ТЗ_задача3_финал.docx', size: '2.4 МБ' },
-    { id: 2, name: 'Дизайн_макеты.pdf', size: '5.7 МБ' },
-    { id: 3, name: 'API_documentation.zip', size: '1.2 МБ' },
-    { id: 4, name: 'Тестовые_данные.xlsx', size: '0.8 МБ' }
-  ]);
-  
-  const [startDate, setStartDate] = useState('15.12.2023');
-  const [deadline, setDeadline] = useState('25.12.2023');
-  const [status, setStatus] = useState('В работе');
-  const [progress, setProgress] = useState(60);
+  const [startDate, setStartDate] = useState('');
+  const [deadline, setDeadline] = useState('');
+  const [status, setStatus] = useState('');
+  const [progress, setProgress] = useState(0);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [assignee, setAssignee] = useState({
-    name: 'Иван Петров',
-    initials: 'ИП',
+    name: '',
+    initials: '',
     color: '#FF6B6B'
   });
   const [manager, setManager] = useState({
-    name: 'Алексей Иванов',
-    initials: 'АИ',
+    name: '',
+    initials: '',
     color: '#4ECDC4'
   });
   
   const statusOptions = [
-    { value: 'Новое', label: 'Новое', progress: 20 },
-    { value: 'В работе', label: 'В работе', progress: 50 },
-    { value: 'На проверке', label: 'На проверке', progress: 80 },
-    { value: 'Выложено', label: 'Выложено', progress: 100 },
-    { value: 'Отложено', label: 'Отложено', progress: 0 }
+    { value: 'new', label: 'Новое', progress: 20, apiValue: 'new' },
+    { value: 'active', label: 'В работе', progress: 60, apiValue: 'active' },
+    { value: 'paused', label: 'Отложено', progress: 0, apiValue: 'paused' },
+    { value: 'completed', label: 'Завершено', progress: 100, apiValue: 'completed' },
+    { value: 'draft', label: 'Черновик', progress: 10, apiValue: 'draft' }
   ];
-  
-const getColorForName = (name) => {
-  const colors = ['#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0', '#118AB2', '#EF476F'];
-  const index = name ? name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length : 0;
-  return colors[index];
-};
-// В useEffect после получения taskData:
-// В useEffect после получения taskData:
-useEffect(() => {
-  const loadTask = async () => {
-    setLoading(true);
-    setError(null);
+
+  // PATCH запрос для описания
+  const patchDescription = async (descriptionText) => {
+    if (!taskId || !task) return;
     
+    clearTimeout(patchTimeoutRef.current);
+    
+    patchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const updateData = { description: descriptionText };
+        console.log(`🔄 PATCH описание:`, updateData);
+        
+        const updatedTask = await updateTask(taskId, updateData, useMockData);
+        console.log('✅ Описание обновлено:', updatedTask);
+        setTask(updatedTask);
+        
+      } catch (error) {
+        console.error('❌ Ошибка обновления описания:', error);
+      }
+    }, 1000);
+  };
+
+  // PATCH запрос для дедлайна
+  const patchDeadline = async (deadlineText) => {
+    if (!taskId || !task) return;
+    
+    clearTimeout(patchTimeoutRef.current);
+    
+    patchTimeoutRef.current = setTimeout(async () => {
+      try {
+        // Преобразуем dd.mm.yyyy в формат API
+        let deadlineForAPI = deadlineText;
+        if (deadlineText.match(/^\d{2}\.\d{2}\.\d{4}$/)) {
+          const [day, month, year] = deadlineText.split('.');
+          deadlineForAPI = `${year}-${month}-${day}T00:00:00+03:00`;
+        }
+        
+        const updateData = { deadline: deadlineForAPI };
+        console.log(`🔄 PATCH дедлайн:`, updateData);
+        
+        const updatedTask = await updateTask(taskId, updateData, useMockData);
+        console.log('✅ Дедлайн обновлен:', updatedTask);
+        setTask(updatedTask);
+        
+      } catch (error) {
+        console.error('❌ Ошибка обновления дедлайна:', error);
+      }
+    }, 1000);
+  };
+
+  // PATCH запрос для статуса (сразу, без дебаунса)
+  const patchStatus = async (statusApiValue, statusLabel, newProgress) => {
     try {
-      const taskData = await getTaskById(taskId, useMockData);
-      setTask(taskData);
+      const updateData = { status: statusApiValue };
+      console.log(`🔄 PATCH статус:`, updateData);
       
-      // Описание в форму
-      if (taskData.description) {
-        setComment(taskData.description);
-      }
+      const updatedTask = await updateTask(taskId, updateData, useMockData);
+      console.log('✅ Статус обновлен:', updatedTask);
       
-      // Даты
-      if (taskData.created) {
-        const createdDate = new Date(taskData.created);
-        const formattedStart = `${createdDate.getDate().toString().padStart(2, '0')}.${(createdDate.getMonth() + 1).toString().padStart(2, '0')}.${createdDate.getFullYear()}`;
-        setStartDate(formattedStart);
-      }
-      
-      if (taskData.deadline) {
-        const deadlineDate = new Date(taskData.deadline);
-        const formattedDeadline = `${deadlineDate.getDate().toString().padStart(2, '0')}.${(deadlineDate.getMonth() + 1).toString().padStart(2, '0')}.${deadlineDate.getFullYear()}`;
-        setDeadline(formattedDeadline);
-      }
-      
-      // Статус
-      if (taskData.status_display) {
-        setStatus(taskData.status_display);
-        const progressMap = {
-          'Новое': 20,
-          'В работе': 60,
-          'Завершено': 100,
-          'Приостановлено': 40,
-          'Черновик': 10
-        };
-        setProgress(progressMap[taskData.status_display] || 50);
-      }
-      
-      // Исполнитель
-      if (taskData.performer_name) {
-        const initials = taskData.performer_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-        setAssignee({
-          name: taskData.performer_name,
-          initials: initials,
-          color: '#FF6B6B'
-        });
-      }
-      
-      // Руководитель
-      if (taskData.director_name) {
-        const initials = taskData.director_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-        setManager({
-          name: taskData.director_name,
-          initials: initials,
-          color: '#4ECDC4'
-        });
-      }
-      
-      // КОММЕНТАРИИ из API в чат
-      if (taskData.comments && taskData.comments.length > 0) {
-        const formattedComments = taskData.comments.map(comment => {
-          const commentDate = new Date(comment.created);
-          return {
-            id: comment.id,
-            userId: `comment_${comment.id}`,
-            userName: comment.author_name || 'Автор',
-            userInitials: comment.author_name 
-              ? comment.author_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-              : '??',
-            userColor: '#4ECDC4',
-            text: comment.content,
-            date: `${commentDate.getDate().toString().padStart(2, '0')}.${(commentDate.getMonth() + 1).toString().padStart(2, '0')}.${commentDate.getFullYear()}`,
-            time: `${commentDate.getHours().toString().padStart(2, '0')}:${commentDate.getMinutes().toString().padStart(2, '0')}`,
-            replies: []
-          };
-        });
-        setCommentsList(formattedComments);
-      } else {
-        // Если нет комментариев - пустой массив
-        setCommentsList([]);
-      }
-      
-      // ФАЙЛЫ из API
-      if (taskData.files && taskData.files.length > 0) {
-        const formattedFiles = taskData.files.map(file => ({
-          id: file.id,
-          name: file.file ? file.file.split('/').pop() : 'Файл',
-          size: formatFileSize(file.size) || 'Неизвестно'
-        }));
-        setFiles(formattedFiles);
-      } else {
-        // Если нет файлов - пустой массив
-        setFiles([]);
-      }
+      setTask(updatedTask);
+      setStatus(statusLabel);
+      setProgress(newProgress);
       
     } catch (error) {
-      console.error('❌ Ошибка загрузки задачи:', error);
-      setError('Не удалось загрузить задачу');
-    } finally {
-      setLoading(false);
+      console.error('❌ Ошибка обновления статуса:', error);
     }
   };
-  
-  loadTask();
-}, [taskId, useMockData]);
 
-// Добавьте функцию formatFileSize:
-const formatFileSize = (bytes) => {
-  if (!bytes) return 'Неизвестно';
-  if (bytes < 1024) return bytes + ' Б';
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' КБ';
-  return (bytes / (1024 * 1024)).toFixed(1) + ' МБ';
-};
-  
-  // Остальной код без изменений...
-  // Скролл к низу чата при добавлении новых сообщений
-  useEffect(() => {
-    if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+  // POST запрос для комментария в чат
+  const postChatComment = async (commentText) => {
+    if (!commentText.trim() || !task) return;
+    
+    try {
+      const commentData = { content: commentText };
+      console.log(`💬 POST комментарий:`, commentData);
+      
+      const newCommentObj = await addCommentToTask(task.id, commentData, useMockData);
+      console.log('✅ Комментарий добавлен:', newCommentObj);
+      
+      // Форматируем для отображения
+      const commentDate = new Date(newCommentObj.created);
+      const formattedComment = {
+        id: newCommentObj.id,
+        userId: `comment_${newCommentObj.id}`,
+        userName: newCommentObj.author_name || 'Текущий Пользователь',
+        userInitials: newCommentObj.author_name 
+          ? newCommentObj.author_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+          : 'ТП',
+        userColor: '#06D6A0',
+        text: newCommentObj.content,
+        date: `${commentDate.getDate().toString().padStart(2, '0')}.${(commentDate.getMonth() + 1).toString().padStart(2, '0')}.${commentDate.getFullYear()}`,
+        time: `${commentDate.getHours().toString().padStart(2, '0')}:${commentDate.getMinutes().toString().padStart(2, '0')}`,
+        replies: []
+      };
+      
+      setCommentsList(prev => [...prev, formattedComment]);
+      
+    } catch (error) {
+      console.error('❌ Ошибка добавления комментария:', error);
+      alert(`Ошибка: ${error.message}`);
     }
-  }, [commentsList]);
-  
-  // Группировка сообщений по дате
+  };
+
+  // POST запрос для загрузки файла
+  const postFileUpload = async (file) => {
+    if (!file || !task) return;
+    
+    try {
+      console.log(`📤 POST файл:`, file.name);
+      
+      const uploadedFile = await uploadFileToTask(task.id, file, useMockData);
+      console.log('✅ Файл загружен:', uploadedFile);
+      
+      const formattedFile = {
+        id: uploadedFile.id,
+        name: file.name,
+        size: formatFileSize(file.size),
+        fileData: uploadedFile
+      };
+      
+      setFiles(prev => [...prev, formattedFile]);
+      
+      alert(`Файл "${file.name}" успешно загружен!`);
+      
+    } catch (error) {
+      console.error('❌ Ошибка загрузки файла:', error);
+      alert(`Ошибка: ${error.message}`);
+    }
+  };
+
+  // Обработчики
+  const handleCommentChange = (e) => {
+    const newComment = e.target.value;
+    setComment(newComment);
+    patchDescription(newComment);
+  };
+
+  const handleDeadlineChange = (e) => {
+    const newDeadline = e.target.textContent;
+    setDeadline(newDeadline);
+    patchDeadline(newDeadline);
+  };
+
+  const handleStatusChange = (statusLabel, statusApiValue, newProgress) => {
+    patchStatus(statusApiValue, statusLabel, newProgress);
+    setShowStatusDropdown(false);
+  };
+
+  const handleChatCommentSubmit = async (e) => {
+    e.preventDefault();
+    const textToSend = newComment.trim();
+    
+    if (!textToSend) return;
+    
+    await postChatComment(textToSend);
+    setNewComment('');
+    setReplyToCommentId(null);
+  };
+
+  const handleFileUpload = async (e) => {
+    const files = e.target.files;
+    if (files.length === 0) return;
+    
+    await postFileUpload(files[0]);
+    e.target.value = null;
+  };
+
+  const handleFileDownload = (file) => {
+    if (!file.fileData || !file.fileData.file) {
+      alert('Ссылка на файл недоступна');
+      return;
+    }
+    
+    const a = document.createElement('a');
+    a.href = file.fileData.file;
+    a.download = file.name;
+    a.target = '_blank';
+    a.style.display = 'none';
+    
+    document.body.appendChild(a);
+    a.click();
+    
+    setTimeout(() => {
+      document.body.removeChild(a);
+    }, 10);
+  };
+
+  // Загрузка данных задачи
+  useEffect(() => {
+    const loadTask = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const taskData = await getTaskById(taskId, useMockData);
+        setTask(taskData);
+        
+        if (taskData.description) {
+          setComment(taskData.description);
+        }
+        
+        if (taskData.created) {
+          const createdDate = new Date(taskData.created);
+          const formattedStart = `${createdDate.getDate().toString().padStart(2, '0')}.${(createdDate.getMonth() + 1).toString().padStart(2, '0')}.${createdDate.getFullYear()}`;
+          setStartDate(formattedStart);
+        }
+        
+        if (taskData.deadline) {
+          const deadlineDate = new Date(taskData.deadline);
+          const formattedDeadline = `${deadlineDate.getDate().toString().padStart(2, '0')}.${(deadlineDate.getMonth() + 1).toString().padStart(2, '0')}.${deadlineDate.getFullYear()}`;
+          setDeadline(formattedDeadline);
+        }
+        
+        if (taskData.status_display) {
+          setStatus(taskData.status_display);
+          const statusOption = statusOptions.find(opt => opt.label === taskData.status_display);
+          setProgress(statusOption ? statusOption.progress : 50);
+        }
+        
+        if (taskData.performer_name) {
+          const initials = taskData.performer_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+          setAssignee({
+            name: taskData.performer_name,
+            initials: initials,
+            color: '#FF6B6B'
+          });
+        }
+        
+        if (taskData.director_name) {
+          const initials = taskData.director_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+          setManager({
+            name: taskData.director_name,
+            initials: initials,
+            color: '#4ECDC4'
+          });
+        }
+        
+        if (taskData.comments && taskData.comments.length > 0) {
+          const formattedComments = taskData.comments.map(comment => {
+            const commentDate = new Date(comment.created);
+            return {
+              id: comment.id,
+              userId: `comment_${comment.id}`,
+              userName: comment.author_name || 'Автор',
+              userInitials: comment.author_name 
+                ? comment.author_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+                : '??',
+              userColor: '#4ECDC4',
+              text: comment.content,
+              date: `${commentDate.getDate().toString().padStart(2, '0')}.${(commentDate.getMonth() + 1).toString().padStart(2, '0')}.${commentDate.getFullYear()}`,
+              time: `${commentDate.getHours().toString().padStart(2, '0')}:${commentDate.getMinutes().toString().padStart(2, '0')}`,
+              replies: []
+            };
+          });
+          setCommentsList(formattedComments);
+        } else {
+          setCommentsList([]);
+        }
+        
+        if (taskData.files && taskData.files.length > 0) {
+          const formattedFiles = taskData.files.map(file => ({
+            id: file.id,
+            name: file.file ? file.file.split('/').pop() : 'Файл',
+            size: formatFileSize(file.size) || 'Неизвестно',
+            fileData: file
+          }));
+          setFiles(formattedFiles);
+        } else {
+          setFiles([]);
+        }
+        
+      } catch (error) {
+        console.error('❌ Ошибка загрузки задачи:', error);
+        setError('Не удалось загрузить задачу');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadTask();
+    
+    return () => {
+      clearTimeout(patchTimeoutRef.current);
+    };
+  }, [taskId, useMockData]);
+
+  const formatFileSize = (bytes) => {
+    if (!bytes) return 'Неизвестно';
+    if (bytes < 1024) return bytes + ' Б';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' КБ';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' МБ';
+  };
+
   const groupCommentsByDate = () => {
     const grouped = {};
     commentsList.forEach(comment => {
@@ -261,133 +355,19 @@ const formatFileSize = (bytes) => {
     const dateB = b.split('.').reverse().join('-');
     return new Date(dateA) - new Date(dateB);
   });
-  
-  const handleCommentSubmit = (e) => {
-    e.preventDefault();
-    if (!comment.trim()) return;
-    
-    const today = new Date().toLocaleDateString('ru-RU');
-    const now = new Date().toLocaleTimeString('ru-RU', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
-    
-    const newCommentObj = {
-      id: commentsList.length + 1,
-      userId: 'current',
-      userName: 'Текущий Пользователь',
-      userInitials: 'ТП',
-      userColor: '#06D6A0',
-      text: comment,
-      date: today,
-      time: now,
-      replies: []
-    };
-    
-    setCommentsList([...commentsList, newCommentObj]);
-    setComment('');
-  };
-  
-  const handleChatCommentSubmit = (e) => {
-    e.preventDefault();
-    let textToSend = newComment.trim();
-    
-    if (!textToSend) return;
-    
-    const today = new Date().toLocaleDateString('ru-RU');
-    const now = new Date().toLocaleTimeString('ru-RU', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
-    
-    if (replyToCommentId) {
-      // Добавляем ответ к существующему комментарию
-      const updatedComments = commentsList.map(comment => {
-        if (comment.id === replyToCommentId) {
-          const newReply = {
-            id: Date.now(),
-            userId: 'current',
-            userName: 'Текущий Пользователь',
-            userInitials: 'ТП',
-            userColor: '#06D6A0',
-            text: textToSend,
-            date: today,
-            time: now
-          };
-          
-          return {
-            ...comment,
-            replies: [...(comment.replies || []), newReply]
-          };
-        }
-        return comment;
-      });
-      
-      setCommentsList(updatedComments);
-      setReplyToCommentId(null);
-    } else {
-      // Добавляем новый комментарий
-      const newCommentObj = {
-        id: commentsList.length + 1,
-        userId: 'current',
-        userName: 'Текущий Пользователь',
-        userInitials: 'ТП',
-        userColor: '#06D6A0',
-        text: textToSend,
-        date: today,
-        time: now,
-        replies: []
-      };
-      
-      setCommentsList([...commentsList, newCommentObj]);
-    }
-    
-    setNewComment('');
-  };
-  
-  const handleReply = (commentId) => {
-    if (replyToCommentId === commentId) {
-      // Если уже отвечаем на этот комментарий, отменяем
-      setReplyToCommentId(null);
-      setNewComment('');
-    } else {
-      // Начинаем отвечать на новый комментарий
-      setReplyToCommentId(commentId);
-      setNewComment('');
-    }
-  };
-  
-  const handleStatusChange = (newStatus, newProgress) => {
-    setStatus(newStatus);
-    setProgress(newProgress);
-    setShowStatusDropdown(false);
-  };
-  
-  const handleFileDownload = (file) => {
-    console.log('Скачивание файла:', file.name);
-    alert(`Начинается скачивание файла: ${file.name}`);
-  };
-  
-  const handleFileUpload = (e) => {
-    const files = e.target.files;
-    if (files.length > 0) {
-      const newFiles = Array.from(files).map((file, index) => ({
-        id: Date.now() + index,
-        name: file.name,
-        size: (file.size / 1024 / 1024).toFixed(1) + ' МБ'
-      }));
-      
-      setFiles([...newFiles, ...files]);
-    }
-  };
-  
+
   const generateAvatar = (initials, color) => (
     <div className="taskcard-avatar" style={{ backgroundColor: color }}>
       {initials}
     </div>
   );
 
-  // ДОБАВЛЕНО: Состояния загрузки
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [commentsList]);
+
   if (loading) {
     return (
       <div className="taskcard-container">
@@ -427,12 +407,13 @@ const formatFileSize = (bytes) => {
 
       {/* Форма ввода комментария */}
       <div className="comment-form-container">
-        <form onSubmit={handleCommentSubmit}>
+        <form onSubmit={(e) => e.preventDefault()}>
           <textarea
             className="comment-input"
             placeholder="Начните ввод"
             value={comment}
-            onChange={(e) => setComment(e.target.value)}
+            onChange={handleCommentChange}
+            onBlur={() => patchDescription(comment)}
           />
         </form>
       </div>
@@ -445,15 +426,12 @@ const formatFileSize = (bytes) => {
             <div className="column-rectangle chat-column">
               <h3 className="column-title">Чат</h3>
               
-              {/* Список сообщений с скроллом */}
               <div className="chat-scroll-container" ref={chatContainerRef}>
                 <div className="chat-container">
                   {sortedDates.map(date => (
                     <React.Fragment key={date}>
-                      {/* Заголовок даты */}
                       <div className="chat-date-header">{date}</div>
                       
-                      {/* Сообщения за эту дату */}
                       {groupedComments[date].map(comment => (
                         <div key={comment.id} className="comment-item">
                           <div className="comment-header">
@@ -465,7 +443,6 @@ const formatFileSize = (bytes) => {
                           </div>
                           <div className="comment-text">{comment.text}</div>
                           
-                          {/* Ответы на комментарий */}
                           {comment.replies && comment.replies.length > 0 && (
                             <div className="replies-container">
                               {comment.replies.map(reply => (
@@ -483,10 +460,9 @@ const formatFileSize = (bytes) => {
                             </div>
                           )}
                           
-                          {/* Кнопка "Ответить" */}
                           <button 
                             className={`reply-btn ${replyToCommentId === comment.id ? 'active' : ''}`}
-                            onClick={() => handleReply(comment.id)}
+                            onClick={() => setReplyToCommentId(replyToCommentId === comment.id ? null : comment.id)}
                           >
                             {replyToCommentId === comment.id ? 'Отменить ответ' : 'Ответить'}
                           </button>
@@ -497,7 +473,6 @@ const formatFileSize = (bytes) => {
                 </div>
               </div>
               
-              {/* Форма для нового комментария */}
               <div className="new-comment-section">
                 <form className="new-comment-form" onSubmit={handleChatCommentSubmit}>
                   <textarea
@@ -535,6 +510,7 @@ const formatFileSize = (bytes) => {
                   + Загрузить файлы
                   <input
                     type="file"
+                    ref={fileInputRef}
                     multiple
                     onChange={handleFileUpload}
                     style={{ display: 'none' }}
@@ -578,7 +554,14 @@ const formatFileSize = (bytes) => {
                   <span className="date-label">Дедлайн:</span>
                 </div>
                 <div className="date-row">
-                  <span className="date-value">{deadline}</span>
+                  <span 
+                    className="date-value editable"
+                    contentEditable
+                    suppressContentEditableWarning
+                    onBlur={(e) => handleDeadlineChange(e)}
+                  >
+                    {deadline}
+                  </span>
                 </div>
               </div>
             </div>
@@ -601,7 +584,7 @@ const formatFileSize = (bytes) => {
                         <div 
                           key={option.value}
                           className="status-option"
-                          onClick={() => handleStatusChange(option.value, option.progress)}
+                          onClick={() => handleStatusChange(option.label, option.apiValue, option.progress)}
                         >
                           {option.label}
                         </div>
@@ -629,8 +612,6 @@ const formatFileSize = (bytes) => {
 
             {/* Прямоугольник 3: Исполнитель и руководитель */}
             <div className="info-rectangle">
-              
-              {/* Исполнитель */}
               <div className="person-item">
                 <div className="person-role">Исполнитель</div>
                 <div className="person-info">
@@ -639,7 +620,6 @@ const formatFileSize = (bytes) => {
                 </div>
               </div>
               
-              {/* Руководитель */}
               <div className="person-item">
                 <div className="person-role">Руководитель</div>
                 <div className="person-info">

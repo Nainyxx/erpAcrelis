@@ -43,30 +43,24 @@ const MyTasks = ({ useMockData = true }) => {
       const apiTasks = await getTasksByPerformer(currentUser.id, useMockData);
       
       const formattedTasks = apiTasks.map(task => {
-        let status;
-        switch(task.status) {
-          case 'completed':
-          case 'done':
-            status = 'completed';
-            break;
-          case 'in_progress':
-          case 'active':
-            status = 'in-progress';
-            break;
-          case 'new':
-          case 'planned':
-          case 'pending':
-            status = 'planned';
-            break;
-          default:
-            status = task.status;
+        // Маппинг статусов как в TaskCard
+        let status_display = task.status_display;
+        if (!status_display && task.status) {
+          const statusMap = {
+            'draft': 'Черновик',
+            'new': 'Новая',
+            'active': 'В работе',
+            'paused': 'Приостановлена',
+            'completed': 'Завершена'
+          };
+          status_display = statusMap[task.status] || task.status;
         }
         
         return {
           id: task.id,
           taskName: task.name,
-          status: status,
-          status_display: task.status_display || task.status,
+          status: task.status || 'new', // API статус для фильтрации
+          status_display: status_display || 'Новая', // Для отображения и фильтрации
           deadline: formatDateForDisplay(task.deadline),
           projectId: task.project,
           projectName: task.project_name || 'Не указан',
@@ -108,12 +102,27 @@ const MyTasks = ({ useMockData = true }) => {
     ];
   }, [tasks]);
 
-  const statuses = [
-    { id: 'all', label: 'Все статусы' },
-    { id: 'completed', label: 'Завершено' },
-    { id: 'in-progress', label: 'В работе' },
-    { id: 'planned', label: 'Запланировано' }
-  ];
+  // Получаем все уникальные статусы из задач (используем status_display)
+  const statuses = useMemo(() => {
+    const statusSet = new Set();
+    
+    // Добавляем "Все статусы" первым
+    const statusList = [{ id: 'all', label: 'Все статусы' }];
+    
+    // Добавляем все статусы из задач (status_display)
+    tasks.forEach(task => {
+      if (task.status_display) {
+        statusSet.add(task.status_display);
+      }
+    });
+    
+    // Преобразуем в массив и добавляем в список
+    Array.from(statusSet).sort().forEach(statusName => {
+      statusList.push({ id: statusName, label: statusName });
+    });
+    
+    return statusList;
+  }, [tasks]);
 
   const statusOptions = [
     { value: 'draft', label: 'Черновик' },
@@ -126,7 +135,10 @@ const MyTasks = ({ useMockData = true }) => {
   const filteredTasks = tasks.filter(task => {
     const matchesSearch = task.taskName.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          (task.projectName && task.projectName.toLowerCase().includes(searchQuery.toLowerCase()));
-    const matchesStatus = selectedStatus === 'all' || task.status === selectedStatus;
+    
+    // Фильтр по статусу (используем status_display - русские названия)
+    const matchesStatus = selectedStatus === 'all' || task.status_display === selectedStatus;
+    
     const matchesPerformer = selectedPerformer === 'all' || task.performerName === selectedPerformer;
     
     return matchesSearch && matchesStatus && matchesPerformer;
@@ -134,11 +146,6 @@ const MyTasks = ({ useMockData = true }) => {
 
   const getProjectManager = (task) => {
     return task.directorName || 'Не назначен';
-  };
-
-  const isTaskOverdue = (task) => {
-    if (task.status === 'completed') return false;
-    return task.is_overdue;
   };
 
   const handleTaskClick = (task) => {
@@ -355,7 +362,7 @@ const MyTasks = ({ useMockData = true }) => {
         )}
       </div>
 
-      {/* Модальное окно создания задачи в стиле ProjectsList */}
+      {/* Модальное окно создания задачи */}
       {showCreateModal && (
         <div className="modal-overlay123">
           <div className="modal-content123">
