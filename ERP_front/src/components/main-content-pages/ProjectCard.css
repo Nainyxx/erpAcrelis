@@ -557,3 +557,114 @@
   max-width: 25vh;
   line-height: 1.4;
 }
+
+.modal-overlay_projects_performers_create {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content_projects_performers_create {
+  background: white;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 400px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header_projects_performers_create {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.modal-header_projects_performers_create h2 {
+  margin: 0;
+  color: #333;
+  font-size: 20px;
+}
+
+.modal-close_projects_performers_create {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+}
+
+.modal-body_projects_performers_create {
+  padding: 20px;
+}
+
+.modal-footer_projects_performers_create {
+  padding: 20px;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.form-group_projects_performers_create {
+  margin-bottom: 15px;
+}
+
+.form-group_projects_performers_create label {
+  display: block;
+  margin-bottom: 5px;
+  color: #333;
+  font-weight: 500;
+}
+
+.form-group_projects_performers_create input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.form-group_projects_performers_create small {
+  color: #666;
+  font-size: 12px;
+  margin-top: 4px;
+  display: block;
+}
+
+.btn-cancel_projects_performers_create {
+  padding: 10px 20px;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #333;
+}
+
+.btn-create_projects_performers_create {
+  padding: 10px 20px;
+  background: #f5f5f5;
+  color: #333333;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-create_projects_performers_create:hover:not(:disabled),
+.btn-cancel_projects_performers_create:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.btn-create_projects_performers_create:disabled,
+.btn-cancel_projects_performers_create:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

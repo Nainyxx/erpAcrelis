@@ -1,11 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { getTaskById } from '../../services/api/api'; // ТОЛЬКО ИМПОРТ
 import './TaskCard.css';
 
-const TaskCard = () => {
+const TaskCard = ({ useMockData = false }) => {
   const navigate = useNavigate();
   const { taskId } = useParams();
   const chatContainerRef = useRef(null);
+  
+  // ДОБАВЛЕНО: Получение данных задачи
+  const [task, setTask] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   
   const [comment, setComment] = useState('');
   const [newComment, setNewComment] = useState('');
@@ -49,7 +55,7 @@ const TaskCard = () => {
       userName: 'Елена Кузнецова',
       userInitials: 'ЕК',
       userColor: '#FFD166',
-      text: 'Дизайн-макеты готовы, отправляю на согласование.',
+      text: 'Дизайн1макеты готовы, отправляю на согласование.',
       date: '16.12.2023',
       time: '11:45'
     },
@@ -106,6 +112,130 @@ const TaskCard = () => {
     { value: 'Отложено', label: 'Отложено', progress: 0 }
   ];
   
+const getColorForName = (name) => {
+  const colors = ['#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0', '#118AB2', '#EF476F'];
+  const index = name ? name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length : 0;
+  return colors[index];
+};
+// В useEffect после получения taskData:
+// В useEffect после получения taskData:
+useEffect(() => {
+  const loadTask = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const taskData = await getTaskById(taskId, useMockData);
+      setTask(taskData);
+      
+      // Описание в форму
+      if (taskData.description) {
+        setComment(taskData.description);
+      }
+      
+      // Даты
+      if (taskData.created) {
+        const createdDate = new Date(taskData.created);
+        const formattedStart = `${createdDate.getDate().toString().padStart(2, '0')}.${(createdDate.getMonth() + 1).toString().padStart(2, '0')}.${createdDate.getFullYear()}`;
+        setStartDate(formattedStart);
+      }
+      
+      if (taskData.deadline) {
+        const deadlineDate = new Date(taskData.deadline);
+        const formattedDeadline = `${deadlineDate.getDate().toString().padStart(2, '0')}.${(deadlineDate.getMonth() + 1).toString().padStart(2, '0')}.${deadlineDate.getFullYear()}`;
+        setDeadline(formattedDeadline);
+      }
+      
+      // Статус
+      if (taskData.status_display) {
+        setStatus(taskData.status_display);
+        const progressMap = {
+          'Новое': 20,
+          'В работе': 60,
+          'Завершено': 100,
+          'Приостановлено': 40,
+          'Черновик': 10
+        };
+        setProgress(progressMap[taskData.status_display] || 50);
+      }
+      
+      // Исполнитель
+      if (taskData.performer_name) {
+        const initials = taskData.performer_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+        setAssignee({
+          name: taskData.performer_name,
+          initials: initials,
+          color: '#FF6B6B'
+        });
+      }
+      
+      // Руководитель
+      if (taskData.director_name) {
+        const initials = taskData.director_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+        setManager({
+          name: taskData.director_name,
+          initials: initials,
+          color: '#4ECDC4'
+        });
+      }
+      
+      // КОММЕНТАРИИ из API в чат
+      if (taskData.comments && taskData.comments.length > 0) {
+        const formattedComments = taskData.comments.map(comment => {
+          const commentDate = new Date(comment.created);
+          return {
+            id: comment.id,
+            userId: `comment_${comment.id}`,
+            userName: comment.author_name || 'Автор',
+            userInitials: comment.author_name 
+              ? comment.author_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+              : '??',
+            userColor: '#4ECDC4',
+            text: comment.content,
+            date: `${commentDate.getDate().toString().padStart(2, '0')}.${(commentDate.getMonth() + 1).toString().padStart(2, '0')}.${commentDate.getFullYear()}`,
+            time: `${commentDate.getHours().toString().padStart(2, '0')}:${commentDate.getMinutes().toString().padStart(2, '0')}`,
+            replies: []
+          };
+        });
+        setCommentsList(formattedComments);
+      } else {
+        // Если нет комментариев - пустой массив
+        setCommentsList([]);
+      }
+      
+      // ФАЙЛЫ из API
+      if (taskData.files && taskData.files.length > 0) {
+        const formattedFiles = taskData.files.map(file => ({
+          id: file.id,
+          name: file.file ? file.file.split('/').pop() : 'Файл',
+          size: formatFileSize(file.size) || 'Неизвестно'
+        }));
+        setFiles(formattedFiles);
+      } else {
+        // Если нет файлов - пустой массив
+        setFiles([]);
+      }
+      
+    } catch (error) {
+      console.error('❌ Ошибка загрузки задачи:', error);
+      setError('Не удалось загрузить задачу');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  loadTask();
+}, [taskId, useMockData]);
+
+// Добавьте функцию formatFileSize:
+const formatFileSize = (bytes) => {
+  if (!bytes) return 'Неизвестно';
+  if (bytes < 1024) return bytes + ' Б';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' КБ';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' МБ';
+};
+  
+  // Остальной код без изменений...
   // Скролл к низу чата при добавлении новых сообщений
   useEffect(() => {
     if (chatContainerRef.current) {
@@ -256,6 +386,28 @@ const TaskCard = () => {
       {initials}
     </div>
   );
+
+  // ДОБАВЛЕНО: Состояния загрузки
+  if (loading) {
+    return (
+      <div className="taskcard-container">
+        <div className="loading">Загрузка задачи...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="taskcard-container">
+        <div className="error-message">
+          {error}
+          <button onClick={() => navigate('/my-tasks')} className="retry-btn">
+            Вернуться к задачам
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="taskcard-container">

@@ -1,27 +1,27 @@
-.employee-page {
+/* EmployeeCard.css */
+.employee-page_employee_card {
     padding: 3vh;
     background: #F6F6FE;
-    min-height: calc(100vh - 90px);
+    min-height: 80vh;
     box-sizing: border-box;
 }
 
-/* Заголовок как в других страницах */
-.page-title {
+.page-title_employee_card {
     color: #5B5B5B;
     margin-bottom: 2.8vh;
     font-size: 2.2vh;
     font-weight: 600;
 }
 
-.clickable {
+.clickable_employee_card {
     cursor: pointer;
 }
 
-.clickable:hover {
+.clickable_employee_card:hover {
     text-decoration: underline;
 }
 
-.main-card {
+.main-card_employee_card {
     background: white;
     border-radius: 2vh;
     padding: 3vh;
@@ -30,7 +30,7 @@
 }
 
 /* Верхняя часть */
-.top-section {
+.top-section_employee_card {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
@@ -38,13 +38,13 @@
     padding-bottom: 3vh;
 }
 
-.employee-info {
+.employee-info_employee_card {
     display: flex;
     align-items: center;
     gap: 2vh;
 }
 
-.avatar-large {
+.avatar-large_employee_card {
     width: 6vh;
     height: 6vh;
     border-radius: 50%;
@@ -56,30 +56,39 @@
     font-weight: 600;
     border: 0.4vh solid white;
     box-shadow: 0 0.4vh 1vh rgba(0,0,0,0.1);
+    overflow: hidden;
+    position: relative;
 }
 
-.name-section h2 {
+.avatar-large_employee_card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.name-section_employee_card h2 {
     color: #333;
     font-size: 2.1vh;
     font-weight: 600;
     margin: 0 0 0.5vh 0;
 }
 
-.name-section p {
+.name-section_employee_card p {
     color: #666;
     font-size: 1.4vh;
     margin: 0;
     font-weight: 500;
 }
 
-.manager-box {
+.manager-box_employee_card {
     border: 0.1vh solid #D1ECEC;
     border-radius: 1vh;
     padding: 2vh;
     min-width: 25vh;
 }
 
-.manager-label {
+.manager-label_employee_card {
     color: #333;
     font-size: 1.4vh;
     font-weight: 600;
@@ -87,13 +96,13 @@
 }
 
 /* Руководитель в одну строку */
-.manager-row {
+.manager-row_employee_card {
     display: flex;
     align-items: center;
     gap: 1vh;
 }
 
-.small-avatar {
+.small-avatar_employee_card {
     width: 3.6vh;
     height: 3.6vh;
     border-radius: 50%;
@@ -109,57 +118,57 @@
     flex-shrink: 0;
 }
 
-.manager-details {
+.manager-details_employee_card {
     display: flex;
     flex-direction: column;
     gap: 0.2vh;
 }
 
-.manager-name {
+.manager-name_employee_card {
     color: #333;
     font-size: 1.6vh;
     font-weight: 500;
     white-space: nowrap;
 }
 
-.manager-role {
+.manager-role_employee_card {
     color: #666;
     font-size: 1.4vh;
     white-space: nowrap;
 }
 
 /* Средняя часть */
-.middle-section {
+.middle-section_employee_card {
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-.contacts-row {
+.contacts-row_employee_card {
     display: flex;
     gap: 4vh;
 }
 
-.contact-item {
+.contact-item_employee_card {
     display: flex;
     flex-direction: column;
     gap: 0.5vh;
 }
 
-.contact-label {
+.contact-label_employee_card {
     color: #666;
     font-size: 1.6vh;
     font-weight: 500;
 }
 
-.contact-value {
+.contact-value_employee_card {
     color: #333;
     font-size: 1.6vh;
     font-weight: 500;
     border-radius: 0.6vh;
 }
 
-.tasks-button {
+.tasks-button_employee_card {
     background: #FFFFFF;
     color: #333;
     border: 0.1vh solid #ddd;
@@ -172,19 +181,19 @@
     transition: all 0.3s;
 }
 
-.tasks-button:hover {
+.tasks-button_employee_card:hover {
     background: #f5f5f5;
     transform: scale(1.02);
 }
 
 /* ОТДЕЛЬНЫЕ 4 прямоугольника ПОД большим */
-.bottom-cards {
+.bottom-cards_employee_card {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 2vh;
 }
 
-.stat-card {
+.stat-card_employee_card {
     background: white;
     border-radius: 2vh;
     padding: 3vh;
@@ -198,19 +207,19 @@
     transition: all 0.3s;
 }
 
-.stat-card:hover {
+.stat-card_employee_card:hover {
     transform: scale(1.02);
     box-shadow: 0 0.4vh 1.5vh rgba(0,0,0,0.1);
 }
 
-.stat-number {
+.stat-number_employee_card {
     color: #333;
     font-size: 3.2vh;
     font-weight: 700;
     margin-bottom: 1vh;
 }
 
-.stat-label {
+.stat-label_employee_card {
     color: #666;
     font-size: 1.4vh;
     font-weight: 500;

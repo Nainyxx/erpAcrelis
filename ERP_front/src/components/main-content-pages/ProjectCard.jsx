@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import './ProjectCard.css';
-import { getProjectById, updateProject } from '../../services/api/api';
+import { getProjectById, updateProject, uploadFileToProject, addPerformerToProject, getProjectLogs } from '../../services/api/api';
 
 const ProjectCard = ({ useMockData }) => {
   const navigate = useNavigate();
@@ -18,71 +18,38 @@ const ProjectCard = ({ useMockData }) => {
   const [currentUser] = useState('Иван Петров');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [showAddPerformerModal_projects_performers_create, setShowAddPerformerModal_projects_performers_create] = useState(false);
+  const [staffId_projects_performers_create, setStaffId_projects_performers_create] = useState('');
+  const [addingPerformer_projects_performers_create, setAddingPerformer_projects_performers_create] = useState(false);
   
-  useEffect(() => {
-    const loadProject = async () => {
-      if (!projectId) return;
-      
-      setIsLoading(true);
-      try {
-        const projectData = await getProjectById(parseInt(projectId), useMockData);
-        setProject(projectData);
-        setStartDate(projectData.startDate || '');
-        setDeadline(projectData.deadline || '');
-        setProjectType(projectData.type || '');
-        setPrice(projectData.price || '');
-        setCustomer(projectData.customer || '');
-        setChanges(projectData.changes || []);
-        
-        if (projectData.team) {
-          const userInTeam = projectData.team.some(member => 
-            member.name === currentUser
-          );
-          setIsUserInProject(userInTeam);
-        }
-      } catch (error) {
-        console.error('Ошибка загрузки проекта:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const fileInputRef = useRef(null);
+
+  const formatDateForDisplay = (dateString) => {
+    if (!dateString) return 'Не указана';
     
-    loadProject();
-  }, [projectId, useMockData, currentUser]);
-  
-  if (isLoading) {
-    return (
-      <div className="projectcard-container">
-        <div style={{padding: '50px', textAlign: 'center'}}>
-          Загрузка проекта...
-        </div>
-      </div>
-    );
-  }
-  
-  if (!project) {
-    return (
-      <div className="projectcard-container">
-        <div style={{padding: '50px', textAlign: 'center'}}>
-          <h2>Проект не найден</h2>
-          <button 
-            onClick={() => navigate('/projects')}
-            style={{
-              padding: '10px 20px',
-              background: '#0066CC',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              marginTop: '20px'
-            }}
-          >
-            Вернуться к списку проектов
-          </button>
-        </div>
-      </div>
-    );
-  }
+    if (dateString.match(/^\d{2}\.\d{2}\.\d{4}$/)) {
+      return dateString;
+    }
+    
+    if (dateString.includes('T')) {
+      try {
+        const datePart = dateString.split('T')[0];
+        const [year, month, day] = datePart.split('-');
+        return `${day}.${month}.${year}`;
+      } catch (e) {
+        console.error('Ошибка парсинга даты:', dateString);
+        return 'Неверная дата';
+      }
+    }
+    
+    if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      const [year, month, day] = dateString.split('-');
+      return `${day}.${month}.${year}`;
+    }
+    
+    return dateString;
+  };
 
   const generateAvatar = (name) => {
     const colors = ['#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0', '#118AB2', '#EF476F'];
@@ -96,21 +63,13 @@ const ProjectCard = ({ useMockData }) => {
     );
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return 'Не указана';
-    
-    if (typeof dateString === 'string' && dateString.includes('.')) {
-      return dateString;
-    }
-    
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return 'Неверная дата';
-    
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear();
-    
-    return `${day}.${month}.${year}`;
+  const formatPrice = (price) => {
+    if (!price) return '0,00 ₽';
+    const num = parseFloat(price);
+    return new Intl.NumberFormat('ru-RU', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(num) + ' ₽';
   };
 
   const handleSaveChanges = async () => {
@@ -120,15 +79,17 @@ const ProjectCard = ({ useMockData }) => {
     try {
       const updateData = {};
       
-      if (startDate !== project.startDate) {
-        updateData.startDate = startDate;
+      const formattedProjectStartDate = formatDateForDisplay(project.startDate);
+      if (startDate !== formattedProjectStartDate && startDate.trim() !== '') {
+        updateData.start_date = startDate;
       }
       
-      if (deadline !== project.deadline) {
+      const formattedProjectDeadline = formatDateForDisplay(project.deadline);
+      if (deadline !== formattedProjectDeadline && deadline.trim() !== '') {
         updateData.deadline = deadline;
       }
       
-      if (projectType !== project.type) {
+      if (projectType !== project.typeLabel && projectType !== project.type_display) {
         updateData.type = projectType;
       }
       
@@ -140,23 +101,45 @@ const ProjectCard = ({ useMockData }) => {
         updateData.customer = customer;
       }
       
+      console.log('Отправляемые данные:', updateData);
+      
       if (Object.keys(updateData).length > 0) {
         const updatedProject = await updateProject(project.id, updateData, useMockData);
+        console.log('Обновленный проект:', updatedProject);
+        
         setProject(updatedProject);
         
-        const newChange = {
-          id: changes.length + 1,
-          action: 'Сохранил изменения проекта',
-          date: new Date().toLocaleString('ru-RU', { 
-            day: '2-digit', 
-            month: '2-digit', 
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-          }),
-        };
+        if (updatedProject.startDateFormatted) {
+          setStartDate(updatedProject.startDateFormatted);
+        } else if (updatedProject.startDate) {
+          setStartDate(formatDateForDisplay(updatedProject.startDate));
+        }
         
-        setChanges([newChange, ...changes]);
+        if (updatedProject.deadlineFormatted) {
+          setDeadline(updatedProject.deadlineFormatted);
+        } else if (updatedProject.deadline) {
+          setDeadline(formatDateForDisplay(updatedProject.deadline));
+        }
+        
+        if (updatedProject.typeLabel) {
+          setProjectType(updatedProject.typeLabel);
+        } else if (updatedProject.type_display) {
+          setProjectType(updatedProject.type_display);
+        } else if (updatedProject.type) {
+          setProjectType(updatedProject.type);
+        }
+        
+        if (updatedProject.price) {
+          setPrice(updatedProject.price);
+        }
+        
+        if (updatedProject.customer) {
+          setCustomer(updatedProject.customer);
+        }
+        
+        const updatedLogs = await getProjectLogs(project.id, useMockData);
+        setChanges(updatedLogs);
+        
         alert('Изменения сохранены!');
       } else {
         alert('Нет изменений для сохранения');
@@ -211,15 +194,109 @@ const ProjectCard = ({ useMockData }) => {
   };
 
   const handleAddTeamMember = () => {
-    console.log('Добавить исполнителя');
+    setShowAddPerformerModal_projects_performers_create(true);
+  };
+
+  const handleAddPerformerSubmit_projects_performers_create = async () => {
+    if (!staffId_projects_performers_create.trim() || !project) {
+      alert('Введите ID сотрудника');
+      return;
+    }
+
+    setAddingPerformer_projects_performers_create(true);
+    
+    try {
+      console.log(`Добавляю сотрудника ${staffId_projects_performers_create} в проект ${project.id}`);
+      
+      const newPerformer = await addPerformerToProject(project.id, parseInt(staffId_projects_performers_create), useMockData);
+      
+      console.log('Исполнитель добавлен:', newPerformer);
+      
+      setProject(prev => ({
+        ...prev,
+        team: [...(prev.team || []), {
+          id: newPerformer.id,
+          name: newPerformer.staff_name || `Сотрудник ${staffId_projects_performers_create}`,
+          role: newPerformer.staff_post || 'Исполнитель'
+        }]
+      }));
+      
+      const updatedLogs = await getProjectLogs(project.id, useMockData);
+      setChanges(updatedLogs);
+      
+      setStaffId_projects_performers_create('');
+      setShowAddPerformerModal_projects_performers_create(false);
+      alert('Исполнитель успешно добавлен!');
+      
+    } catch (error) {
+      console.error('Ошибка добавления исполнителя:', error);
+      alert(`Ошибка: ${error.message}`);
+    } finally {
+      setAddingPerformer_projects_performers_create(false);
+    }
   };
 
   const handleAddFile = () => {
-    console.log('Добавить файл');
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file || !project) return;
+
+    console.log('Загружаю файл:', file.name, file.size, file.type);
+    setUploadingFile(true);
+
+    try {
+      const uploadedFile = await uploadFileToProject(project.id, file, useMockData);
+      
+      console.log('Файл загружен:', uploadedFile);
+      
+      setProject(prev => ({
+        ...prev,
+        files: [...(prev.files || []), uploadedFile]
+      }));
+      
+      const updatedLogs = await getProjectLogs(project.id, useMockData);
+      setChanges(updatedLogs);
+      
+      alert(`Файл "${file.name}" успешно загружен!`);
+      
+      event.target.value = null;
+      
+    } catch (error) {
+      console.error('Ошибка загрузки файла:', error);
+      alert(`Ошибка загрузки файла: ${error.message}`);
+    } finally {
+      setUploadingFile(false);
+    }
   };
 
   const handleDownloadFile = (file) => {
-    console.log('Скачать файл:', file.name);
+    if (!file.file) {
+      alert('Ссылка на файл недоступна');
+      return;
+    }
+    
+    const fileUrl = file.file;
+    const fileName = file.name || fileUrl.split('/').pop() || 'file.txt';
+    
+    const a = document.createElement('a');
+    a.href = fileUrl;
+    a.download = fileName;
+    a.target = '_blank';
+    a.style.display = 'none';
+    
+    document.body.appendChild(a);
+    a.click();
+    
+    setTimeout(() => {
+      document.body.removeChild(a);
+    }, 10);
+    
+    console.log(`Скачивание файла: ${fileName}`);
   };
 
   const renderTeamAvatars = (team) => {
@@ -246,14 +323,6 @@ const ProjectCard = ({ useMockData }) => {
       </div>
     );
   };
-  
-  const formatPrice = (price) => {
-    const num = parseFloat(price);
-    return new Intl.NumberFormat('ru-RU', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(num) + ' ₽';
-  };
 
   const groupChangesByDate = () => {
     const grouped = {};
@@ -266,6 +335,76 @@ const ProjectCard = ({ useMockData }) => {
     });
     return grouped;
   };
+  
+  const loadProjectAndLogs = async () => {
+    if (!projectId) return;
+    
+    setIsLoading(true);
+    try {
+      const projectData = await getProjectById(parseInt(projectId), useMockData);
+      console.log('Загружен проект:', projectData);
+      
+      setProject(projectData);
+      setStartDate(projectData.startDateFormatted || projectData.startDate || '');
+      setDeadline(projectData.deadlineFormatted || projectData.deadline || '');
+      setProjectType(projectData.typeLabel || projectData.type_display || projectData.type || '');
+      setPrice(projectData.price || '');
+      setCustomer(projectData.customer || '');
+      
+      const projectLogs = await getProjectLogs(parseInt(projectId), useMockData);
+      console.log('Загружены логи:', projectLogs);
+      setChanges(projectLogs);
+      
+      if (projectData.team) {
+        const userInTeam = projectData.team.some(member => 
+          member.name === currentUser
+        );
+        setIsUserInProject(userInTeam);
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки проекта:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  useEffect(() => {
+    loadProjectAndLogs();
+  }, [projectId, useMockData, currentUser]);
+  
+  if (isLoading) {
+    return (
+      <div className="projectcard-container">
+        <div style={{padding: '5vh', textAlign: 'center'}}>
+          Загрузка проекта...
+        </div>
+      </div>
+    );
+  }
+  
+  if (!project) {
+    return (
+      <div className="projectcard-container">
+        <div style={{padding: '5vh', textAlign: 'center'}}>
+          <h2>Проект не найден</h2>
+          <button 
+            onClick={() => navigate('/projects')}
+            style={{
+              padding: '1vh 2vh',
+              background: '#0066CC',
+              color: 'white',
+              border: 'none',
+              borderRadius: '0.4vh',
+              cursor: 'pointer',
+              marginTop: '2vh'
+            }}
+          >
+            Вернуться к списку проектов
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const groupedChanges = groupChangesByDate();
   const sortedDates = Object.keys(groupedChanges).sort((a, b) => {
@@ -276,7 +415,14 @@ const ProjectCard = ({ useMockData }) => {
 
   return (
     <div className="projectcard-container">
-      {/* Контейнер для кнопок */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        style={{ display: 'none' }}
+        onChange={handleFileUpload}
+        disabled={uploadingFile}
+      />
+      
       <div className="projectcard-buttons">
         <button 
           className="save-changes-btn" 
@@ -312,7 +458,7 @@ const ProjectCard = ({ useMockData }) => {
                     suppressContentEditableWarning
                     onBlur={(e) => setStartDate(e.target.textContent)}
                   >
-                    {formatDate(startDate)}
+                    {formatDateForDisplay(startDate)}
                   </span>
                 </div>
                 <div className="date-item">
@@ -323,7 +469,7 @@ const ProjectCard = ({ useMockData }) => {
                     suppressContentEditableWarning
                     onBlur={(e) => setDeadline(e.target.textContent)}
                   >
-                    {formatDate(deadline)}
+                    {formatDateForDisplay(deadline)}
                   </span>
                 </div>
               </div>
@@ -346,13 +492,13 @@ const ProjectCard = ({ useMockData }) => {
                 <div className="info-item">
                   <span className="info-label">Тип проекта</span>
                   <span 
-                      className="project-type1 editable" 
-                      contentEditable
-                      suppressContentEditableWarning
-                      onBlur={(e) => setProjectType(e.target.textContent)}
-                    >
-                  {projectType || project.type || 'Не указан'}
-                </span>
+                    className="project-type1 editable" 
+                    contentEditable
+                    suppressContentEditableWarning
+                    onBlur={(e) => setProjectType(e.target.textContent)}
+                  >
+                    {projectType || project.typeLabel || project.type_display || project.type || 'Не указан'}
+                  </span>
                 </div>
                 <div className="info-item">
                   <span className="info-label">Бюджет проекта</span>
@@ -421,12 +567,12 @@ const ProjectCard = ({ useMockData }) => {
                 >
                   Открыть канбан
                 </button>
-<button 
-  className="action-btn gantt-btn" 
-  onClick={() => window.location.href = `/projects/${project.id}/gantt`}
->
-  Диаграмма ганта
-</button>
+                <button 
+                  className="action-btn gantt-btn" 
+                  onClick={() => window.location.href = `/projects/${project.id}/gantt`}
+                >
+                  Диаграмма Ганта
+                </button>
               </div>
             </div>
           </div>
@@ -434,24 +580,39 @@ const ProjectCard = ({ useMockData }) => {
           <div className="files-panel">
             <div className="files-header">
               <h3>Файлы проекта</h3>
-              <button className="add-btn" onClick={handleAddFile}>
-                + Загрузить файлы
+              <button 
+                className="add-btn" 
+                onClick={handleAddFile}
+                disabled={uploadingFile}
+              >
+                {uploadingFile ? 'Загрузка...' : '+ Загрузить файлы'}
               </button>
             </div>
             <div className="files-list">
-              {project.files?.map(file => (
-                <div key={file.id} className="file-item">
-                  <div className="file-details">
-                    <span className="file-name">{file.name}</span>
+              {project.files?.map(file => {
+                const fileName = file.name || (file.file ? file.file.split('/').pop() : 'Файл');
+                return (
+                  <div key={file.id} className="file-item">
+                    <div className="file-details">
+                      <span className="file-name" title={file.file}>
+                        {fileName}
+                      </span>
+                      {file.uploaded_at && (
+                        <span className="file-date">
+                          {new Date(file.uploaded_at).toLocaleDateString('ru-RU')}
+                        </span>
+                      )}
+                    </div>
+                    <button 
+                      className="file-download" 
+                      onClick={() => handleDownloadFile(file)}
+                      title="Скачать файл"
+                    >
+                      ↓
+                    </button>
                   </div>
-                  <button 
-                    className="file-download" 
-                    onClick={() => handleDownloadFile(file)}
-                  >
-                    ↓
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
             <div className="files-count">
               Всего файлов: {project.files?.length || 0}
@@ -459,6 +620,62 @@ const ProjectCard = ({ useMockData }) => {
           </div>
         </div>
       </div>
+
+      {showAddPerformerModal_projects_performers_create && (
+        <div className="modal-overlay_projects_performers_create">
+          <div className="modal-content_projects_performers_create">
+            <div className="modal-header_projects_performers_create">
+              <h2>Добавить исполнителя</h2>
+              <button 
+                className="modal-close_projects_performers_create"
+                onClick={() => setShowAddPerformerModal_projects_performers_create(false)}
+                disabled={addingPerformer_projects_performers_create}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="modal-body_projects_performers_create">
+              <div className="form-group_projects_performers_create">
+                <label>ID сотрудника *</label>
+                <input
+                  type="number"
+                  value={staffId_projects_performers_create}
+                  onChange={(e) => setStaffId_projects_performers_create(e.target.value)}
+                  placeholder="Введите ID сотрудника"
+                  disabled={addingPerformer_projects_performers_create}
+                  min="1"
+                />
+                <small>Укажите числовой ID сотрудника из системы</small>
+              </div>
+              
+              <div className="form-group_projects_performers_create">
+                <p style={{ color: '#666', fontSize: '1.4vh' }}>
+                  <strong>Примечание:</strong> ID сотрудника можно получить из списка сотрудников.
+                  После добавления сотрудник появится в команде проекта.
+                </p>
+              </div>
+            </div>
+            
+            <div className="modal-footer_projects_performers_create">
+              <button 
+                className="btn-cancel_projects_performers_create"
+                onClick={() => setShowAddPerformerModal_projects_performers_create(false)}
+                disabled={addingPerformer_projects_performers_create}
+              >
+                Отмена
+              </button>
+              <button 
+                className="btn-create_projects_performers_create"
+                onClick={handleAddPerformerSubmit_projects_performers_create}
+                disabled={addingPerformer_projects_performers_create}
+              >
+                {addingPerformer_projects_performers_create ? 'Добавление...' : 'Добавить'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

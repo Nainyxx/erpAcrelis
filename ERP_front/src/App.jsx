@@ -82,7 +82,7 @@ function App() {
                 
                 {/* Карточка задачи */}
                 <Route path="/tasks/:taskId" element={
-                  <TaskCard />
+                   <TaskCard useMockData={useMockData} />
                 } />
                 
                 {/* Бухгалтерия */}
@@ -92,7 +92,9 @@ function App() {
                 
                 {/* Список сотрудников */}
                 <Route path="/staff" element={
-                  <StaffPage />
+                  <StaffList 
+                    useMockData={useMockData}
+                  />
                 } />
                 
                 {/* Карточка сотрудника */}

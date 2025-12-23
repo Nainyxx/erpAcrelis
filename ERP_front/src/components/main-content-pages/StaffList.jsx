@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getStaffList } from '../../services/staffService';
+import { getStaffList, getStaffDepartments } from '../../services/api/api';
 import './StaffList.css';
 
 const StaffList = ({ useMockData = true }) => {
@@ -12,32 +12,77 @@ const StaffList = ({ useMockData = true }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      setError(null);
+ useEffect(() => {
+  const loadData = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // 1. Загружаем сотрудников (реальный API при USE_MOCK_DATA=false)
+      const { employees: loadedEmployees } = await getStaffList(useMockData);
       
-      try {
-        const { employees: loadedEmployees, departments: loadedDepartments } = await getStaffList(useMockData);
-        
-        setEmployees(loadedEmployees);
-        setDepartments(loadedDepartments);
-      } catch (error) {
-        console.error('Ошибка загрузки данных сотрудников:', error);
-        setError('Не удалось загрузить данные сотрудников');
-        setEmployees([]);
-        setDepartments([]);
-      } finally {
-        setLoading(false);
+      // 2. Загружаем отделы отдельным запросом
+      const departmentsData = await getStaffDepartments(useMockData);
+      
+      console.log('Загруженные сотрудники:', loadedEmployees);
+      console.log('Загруженные отделы:', departmentsData);
+      
+      // 3. Создаем фильтр отделов
+      const departmentOptions = [
+        { id: 'all', label: 'Все отделы', count: loadedEmployees.length }
+      ];
+      
+      // Добавляем отделы из API
+      if (departmentsData.length > 0) {
+        departmentsData.forEach(dept => {
+          // Считаем сотрудников в отделе
+          const count = loadedEmployees.filter(emp => 
+            emp.department === dept.id.toString() || 
+            emp.departmentLabel === dept.name
+          ).length;
+          
+          departmentOptions.push({
+            id: dept.id.toString(),
+            label: dept.name,
+            count: count
+          });
+        });
+      } else {
+        // Если отделов нет, создаем из уникальных отделов сотрудников
+        const uniqueDepartments = [...new Set(loadedEmployees.map(emp => emp.departmentLabel))];
+        uniqueDepartments.forEach((deptLabel, index) => {
+          if (deptLabel && deptLabel !== 'Не указан') {
+            const count = loadedEmployees.filter(emp => emp.departmentLabel === deptLabel).length;
+            departmentOptions.push({
+              id: (index + 1).toString(),
+              label: deptLabel,
+              count: count
+            });
+          }
+        });
       }
-    };
+      
+      setEmployees(loadedEmployees);
+      setDepartments(departmentOptions);
+      
+    } catch (error) {
+      console.error('Ошибка загрузки данных сотрудников:', error);
+      setError('Не удалось загрузить данные сотрудников');
+      setEmployees([]);
+      setDepartments([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    loadData();
-  }, [useMockData]);
+  loadData();
+}, [useMockData]);
 
   const filteredEmployees = employees.filter(employee => {
     const matchesSearch = employee.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesDepartment = selectedDepartment === 'all' || employee.department === selectedDepartment;
+    const matchesDepartment = selectedDepartment === 'all' || 
+                             employee.department === selectedDepartment || 
+                             employee.departmentLabel === departments.find(d => d.id === selectedDepartment)?.label;
     return matchesSearch && matchesDepartment;
   });
 
@@ -106,9 +151,7 @@ const StaffList = ({ useMockData = true }) => {
         </div>
       </div>
 
-      {/* ЕДИНЫЙ ГРИД КАК В PROJECTS */}
       <div className="staff-table">
-        {/* Заголовки - первые 3 элемента в гриде */}
         <div className="header-cell">ФИО</div>
         <div className="header-cell">Роль</div>
         <div className="header-cell">Отдел</div>

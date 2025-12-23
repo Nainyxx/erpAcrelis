@@ -1,46 +1,112 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getMyTasks, getCurrentUser } from '../../services/projectsService';
+import { getTasksByPerformer, getCurrentUser, formatDateForDisplay, createTask } from '../../services/api/api';
 import './MyTasks.css';
 
 const MyTasks = ({ useMockData = true }) => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
+  const [selectedPerformer, setSelectedPerformer] = useState('all');
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
+  // Состояния для модального окна
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState('');
+  
+  // Данные формы
+  const [newTask, setNewTask] = useState({
+    name: '',
+    description: '',
+    status: 'new',
+    project: '',
+    deadline: '',
+    performer: '',
+    director: '',
+    hours: 0
+  });
+  
   const currentUser = getCurrentUser();
 
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      setError(null);
-      
-      try {
-        const userTasks = await getMyTasks(currentUser.id, useMockData);
-        setTasks(userTasks);
-      } catch (error) {
-        console.error('Ошибка загрузки задач:', error);
-        setError('Не удалось загрузить ваши задачи');
-        setTasks([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
+    loadTasks();
   }, [currentUser.id, useMockData]);
 
-  const getProjectManager = (projectId) => {
-    const project = tasks.find(t => t.projectId === projectId)?.projectData;
-    if (project?.team) {
-      const manager = project.team.find(member => member.role === 'Team Lead' || member.role === 'Project Manager');
-      return manager?.name || 'Не назначен';
+  const loadTasks = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const apiTasks = await getTasksByPerformer(currentUser.id, useMockData);
+      
+      const formattedTasks = apiTasks.map(task => {
+        let status;
+        switch(task.status) {
+          case 'completed':
+          case 'done':
+            status = 'completed';
+            break;
+          case 'in_progress':
+          case 'active':
+            status = 'in-progress';
+            break;
+          case 'new':
+          case 'planned':
+          case 'pending':
+            status = 'planned';
+            break;
+          default:
+            status = task.status;
+        }
+        
+        return {
+          id: task.id,
+          taskName: task.name,
+          status: status,
+          status_display: task.status_display || task.status,
+          deadline: formatDateForDisplay(task.deadline),
+          projectId: task.project,
+          projectName: task.project_name || 'Не указан',
+          directorId: task.director,
+          directorName: task.director_name,
+          performerId: task.performer,
+          performerName: task.performer_name,
+          hours: task.hours || 0,
+          created: task.created,
+          is_overdue: task.is_overdue || false,
+          originalDeadline: task.deadline
+        };
+      });
+      
+      setTasks(formattedTasks);
+    } catch (error) {
+      console.error('❌ Ошибка загрузки задач:', error);
+      setError('Не удалось загрузить ваши задачи');
+      setTasks([]);
+    } finally {
+      setLoading(false);
     }
-    return 'Не назначен';
   };
+
+  // Получаем уникальных исполнителей из задач
+  const performers = useMemo(() => {
+    const performerSet = new Set();
+    tasks.forEach(task => {
+      if (task.performerName) {
+        performerSet.add(task.performerName);
+      }
+    });
+    
+    const performerList = Array.from(performerSet).sort();
+    
+    return [
+      { id: 'all', label: 'Все исполнители' },
+      ...performerList.map(name => ({ id: name, label: name }))
+    ];
+  }, [tasks]);
 
   const statuses = [
     { id: 'all', label: 'Все статусы' },
@@ -49,20 +115,30 @@ const MyTasks = ({ useMockData = true }) => {
     { id: 'planned', label: 'Запланировано' }
   ];
 
+  const statusOptions = [
+    { value: 'draft', label: 'Черновик' },
+    { value: 'new', label: 'Новая' },
+    { value: 'active', label: 'В работе' },
+    { value: 'paused', label: 'Приостановлена' },
+    { value: 'completed', label: 'Завершена' }
+  ];
+
   const filteredTasks = tasks.filter(task => {
     const matchesSearch = task.taskName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         task.projectName.toLowerCase().includes(searchQuery.toLowerCase());
+                         (task.projectName && task.projectName.toLowerCase().includes(searchQuery.toLowerCase()));
     const matchesStatus = selectedStatus === 'all' || task.status === selectedStatus;
-    return matchesSearch && matchesStatus;
+    const matchesPerformer = selectedPerformer === 'all' || task.performerName === selectedPerformer;
+    
+    return matchesSearch && matchesStatus && matchesPerformer;
   });
 
-  const getStatusText = (status) => {
-    switch(status) {
-      case 'completed': return 'Завершено';
-      case 'in-progress': return 'В работе';
-      case 'planned': return 'Запланировано';
-      default: return status;
-    }
+  const getProjectManager = (task) => {
+    return task.directorName || 'Не назначен';
+  };
+
+  const isTaskOverdue = (task) => {
+    if (task.status === 'completed') return false;
+    return task.is_overdue;
   };
 
   const handleTaskClick = (task) => {
@@ -70,7 +146,89 @@ const MyTasks = ({ useMockData = true }) => {
   };
 
   const handleRefresh = () => {
-    window.location.reload();
+    loadTasks();
+  };
+
+  // Функции для работы с модальным окном
+  const openCreateModal = () => {
+    setShowCreateModal(true);
+    setCreateError('');
+    setNewTask({
+      name: '',
+      description: '',
+      status: 'new',
+      project: '',
+      deadline: '',
+      performer: '',
+      director: '',
+      hours: 0
+    });
+  };
+
+  const closeCreateModal = () => {
+    setShowCreateModal(false);
+    setCreateError('');
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewTask(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleCreateTask = async () => {
+    // Валидация
+    if (!newTask.name.trim()) {
+      setCreateError('Название задачи обязательно');
+      return;
+    }
+
+    if (!newTask.deadline) {
+      setCreateError('Дата дедлайна обязательна');
+      return;
+    }
+
+    setCreating(true);
+    setCreateError('');
+
+    try {
+      const taskData = {
+        name: newTask.name,
+        description: newTask.description || newTask.name,
+        status: newTask.status,
+        project: newTask.project || null,
+        deadline: newTask.deadline + 'T00:00:00+03:00',
+        performer: newTask.performer || null,
+        director: newTask.director || null,
+        hours: newTask.hours || 0
+      };
+
+      await createTask(taskData, useMockData);
+      
+      setShowCreateModal(false);
+      setNewTask({
+        name: '',
+        description: '',
+        status: 'new',
+        project: '',
+        deadline: '',
+        performer: '',
+        director: '',
+        hours: 0
+      });
+      
+      await loadTasks();
+      
+      alert('Задача успешно создана!');
+      
+    } catch (error) {
+      console.error('❌ Ошибка создания задачи:', error);
+      setCreateError(error.message || 'Не удалось создать задачу');
+    } finally {
+      setCreating(false);
+    }
   };
 
   if (loading) {
@@ -114,6 +272,20 @@ const MyTasks = ({ useMockData = true }) => {
             </select>
           </div>
 
+          <div className="filter-group">
+            <select 
+              className="filter-select" 
+              value={selectedPerformer}
+              onChange={(e) => setSelectedPerformer(e.target.value)}
+            >
+              {performers.map(performer => (
+                <option key={performer.id} value={performer.id}>
+                  {performer.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="filter-group search-group">
             <input
               type="text"
@@ -125,13 +297,12 @@ const MyTasks = ({ useMockData = true }) => {
           </div>
         </div>
         
-        <button className="create-task-btn">
+        <button className="create-task-btn" onClick={openCreateModal}>
           Создать задачу
         </button>
       </div>
 
       <div className="tasks-table">
-        {/* Заголовки таблицы - первые 4 элемента в гриде */}
         <div className="header-cell">Название задачи</div>
         <div className="header-cell">Дедлайн</div>
         <div className="header-cell">Проект</div>
@@ -139,13 +310,13 @@ const MyTasks = ({ useMockData = true }) => {
 
         {filteredTasks.length === 0 ? (
           <div className="no-tasks">
-            {searchQuery || selectedStatus !== 'all' 
+            {searchQuery || selectedStatus !== 'all' || selectedPerformer !== 'all'
               ? 'Задачи не найдены по заданным фильтрам' 
               : 'У вас нет назначенных задач'}
           </div>
         ) : (
           filteredTasks.map((task) => (
-            <React.Fragment key={`${task.projectId}-${task.id}`}>
+            <React.Fragment key={task.id}>
               <div 
                 className="task-cell task-name"
                 onClick={() => handleTaskClick(task)}
@@ -176,13 +347,164 @@ const MyTasks = ({ useMockData = true }) => {
                 onClick={() => handleTaskClick(task)}
               >
                 <div className="manager-info">
-                  <div className="manager-name">{getProjectManager(task.projectId)}</div>
+                  <div className="manager-name">{getProjectManager(task)}</div>
                 </div>
               </div>
             </React.Fragment>
           ))
         )}
       </div>
+
+      {/* Модальное окно создания задачи в стиле ProjectsList */}
+      {showCreateModal && (
+        <div className="modal-overlay123">
+          <div className="modal-content123">
+            <div className="modal-header123">
+              <h2>Создать новую задачу</h2>
+              <button 
+                className="modal-close123"
+                onClick={closeCreateModal}
+                disabled={creating}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="modal-body123">
+              {createError && (
+                <div className="error-message123">{createError}</div>
+              )}
+              
+              <div className="form-group123">
+                <label>Название задачи *</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={newTask.name}
+                  onChange={handleInputChange}
+                  placeholder="Введите название задачи"
+                  disabled={creating}
+                  maxLength={100}
+                />
+              </div>
+              
+              <div className="form-group123">
+                <label>Описание *</label>
+                <textarea
+                  name="description"
+                  value={newTask.description}
+                  onChange={handleInputChange}
+                  className="form-textarea123"
+                  placeholder="Введите описание задачи"
+                  disabled={creating}
+                  rows="3"
+                />
+              </div>
+              
+              <div className="form-group123">
+                <label>Статус</label>
+                <select
+                  name="status"
+                  value={newTask.status}
+                  onChange={handleInputChange}
+                  disabled={creating}
+                >
+                  {statusOptions.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="form-group123">
+                <label>Дедлайн *</label>
+                <input
+                  type="date"
+                  name="deadline"
+                  value={newTask.deadline}
+                  onChange={handleInputChange}
+                  disabled={creating}
+                />
+              </div>
+              
+              <div className="form-row123">
+                <div className="form-group123">
+                  <label>Часы</label>
+                  <input
+                    type="number"
+                    name="hours"
+                    value={newTask.hours}
+                    onChange={handleInputChange}
+                    placeholder="0"
+                    min="0"
+                    max="2147483647"
+                    disabled={creating}
+                  />
+                </div>
+                
+                <div className="form-group123">
+                  <label>ID проекта (опционально)</label>
+                  <input
+                    type="number"
+                    name="project"
+                    value={newTask.project}
+                    onChange={handleInputChange}
+                    placeholder="Введите ID проекта"
+                    min="0"
+                    disabled={creating}
+                  />
+                </div>
+              </div>
+              
+              <div className="form-row123">
+                <div className="form-group123">
+                  <label>ID исполнителя (опционально)</label>
+                  <input
+                    type="number"
+                    name="performer"
+                    value={newTask.performer}
+                    onChange={handleInputChange}
+                    placeholder="Введите ID исполнителя"
+                    min="0"
+                    disabled={creating}
+                  />
+                </div>
+                
+                <div className="form-group123">
+                  <label>ID руководителя (опционально)</label>
+                  <input
+                    type="number"
+                    name="director"
+                    value={newTask.director}
+                    onChange={handleInputChange}
+                    placeholder="Введите ID руководителя"
+                    min="0"
+                    disabled={creating}
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <div className="modal-footer123">
+              <button 
+                className="btn-cancel123"
+                onClick={closeCreateModal}
+                disabled={creating}
+              >
+                Отмена
+              </button>
+              <button 
+                className="btn-create123"
+                onClick={handleCreateTask}
+                disabled={creating}
+              >
+                {creating ? 'Создание...' : 'Создать задачу'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
