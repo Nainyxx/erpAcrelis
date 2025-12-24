@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import './ProjectCard.css';
-import { getProjectById, updateProject, uploadFileToProject, addPerformerToProject, getProjectLogs } from '../../services/api/api';
+import { getProjectById, updateProject, uploadFileToProject, addPerformerToProject, getProjectLogs, getStaffList } from '../../services/api/api';
 
 const ProjectCard = ({ useMockData }) => {
   const navigate = useNavigate();
@@ -20,10 +20,16 @@ const ProjectCard = ({ useMockData }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [showAddPerformerModal_projects_performers_create, setShowAddPerformerModal_projects_performers_create] = useState(false);
-  const [staffId_projects_performers_create, setStaffId_projects_performers_create] = useState('');
+  const [staffNameInput, setStaffNameInput] = useState('');
   const [addingPerformer_projects_performers_create, setAddingPerformer_projects_performers_create] = useState(false);
   
+  // Состояния для автодополнения
+  const [allStaff, setAllStaff] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  
   const fileInputRef = useRef(null);
+  const suggestionsRef = useRef(null);
 
   const formatDateForDisplay = (dateString) => {
     if (!dateString) return 'Не указана';
@@ -71,6 +77,57 @@ const ProjectCard = ({ useMockData }) => {
       maximumFractionDigits: 2
     }).format(num) + ' ₽';
   };
+
+  // Загрузка списка всех сотрудников
+  const loadStaffList = async () => {
+    try {
+      const staffListResult = await getStaffList(useMockData);
+      const staffList = staffListResult.employees || [];
+      setAllStaff(staffList);
+    } catch (error) {
+      console.error('Ошибка загрузки списка сотрудников:', error);
+    }
+  };
+
+  // Обработчик изменения ввода ФИО
+  const handleStaffInputChange = (e) => {
+    const value = e.target.value;
+    setStaffNameInput(value);
+    
+    if (value.length > 1) {
+      const searchQuery = value.toLowerCase().trim();
+      const filtered = allStaff.filter(staff => 
+        staff.name.toLowerCase().includes(searchQuery)
+      ).slice(0, 5);
+      
+      setSuggestions(filtered);
+      setShowSuggestions(filtered.length > 0);
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  // Обработчик выбора сотрудника из списка предложений
+  const handleSuggestionClick = (staff) => {
+    setStaffNameInput(staff.name);
+    setSuggestions([]);
+    setShowSuggestions(false);
+  };
+
+  // Закрытие списка предложений при клике вне его
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showSuggestions && suggestionsRef.current && !suggestionsRef.current.contains(event.target)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showSuggestions]);
 
   const handleSaveChanges = async () => {
     if (!project) return;
@@ -195,20 +252,42 @@ const ProjectCard = ({ useMockData }) => {
 
   const handleAddTeamMember = () => {
     setShowAddPerformerModal_projects_performers_create(true);
+    setStaffNameInput('');
+    setSuggestions([]);
+    setShowSuggestions(false);
+    
+    // Загружаем список сотрудников при открытии модального окна
+    loadStaffList();
   };
 
   const handleAddPerformerSubmit_projects_performers_create = async () => {
-    if (!staffId_projects_performers_create.trim() || !project) {
-      alert('Введите ID сотрудника');
+    const staffName = staffNameInput.trim();
+    
+    if (!staffName || !project) {
+      alert('Введите ФИО сотрудника');
       return;
     }
 
     setAddingPerformer_projects_performers_create(true);
     
     try {
-      console.log(`Добавляю сотрудника ${staffId_projects_performers_create} в проект ${project.id}`);
+      // Ищем точное совпадение
+      const searchQuery = staffName.toLowerCase();
+      const foundStaff = allStaff.find(staff => 
+        staff.name.toLowerCase() === searchQuery ||
+        staff.name.toLowerCase().includes(searchQuery)
+      );
       
-      const newPerformer = await addPerformerToProject(project.id, parseInt(staffId_projects_performers_create), useMockData);
+      if (!foundStaff) {
+        alert(`Сотрудник "${staffName}" не найден. Проверьте правильность ввода ФИО.`);
+        setAddingPerformer_projects_performers_create(false);
+        return;
+      }
+      
+      console.log(`Найден сотрудник: ${foundStaff.name}, ID: ${foundStaff.id}`);
+      
+      // Добавляем сотрудника по найденному ID
+      const newPerformer = await addPerformerToProject(project.id, parseInt(foundStaff.id), useMockData);
       
       console.log('Исполнитель добавлен:', newPerformer);
       
@@ -216,17 +295,18 @@ const ProjectCard = ({ useMockData }) => {
         ...prev,
         team: [...(prev.team || []), {
           id: newPerformer.id,
-          name: newPerformer.staff_name || `Сотрудник ${staffId_projects_performers_create}`,
-          role: newPerformer.staff_post || 'Исполнитель'
+          name: newPerformer.staff_name || foundStaff.name,
+          role: newPerformer.staff_post || foundStaff.position || 'Исполнитель'
         }]
       }));
       
       const updatedLogs = await getProjectLogs(project.id, useMockData);
       setChanges(updatedLogs);
       
-      setStaffId_projects_performers_create('');
+      setStaffNameInput('');
+      setShowSuggestions(false);
       setShowAddPerformerModal_projects_performers_create(false);
-      alert('Исполнитель успешно добавлен!');
+      alert(`Исполнитель "${foundStaff.name}" успешно добавлен!`);
       
     } catch (error) {
       console.error('Ошибка добавления исполнителя:', error);
@@ -274,30 +354,76 @@ const ProjectCard = ({ useMockData }) => {
     }
   };
 
-  const handleDownloadFile = (file) => {
-    if (!file.file) {
-      alert('Ссылка на файл недоступна');
-      return;
+const handleDownloadFile = async (file) => {
+  if (!file.file) {
+    alert('Ссылка на файл недоступна');
+    return;
+  }
+  
+  const fileUrl = file.file;
+  // Используем оригинальное имя файла для скачивания
+  const fileName = file.originalName || file.name || fileUrl.split('/').pop() || 'file.txt';
+  
+  try {
+    // Пытаемся скачать через fetch с авторизацией
+    const token = localStorage.getItem('access_token') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY2NjU0NjU3LCJpYXQiOjE3NjY1NjgyNTcsImp0aSI6IjhkZmI1MmI2ZjhlNDRmMzAhZDJlOTdmMTA3N2RkYmY1IiwidXNlcl9pDCI6IjMifQ.FBGdiqMY1jzb7UTkV-urikB5pHbwu6an4zYJ-GQLzAw';
+    
+    const response = await fetch(fileUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/octet-stream'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Ошибка загрузки файла: ${response.status}`);
     }
     
-    const fileUrl = file.file;
-    const fileName = file.name || fileUrl.split('/').pop() || 'file.txt';
+    const blob = await response.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
     
     const a = document.createElement('a');
-    a.href = fileUrl;
-    a.download = fileName;
-    a.target = '_blank';
+    a.href = blobUrl;
+    a.download = fileName; // Используем оригинальное имя
     a.style.display = 'none';
+    a.setAttribute('download', fileName);
     
     document.body.appendChild(a);
     a.click();
     
     setTimeout(() => {
+      window.URL.revokeObjectURL(blobUrl);
       document.body.removeChild(a);
-    }, 10);
+    }, 100);
     
-    console.log(`Скачивание файла: ${fileName}`);
-  };
+    console.log(`Файл скачан: ${fileName}`);
+    
+  } catch (error) {
+    console.error('Ошибка скачивания файла через fetch:', error);
+    
+    // Fallback метод
+    try {
+      const a = document.createElement('a');
+      a.href = fileUrl;
+      a.download = fileName; // Используем оригинальное имя
+      a.style.display = 'none';
+      a.setAttribute('download', fileName);
+      
+      document.body.appendChild(a);
+      a.click();
+      
+      setTimeout(() => {
+        document.body.removeChild(a);
+      }, 100);
+      
+      console.log(`Попытка скачивания через прямую ссылку: ${fileName}`);
+    } catch (fallbackError) {
+      console.error('Fallback метод тоже не сработал:', fallbackError);
+      alert('Не удалось скачать файл. Попробуйте позже или обратитесь к администратору.');
+    }
+  }
+};
 
   const renderTeamAvatars = (team) => {
     if (!team || team.length === 0) {
@@ -589,31 +715,33 @@ const ProjectCard = ({ useMockData }) => {
               </button>
             </div>
             <div className="files-list">
-              {project.files?.map(file => {
-                const fileName = file.name || (file.file ? file.file.split('/').pop() : 'Файл');
-                return (
-                  <div key={file.id} className="file-item">
-                    <div className="file-details">
-                      <span className="file-name" title={file.file}>
-                        {fileName}
-                      </span>
-                      {file.uploaded_at && (
-                        <span className="file-date">
-                          {new Date(file.uploaded_at).toLocaleDateString('ru-RU')}
-                        </span>
-                      )}
-                    </div>
-                    <button 
-                      className="file-download" 
-                      onClick={() => handleDownloadFile(file)}
-                      title="Скачать файл"
-                    >
-                      ↓
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
+  {project.files?.map(file => {
+    // Используем оригинальное имя файла
+    const fileName = file.name || file.originalName || (file.file ? file.file.split('/').pop() : 'Файл');
+    
+    return (
+      <div key={file.id} className="file-item">
+        <div className="file-details">
+          <span className="file-name" title={fileName}>
+            {fileName}
+          </span>
+          {file.uploaded_at && (
+            <span className="file-date">
+              {new Date(file.uploaded_at).toLocaleDateString('ru-RU')}
+            </span>
+          )}
+        </div>
+        <button 
+          className="file-download" 
+          onClick={() => handleDownloadFile(file)}
+          title="Скачать файл"
+        >
+          ↓
+        </button>
+      </div>
+    );
+  })}
+</div>
             <div className="files-count">
               Всего файлов: {project.files?.length || 0}
             </div>
@@ -635,23 +763,40 @@ const ProjectCard = ({ useMockData }) => {
               </button>
             </div>
             
-            <div className="modal-body_projects_performers_create">
-              <div className="form-group_projects_performers_create">
-                <label>ID сотрудника *</label>
+            <div className="modal-body_projects_performers_create" ref={suggestionsRef}>
+              <div className="form-group_projects_performers_create" style={{ position: 'relative' }}>
+                <label>ФИО сотрудника *</label>
                 <input
-                  type="number"
-                  value={staffId_projects_performers_create}
-                  onChange={(e) => setStaffId_projects_performers_create(e.target.value)}
-                  placeholder="Введите ID сотрудника"
+                  type="text"
+                  value={staffNameInput}
+                  onChange={handleStaffInputChange}
+                  placeholder="Начните вводить ФИО сотрудника"
                   disabled={addingPerformer_projects_performers_create}
-                  min="1"
+                  autoComplete="off"
                 />
-                <small>Укажите числовой ID сотрудника из системы</small>
+                <small>Введите имя и фамилию сотрудника. При вводе будут появляться подсказки.</small>
+                
+                {showSuggestions && suggestions.length > 0 && (
+                  <div className="suggestions-dropdown">
+                    {suggestions.map((staff, index) => (
+                      <div 
+                        key={staff.id || index}
+                        className="suggestion-item"
+                        onClick={() => handleSuggestionClick(staff)}
+                      >
+                        <div className="suggestion-name">{staff.name}</div>
+                        {staff.position && (
+                          <div className="suggestion-position">{staff.position}</div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               
               <div className="form-group_projects_performers_create">
                 <p style={{ color: '#666', fontSize: '1.4vh' }}>
-                  <strong>Примечание:</strong> ID сотрудника можно получить из списка сотрудников.
+                  <strong>Примечание:</strong> Начните вводить ФИО сотрудника и выберите его из списка. 
                   После добавления сотрудник появится в команде проекта.
                 </p>
               </div>

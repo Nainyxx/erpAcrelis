@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "frappe-gantt": "^1.0.4",
+    "react-router-dom": "^6.30.2"
+  }
+}

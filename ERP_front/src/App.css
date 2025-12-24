@@ -41,3 +41,114 @@ body {
     box-sizing: border-box;
     height: 100%;
 }
+
+/* ДОБАВЛЕННЫЕ СТИЛИ ДЛЯ УВЕДОМЛЕНИЙ */
+.notifications-container {
+  position: fixed;
+  top: 12vh;
+  right: 2vh;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 1vh;
+  pointer-events: none;
+}
+
+.notification {
+  position: relative;
+  padding: 1.5vh 2vh;
+  border-radius: 0.8vh;
+  box-shadow: 0 0.3vh 0.8vh rgba(0, 0, 0, 0.2);
+  min-width: 30vh;
+  max-width: 40vh;
+  animation: slideIn 0.3s ease-out;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 1.6vh;
+  line-height: 1.4;
+  pointer-events: auto;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.notification-content {
+  flex: 1;
+  padding-right: 2vh;
+}
+
+.notification-close {
+  background: none;
+  border: none;
+  font-size: 2.2vh;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.7;
+  padding: 0;
+  width: 2.5vh;
+  height: 2.5vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  font-weight: bold;
+}
+
+.notification-close:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Типы уведомлений */
+.notification-info {
+  background: #0066CC;
+  color: white;
+  border-left: 0.5vh solid #004C99;
+}
+
+.notification-success {
+  background: #00A86B;
+  color: white;
+  border-left: 0.5vh solid #008759;
+}
+
+.notification-warning {
+  background: #FF9500;
+  color: white;
+  border-left: 0.5vh solid #CC7700;
+}
+
+.notification-error {
+  background: #FF3B30;
+  color: white;
+  border-left: 0.5vh solid #CC3026;
+}
+
+/* Анимация исчезновения */
+.notification-leave {
+  animation: slideOut 0.3s ease-in forwards;
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}

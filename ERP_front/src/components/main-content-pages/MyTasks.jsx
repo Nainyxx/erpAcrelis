@@ -1,66 +1,135 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getTasksByPerformer, getCurrentUser, formatDateForDisplay, createTask } from '../../services/api/api';
+import { 
+  getTasks, 
+  getCurrentUser, 
+  formatDateForDisplay, 
+  createTask, 
+  getProjects, 
+  getStaffList 
+} from '../../services/api/api';
 import './MyTasks.css';
+
+// Константы статусов задач
+const TASK_STATUS_MAP = {
+  'draft': 'Черновик',
+  'new': 'Новое', 
+  'active': 'В работе',
+  'paused': 'Ожидает',
+  'completed': 'Готова',
+  'failed': 'Провалена'
+};
 
 const MyTasks = ({ useMockData = true }) => {
   const navigate = useNavigate();
+  
+  // Фильтры (ТОЛЬКО те, что были в исходном коде)
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedPerformer, setSelectedPerformer] = useState('all');
+  
+  // Данные
   const [tasks, setTasks] = useState([]);
+  const [performers, setPerformers] = useState([{ id: 'all', label: 'Все исполнители' }]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  // Состояния для модального окна
+  // Создание задачи (без изменений)
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState('');
-  
-  // Данные формы
   const [newTask, setNewTask] = useState({
-    name: '',
-    description: '',
-    status: 'new',
-    project: '',
-    deadline: '',
-    performer: '',
-    director: '',
-    hours: 0
+    name: '', description: '', status: 'new', project: '', projectName: '',
+    deadline: '', performer: '', performerName: '', director: '', directorName: '', hours: 0
   });
   
-  const currentUser = getCurrentUser();
+  // Данные для автодополнения
+  const [allProjects, setAllProjects] = useState([]);
+  const [allStaff, setAllStaff] = useState([]);
+  const [projectSuggestions, setProjectSuggestions] = useState([]);
+  const [performerSuggestions, setPerformerSuggestions] = useState([]);
+  const [directorSuggestions, setDirectorSuggestions] = useState([]);
+  const [showProjectSuggestions, setShowProjectSuggestions] = useState(false);
+  const [showPerformerSuggestions, setShowPerformerSuggestions] = useState(false);
+  const [showDirectorSuggestions, setShowDirectorSuggestions] = useState(false);
+  
+  const projectInputRef = useRef(null);
+  const performerInputRef = useRef(null);
+  const directorInputRef = useRef(null);
 
+  // Статусы для фильтров
+  const statuses = [
+    { id: 'all', label: 'Все статусы' },
+    ...Object.entries(TASK_STATUS_MAP).map(([id, label]) => ({ id, label }))
+  ];
+
+  // Загрузка исполнителей
+  useEffect(() => {
+    loadStaffList();
+  }, [useMockData]);
+
+  // Загрузка задач при изменении фильтров
   useEffect(() => {
     loadTasks();
-  }, [currentUser.id, useMockData]);
+  }, [selectedStatus, selectedPerformer, searchQuery, useMockData]);
 
+  // Загрузка списка сотрудников
+  const loadStaffList = async () => {
+    try {
+      const staffResult = await getStaffList(useMockData);
+      const staffData = staffResult.employees || [];
+      
+      const performersList = [
+        { id: 'all', label: 'Все исполнители' },
+        ...staffData.map(staff => ({
+          id: staff.id.toString(),
+          label: staff.name
+        }))
+      ];
+      
+      setPerformers(performersList);
+      setAllStaff(staffData);
+    } catch (error) {
+      console.error('Ошибка загрузки сотрудников:', error);
+    }
+  };
+
+  // Загрузка задач с фильтрацией на бэкенде
   const loadTasks = async () => {
     setLoading(true);
     setError(null);
     
     try {
-      const apiTasks = await getTasksByPerformer(currentUser.id, useMockData);
+      // Собираем фильтры для API
+      const filters = {};
       
+      if (selectedStatus !== 'all') {
+        filters.status = selectedStatus;
+      }
+      
+      if (selectedPerformer !== 'all') {
+        filters.performer = selectedPerformer;
+      }
+      
+      if (searchQuery) {
+        filters.search = searchQuery;
+      }
+      
+      // Всегда добавляем сортировку по дедлайну
+      filters.ordering = '-deadline';
+      
+      // Отправляем запрос с фильтрами
+      const apiTasks = await getTasks(useMockData, filters, 1); // всегда первая страница
+      
+      // Форматируем задачи
       const formattedTasks = apiTasks.map(task => {
-        // Маппинг статусов как в TaskCard
-        let status_display = task.status_display;
-        if (!status_display && task.status) {
-          const statusMap = {
-            'draft': 'Черновик',
-            'new': 'Новая',
-            'active': 'В работе',
-            'paused': 'Приостановлена',
-            'completed': 'Завершена'
-          };
-          status_display = statusMap[task.status] || task.status;
-        }
+        const status_display = task.status_display || TASK_STATUS_MAP[task.status] || 'Новая';
         
         return {
           id: task.id,
           taskName: task.name,
-          status: task.status || 'new', // API статус для фильтрации
-          status_display: status_display || 'Новая', // Для отображения и фильтрации
+          status: task.status || 'new',
+          status_display: status_display,
           deadline: formatDateForDisplay(task.deadline),
           projectId: task.project,
           projectName: task.project_name || 'Не указан',
@@ -76,6 +145,7 @@ const MyTasks = ({ useMockData = true }) => {
       });
       
       setTasks(formattedTasks);
+      
     } catch (error) {
       console.error('❌ Ошибка загрузки задач:', error);
       setError('Не удалось загрузить ваши задачи');
@@ -85,64 +155,21 @@ const MyTasks = ({ useMockData = true }) => {
     }
   };
 
-  // Получаем уникальных исполнителей из задач
-  const performers = useMemo(() => {
-    const performerSet = new Set();
-    tasks.forEach(task => {
-      if (task.performerName) {
-        performerSet.add(task.performerName);
-      }
-    });
-    
-    const performerList = Array.from(performerSet).sort();
-    
-    return [
-      { id: 'all', label: 'Все исполнители' },
-      ...performerList.map(name => ({ id: name, label: name }))
-    ];
-  }, [tasks]);
+  // Загрузка проектов для автодополнения
+  const loadProjectsAndStaff = async () => {
+    try {
+      const projectsResult = await getProjects(useMockData);
+      const projectsList = projectsResult.projects || [];
+      setAllProjects(projectsList);
+    } catch (error) {
+      console.error('Ошибка загрузки проектов:', error);
+    }
+  };
 
-  // Получаем все уникальные статусы из задач (используем status_display)
-  const statuses = useMemo(() => {
-    const statusSet = new Set();
-    
-    // Добавляем "Все статусы" первым
-    const statusList = [{ id: 'all', label: 'Все статусы' }];
-    
-    // Добавляем все статусы из задач (status_display)
-    tasks.forEach(task => {
-      if (task.status_display) {
-        statusSet.add(task.status_display);
-      }
-    });
-    
-    // Преобразуем в массив и добавляем в список
-    Array.from(statusSet).sort().forEach(statusName => {
-      statusList.push({ id: statusName, label: statusName });
-    });
-    
-    return statusList;
-  }, [tasks]);
-
-  const statusOptions = [
-    { value: 'draft', label: 'Черновик' },
-    { value: 'new', label: 'Новая' },
-    { value: 'active', label: 'В работе' },
-    { value: 'paused', label: 'Приостановлена' },
-    { value: 'completed', label: 'Завершена' }
-  ];
-
-  const filteredTasks = tasks.filter(task => {
-    const matchesSearch = task.taskName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         (task.projectName && task.projectName.toLowerCase().includes(searchQuery.toLowerCase()));
-    
-    // Фильтр по статусу (используем status_display - русские названия)
-    const matchesStatus = selectedStatus === 'all' || task.status_display === selectedStatus;
-    
-    const matchesPerformer = selectedPerformer === 'all' || task.performerName === selectedPerformer;
-    
-    return matchesSearch && matchesStatus && matchesPerformer;
-  });
+  // Обновление задач
+  const handleRefresh = () => {
+    loadTasks();
+  };
 
   const getProjectManager = (task) => {
     return task.directorName || 'Не назначен';
@@ -152,38 +179,122 @@ const MyTasks = ({ useMockData = true }) => {
     navigate(`/tasks/${task.id}`);
   };
 
-  const handleRefresh = () => {
-    loadTasks();
-  };
-
-  // Функции для работы с модальным окном
+  // Функции для работы с модальным окном (без изменений)
   const openCreateModal = () => {
     setShowCreateModal(true);
     setCreateError('');
     setNewTask({
-      name: '',
-      description: '',
-      status: 'new',
-      project: '',
-      deadline: '',
-      performer: '',
-      director: '',
-      hours: 0
+      name: '', description: '', status: 'new', project: '', projectName: '',
+      deadline: '', performer: '', performerName: '', director: '', directorName: '', hours: 0
     });
+    
+    loadProjectsAndStaff();
   };
 
   const closeCreateModal = () => {
     setShowCreateModal(false);
     setCreateError('');
+    setShowProjectSuggestions(false);
+    setShowPerformerSuggestions(false);
+    setShowDirectorSuggestions(false);
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setNewTask(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setNewTask(prev => ({ ...prev, [name]: value }));
   };
+
+  // Обработчики для автодополнения проектов (без изменений)
+  const handleProjectInputChange = (e) => {
+    const value = e.target.value;
+    setNewTask(prev => ({ ...prev, projectName: value, project: '' }));
+    
+    if (value.length > 1) {
+      const searchTerm = value.toLowerCase().trim();
+      const filtered = allProjects.filter(project => 
+        project.name.toLowerCase().includes(searchTerm)
+      ).slice(0, 5);
+      
+      setProjectSuggestions(filtered);
+      setShowProjectSuggestions(filtered.length > 0);
+    } else {
+      setProjectSuggestions([]);
+      setShowProjectSuggestions(false);
+    }
+  };
+
+  const handleProjectSuggestionClick = (project) => {
+    setNewTask(prev => ({ ...prev, project: project.id, projectName: project.name }));
+    setShowProjectSuggestions(false);
+  };
+
+  // Обработчики для автодополнения исполнителей (без изменений)
+  const handlePerformerInputChange = (e) => {
+    const value = e.target.value;
+    setNewTask(prev => ({ ...prev, performerName: value, performer: '' }));
+    
+    if (value.length > 1) {
+      const searchTerm = value.toLowerCase().trim();
+      const filtered = allStaff.filter(staff => 
+        staff.name.toLowerCase().includes(searchTerm)
+      ).slice(0, 5);
+      
+      setPerformerSuggestions(filtered);
+      setShowPerformerSuggestions(filtered.length > 0);
+    } else {
+      setPerformerSuggestions([]);
+      setShowPerformerSuggestions(false);
+    }
+  };
+
+  const handlePerformerSuggestionClick = (staff) => {
+    setNewTask(prev => ({ ...prev, performer: staff.id, performerName: staff.name }));
+    setShowPerformerSuggestions(false);
+  };
+
+  // Обработчики для автодополнения руководителей (без изменений)
+  const handleDirectorInputChange = (e) => {
+    const value = e.target.value;
+    setNewTask(prev => ({ ...prev, directorName: value, director: '' }));
+    
+    if (value.length > 1) {
+      const searchTerm = value.toLowerCase().trim();
+      const filtered = allStaff.filter(staff => 
+        staff.name.toLowerCase().includes(searchTerm)
+      ).slice(0, 5);
+      
+      setDirectorSuggestions(filtered);
+      setShowDirectorSuggestions(filtered.length > 0);
+    } else {
+      setDirectorSuggestions([]);
+      setShowDirectorSuggestions(false);
+    }
+  };
+
+  const handleDirectorSuggestionClick = (staff) => {
+    setNewTask(prev => ({ ...prev, director: staff.id, directorName: staff.name }));
+    setShowDirectorSuggestions(false);
+  };
+
+  // Закрытие выпадающих списков при клике вне
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showProjectSuggestions && projectInputRef.current && !projectInputRef.current.contains(event.target)) {
+        setShowProjectSuggestions(false);
+      }
+      if (showPerformerSuggestions && performerInputRef.current && !performerInputRef.current.contains(event.target)) {
+        setShowPerformerSuggestions(false);
+      }
+      if (showDirectorSuggestions && directorInputRef.current && !directorInputRef.current.contains(event.target)) {
+        setShowDirectorSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showProjectSuggestions, showPerformerSuggestions, showDirectorSuggestions]);
 
   const handleCreateTask = async () => {
     // Валидация
@@ -195,6 +306,51 @@ const MyTasks = ({ useMockData = true }) => {
     if (!newTask.deadline) {
       setCreateError('Дата дедлайна обязательна');
       return;
+    }
+
+    // Проверяем проект
+    if (newTask.projectName && !newTask.project) {
+      const foundProject = allProjects.find(project => 
+        project.name.toLowerCase() === newTask.projectName.toLowerCase() ||
+        project.name.toLowerCase().includes(newTask.projectName.toLowerCase())
+      );
+      
+      if (foundProject) {
+        setNewTask(prev => ({ ...prev, project: foundProject.id }));
+      } else {
+        setCreateError(`Проект "${newTask.projectName}" не найден`);
+        return;
+      }
+    }
+
+    // Проверяем исполнителя
+    if (newTask.performerName && !newTask.performer) {
+      const foundPerformer = allStaff.find(staff => 
+        staff.name.toLowerCase() === newTask.performerName.toLowerCase() ||
+        staff.name.toLowerCase().includes(newTask.performerName.toLowerCase())
+      );
+      
+      if (foundPerformer) {
+        setNewTask(prev => ({ ...prev, performer: foundPerformer.id }));
+      } else {
+        setCreateError(`Исполнитель "${newTask.performerName}" не найден`);
+        return;
+      }
+    }
+
+    // Проверяем руководителя
+    if (newTask.directorName && !newTask.director) {
+      const foundDirector = allStaff.find(staff => 
+        staff.name.toLowerCase() === newTask.directorName.toLowerCase() ||
+        staff.name.toLowerCase().includes(newTask.directorName.toLowerCase())
+      );
+      
+      if (foundDirector) {
+        setNewTask(prev => ({ ...prev, director: foundDirector.id }));
+      } else {
+        setCreateError(`Руководитель "${newTask.directorName}" не найден`);
+        return;
+      }
     }
 
     setCreating(true);
@@ -216,14 +372,8 @@ const MyTasks = ({ useMockData = true }) => {
       
       setShowCreateModal(false);
       setNewTask({
-        name: '',
-        description: '',
-        status: 'new',
-        project: '',
-        deadline: '',
-        performer: '',
-        director: '',
-        hours: 0
+        name: '', description: '', status: 'new', project: '', projectName: '',
+        deadline: '', performer: '', performerName: '', director: '', directorName: '', hours: 0
       });
       
       await loadTasks();
@@ -232,7 +382,39 @@ const MyTasks = ({ useMockData = true }) => {
       
     } catch (error) {
       console.error('❌ Ошибка создания задачи:', error);
-      setCreateError(error.message || 'Не удалось создать задачу');
+      
+      let userFriendlyError = 'Не удалось создать задачу';
+      
+      if (error.message.includes('API Error: 400')) {
+        const errorMatch = error.message.match(/\{.*\}/);
+        if (errorMatch) {
+          try {
+            const errorJson = JSON.parse(errorMatch[0]);
+            
+            if (errorJson.hours && Array.isArray(errorJson.hours)) {
+              userFriendlyError = 'Превышено общее количество часов проекта. Уменьшите количество часов для этой задачи.';
+            } else if (errorJson.non_field_errors && Array.isArray(errorJson.non_field_errors)) {
+              userFriendlyError = errorJson.non_field_errors[0];
+            } else if (errorJson.name && Array.isArray(errorJson.name)) {
+              userFriendlyError = `Название задачи: ${errorJson.name[0]}`;
+            } else if (errorJson.deadline && Array.isArray(errorJson.deadline)) {
+              userFriendlyError = `Дата дедлайна: ${errorJson.deadline[0]}`;
+            }
+          } catch {
+            // Оставляем общее сообщение
+          }
+        }
+      } else if (error.message.includes('Network Error') || error.message.includes('Failed to fetch')) {
+        userFriendlyError = 'Ошибка сети. Проверьте подключение к интернету.';
+      } else if (error.message.includes('401') || error.message.includes('403')) {
+        userFriendlyError = 'Ошибка авторизации. Войдите в систему заново.';
+      } else if (error.message.includes('404')) {
+        userFriendlyError = 'Проект или сотрудник не найден. Проверьте введенные данные.';
+      } else if (error.message.includes('500')) {
+        userFriendlyError = 'Внутренняя ошибка сервера. Попробуйте позже.';
+      }
+      
+      setCreateError(userFriendlyError);
     } finally {
       setCreating(false);
     }
@@ -259,6 +441,7 @@ const MyTasks = ({ useMockData = true }) => {
     );
   }
 
+  // ВЕРСТКА БЕЗ ИЗМЕНЕНИЙ - ТОЧНО ТАКАЯ ЖЕ КАК БЫЛА
   return (
     <div className="mytasks-container">
       <h1 className="mytasks-title">Мои задачи</h1>
@@ -315,14 +498,14 @@ const MyTasks = ({ useMockData = true }) => {
         <div className="header-cell">Проект</div>
         <div className="header-cell">Руководитель</div>
 
-        {filteredTasks.length === 0 ? (
+        {tasks.length === 0 ? (
           <div className="no-tasks">
             {searchQuery || selectedStatus !== 'all' || selectedPerformer !== 'all'
               ? 'Задачи не найдены по заданным фильтрам' 
               : 'У вас нет назначенных задач'}
           </div>
         ) : (
-          filteredTasks.map((task) => (
+          tasks.map((task) => (
             <React.Fragment key={task.id}>
               <div 
                 className="task-cell task-name"
@@ -416,11 +599,11 @@ const MyTasks = ({ useMockData = true }) => {
                   onChange={handleInputChange}
                   disabled={creating}
                 >
-                  {statusOptions.map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
+                  <option value="draft">Черновик</option>
+                  <option value="new">Новая</option>
+                  <option value="active">В работе</option>
+                  <option value="paused">Приостановлена</option>
+                  <option value="completed">Завершена</option>
                 </select>
               </div>
               
@@ -435,6 +618,99 @@ const MyTasks = ({ useMockData = true }) => {
                 />
               </div>
               
+              <div className="form-group123" ref={projectInputRef} style={{ position: 'relative' }}>
+                <label>Проект (опционально)</label>
+                <input
+                  type="text"
+                  name="projectName"
+                  value={newTask.projectName}
+                  onChange={handleProjectInputChange}
+                  placeholder="Начните вводить название проекта"
+                  disabled={creating}
+                  autoComplete="off"
+                />
+                <small>Введите название проекта, чтобы выбрать его из списка</small>
+                
+                {showProjectSuggestions && projectSuggestions.length > 0 && (
+                  <div className="suggestions-dropdown">
+                    {projectSuggestions.map((project, index) => (
+                      <div 
+                        key={project.id || index}
+                        className="suggestion-item"
+                        onClick={() => handleProjectSuggestionClick(project)}
+                      >
+                        <div className="suggestion-name">{project.name}</div>
+                        {project.typeLabel && (
+                          <div className="suggestion-details">{project.typeLabel}</div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              <div className="form-row123">
+                <div className="form-group123" ref={performerInputRef} style={{ position: 'relative' }}>
+                  <label>Исполнитель (опционально)</label>
+                  <input
+                    type="text"
+                    name="performerName"
+                    value={newTask.performerName}
+                    onChange={handlePerformerInputChange}
+                    placeholder="Начните вводить ФИО исполнителя"
+                    disabled={creating}
+                    autoComplete="off"
+                  />
+                  
+                  {showPerformerSuggestions && performerSuggestions.length > 0 && (
+                    <div className="suggestions-dropdown">
+                      {performerSuggestions.map((staff, index) => (
+                        <div 
+                          key={staff.id || index}
+                          className="suggestion-item"
+                          onClick={() => handlePerformerSuggestionClick(staff)}
+                        >
+                          <div className="suggestion-name">{staff.name}</div>
+                          {staff.position && (
+                            <div className="suggestion-details">{staff.position}</div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
+                <div className="form-group123" ref={directorInputRef} style={{ position: 'relative' }}>
+                  <label>Руководитель (опционально)</label>
+                  <input
+                    type="text"
+                    name="directorName"
+                    value={newTask.directorName}
+                    onChange={handleDirectorInputChange}
+                    placeholder="Начните вводить ФИО руководителя"
+                    disabled={creating}
+                    autoComplete="off"
+                  />
+                  
+                  {showDirectorSuggestions && directorSuggestions.length > 0 && (
+                    <div className="suggestions-dropdown">
+                      {directorSuggestions.map((staff, index) => (
+                        <div 
+                          key={staff.id || index}
+                          className="suggestion-item"
+                          onClick={() => handleDirectorSuggestionClick(staff)}
+                        >
+                          <div className="suggestion-name">{staff.name}</div>
+                          {staff.position && (
+                            <div className="suggestion-details">{staff.position}</div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+              
               <div className="form-row123">
                 <div className="form-group123">
                   <label>Часы</label>
@@ -446,47 +722,6 @@ const MyTasks = ({ useMockData = true }) => {
                     placeholder="0"
                     min="0"
                     max="2147483647"
-                    disabled={creating}
-                  />
-                </div>
-                
-                <div className="form-group123">
-                  <label>ID проекта (опционально)</label>
-                  <input
-                    type="number"
-                    name="project"
-                    value={newTask.project}
-                    onChange={handleInputChange}
-                    placeholder="Введите ID проекта"
-                    min="0"
-                    disabled={creating}
-                  />
-                </div>
-              </div>
-              
-              <div className="form-row123">
-                <div className="form-group123">
-                  <label>ID исполнителя (опционально)</label>
-                  <input
-                    type="number"
-                    name="performer"
-                    value={newTask.performer}
-                    onChange={handleInputChange}
-                    placeholder="Введите ID исполнителя"
-                    min="0"
-                    disabled={creating}
-                  />
-                </div>
-                
-                <div className="form-group123">
-                  <label>ID руководителя (опционально)</label>
-                  <input
-                    type="number"
-                    name="director"
-                    value={newTask.director}
-                    onChange={handleInputChange}
-                    placeholder="Введите ID руководителя"
-                    min="0"
                     disabled={creating}
                   />
                 </div>

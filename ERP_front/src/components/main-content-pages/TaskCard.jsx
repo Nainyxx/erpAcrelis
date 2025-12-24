@@ -41,7 +41,7 @@ const TaskCard = ({ useMockData = false }) => {
   const statusOptions = [
     { value: 'new', label: 'Новое', progress: 20, apiValue: 'new' },
     { value: 'active', label: 'В работе', progress: 60, apiValue: 'active' },
-    { value: 'paused', label: 'Отложено', progress: 0, apiValue: 'paused' },
+    { value: 'paused', label: 'Ожидает', progress: 0, apiValue: 'paused' },
     { value: 'completed', label: 'Завершено', progress: 100, apiValue: 'completed' },
     { value: 'draft', label: 'Черновик', progress: 10, apiValue: 'draft' }
   ];
