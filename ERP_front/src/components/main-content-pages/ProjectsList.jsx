@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { getProjects, createProject } from '../../services/api/api';
 import './ProjectsList.css';
 
 const ProjectsList = ({ useMockData = true, onProjectSelect }) => {
+  const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState('all');
   const [projects, setProjects] = useState([]);
@@ -24,16 +25,32 @@ const ProjectsList = ({ useMockData = true, onProjectSelect }) => {
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState('');
 
+  const searchTimeoutRef = useRef(null);
+
   const loadProjects = async () => {
     setLoading(true);
     setError(null);
     
     try {
-      console.log(`🔄 Загружаю проекты: useMockData = ${useMockData}`);
+      console.log(`🔄 Загружаю проекты: useMockData = ${useMockData}, тип = ${selectedType}, поиск = ${searchQuery}`);
       
-      const { projects: loadedProjects, projectTypes: loadedTypes } = await getProjects(useMockData);
+      // Создаем объект фильтров для API
+      const filters = {};
       
-      console.log(`✅ Получено ${loadedProjects.length} проектов`);
+      // Если выбран не "все проекты", добавляем фильтр по типу
+      if (selectedType !== 'all') {
+        filters.type = selectedType;
+      }
+      
+      // Если есть поисковый запрос, добавляем фильтр поиска
+      if (searchQuery.trim()) {
+        filters.search = searchQuery.trim();
+      }
+      
+      // Теперь getProjects получает фильтры, API само отфильтрует данные на сервере
+      const { projects: loadedProjects, projectTypes: loadedTypes } = await getProjects(useMockData, filters);
+      
+      console.log(`✅ Получено ${loadedProjects.length} проектов с фильтрами`);
       
       setProjects(loadedProjects);
       setProjectTypes(loadedTypes);
@@ -45,6 +62,37 @@ const ProjectsList = ({ useMockData = true, onProjectSelect }) => {
       setProjectTypes([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Обработчик изменения поиска с дебаунсом
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchInput(value);
+    
+    // Очищаем предыдущий таймер
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    
+    // Устанавливаем новый таймер на 1.5 секунды
+    searchTimeoutRef.current = setTimeout(() => {
+      if (value !== searchQuery) {
+        setSearchQuery(value);
+      }
+    }, 1500);
+  };
+
+  // При потере фокуса - сразу делаем поиск (если текст изменился)
+  const handleSearchBlur = () => {
+    // Очищаем таймер дебаунса
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    
+    // Если текст изменился - делаем поиск сразу
+    if (searchInput !== searchQuery) {
+      setSearchQuery(searchInput);
     }
   };
 
@@ -100,15 +148,19 @@ const ProjectsList = ({ useMockData = true, onProjectSelect }) => {
     }
   };
 
+  // Загружаем проекты при изменении фильтров
   useEffect(() => {
     loadProjects();
-  }, [useMockData]);
+  }, [useMockData, selectedType, searchQuery]);
 
-  const filteredProjects = projects.filter(project => {
-    const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesType = selectedType === 'all' || project.type === selectedType;
-    return matchesSearch && matchesType;
-  });
+  // Очищаем таймер при размонтировании
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
 
 const generateAvatar = (name) => {
   // Обработка для поля staff_name
@@ -226,8 +278,9 @@ const renderTeamAvatars = (team) => {
               type="text"
               placeholder="Поиск проектов..."
               className="search-input"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={searchInput}
+              onChange={handleSearchChange}
+              onBlur={handleSearchBlur}
             />
           </div>
         </div>
@@ -247,14 +300,14 @@ const renderTeamAvatars = (team) => {
         <div className="header-cell">Статус</div>
         <div className="header-cell">Часы</div>
 
-        {filteredProjects.length === 0 ? (
+        {projects.length === 0 ? (
           <div className="no-projects">
             {searchQuery || selectedType !== 'all' 
               ? 'Проекты не найдены по заданным фильтрам' 
               : 'Нет доступных проектов'}
           </div>
         ) : (
-          filteredProjects.map((project) => (
+          projects.map((project) => (
             <div className="project-row" key={project.id}>
               <div onClick={() => onProjectSelect(project)}>
                 <div className="project-name-text">{project.name}</div>

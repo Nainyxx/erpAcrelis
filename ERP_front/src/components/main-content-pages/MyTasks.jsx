@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   getTasks, 
   getCurrentUser, 
@@ -16,17 +16,27 @@ const TASK_STATUS_MAP = {
   'new': 'Новое', 
   'active': 'В работе',
   'paused': 'Ожидает',
-  'completed': 'Готова',
-  'failed': 'Провалена'
+  'completed': 'Готово',
+  'failed': 'Провалено'
 };
 
 const MyTasks = ({ useMockData = true }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   
-  // Фильтры (ТОЛЬКО те, что были в исходном коде)
+  // Получаем параметры из URL для фильтрации
+  const queryParams = new URLSearchParams(location.search);
+  const performerFromUrl = queryParams.get('performer');
+  const performerNameFromUrl = queryParams.get('performerName');
+  
+  // Поиск с дебаунсом
+  const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const searchTimeoutRef = useRef(null);
+  
+  // Фильтры
   const [selectedStatus, setSelectedStatus] = useState('all');
-  const [selectedPerformer, setSelectedPerformer] = useState('all');
+  const [selectedPerformer, setSelectedPerformer] = useState(performerFromUrl || 'all');
   
   // Данные
   const [tasks, setTasks] = useState([]);
@@ -34,13 +44,21 @@ const MyTasks = ({ useMockData = true }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  // Создание задачи (без изменений)
+  // Создание задачи
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState('');
   const [newTask, setNewTask] = useState({
-    name: '', description: '', status: 'new', project: '', projectName: '',
-    deadline: '', performer: '', performerName: '', director: '', directorName: '', hours: 0
+    name: '', 
+    description: '', 
+    project: '', 
+    projectName: '',
+    deadline: '', 
+    performer: '', 
+    performerName: '', 
+    director: '', 
+    directorName: '', 
+    hours: 0
   });
   
   // Данные для автодополнения
@@ -71,7 +89,16 @@ const MyTasks = ({ useMockData = true }) => {
   // Загрузка задач при изменении фильтров
   useEffect(() => {
     loadTasks();
-  }, [selectedStatus, selectedPerformer, searchQuery, useMockData]);
+  }, [useMockData, selectedStatus, selectedPerformer, searchQuery]);
+
+  // Очищаем таймер при размонтировании
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Загрузка списка сотрудников
   const loadStaffList = async () => {
@@ -79,7 +106,8 @@ const MyTasks = ({ useMockData = true }) => {
       const staffResult = await getStaffList(useMockData);
       const staffData = staffResult.employees || [];
       
-      const performersList = [
+      // Создаем список исполнителей
+      let performersList = [
         { id: 'all', label: 'Все исполнители' },
         ...staffData.map(staff => ({
           id: staff.id.toString(),
@@ -87,10 +115,57 @@ const MyTasks = ({ useMockData = true }) => {
         }))
       ];
       
+      // Если есть фильтр из URL, добавляем его в список если нет
+      if (performerFromUrl && performerFromUrl !== 'all' && performerNameFromUrl) {
+        const exists = performersList.find(p => p.id === performerFromUrl);
+        if (!exists) {
+          performersList = [
+            { id: 'all', label: 'Все исполнители' },
+            { id: performerFromUrl, label: performerNameFromUrl },
+            ...staffData.map(staff => ({
+              id: staff.id.toString(),
+              label: staff.name
+            }))
+          ];
+        }
+      }
+      
       setPerformers(performersList);
       setAllStaff(staffData);
+      
     } catch (error) {
       console.error('Ошибка загрузки сотрудников:', error);
+    }
+  };
+
+  // Обработчик изменения поиска с дебаунсом
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchInput(value);
+    
+    // Очищаем предыдущий таймер
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    
+    // Устанавливаем новый таймер на 1.5 секунды
+    searchTimeoutRef.current = setTimeout(() => {
+      if (value !== searchQuery) {
+        setSearchQuery(value);
+      }
+    }, 1500);
+  };
+
+  // При потере фокуса - сразу делаем поиск (если текст изменился)
+  const handleSearchBlur = () => {
+    // Очищаем таймер дебаунса
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    
+    // Если текст изменился - делаем поиск сразу
+    if (searchInput !== searchQuery) {
+      setSearchQuery(searchInput);
     }
   };
 
@@ -119,7 +194,7 @@ const MyTasks = ({ useMockData = true }) => {
       filters.ordering = '-deadline';
       
       // Отправляем запрос с фильтрами
-      const apiTasks = await getTasks(useMockData, filters, 1); // всегда первая страница
+      const apiTasks = await getTasks(useMockData, filters);
       
       // Форматируем задачи
       const formattedTasks = apiTasks.map(task => {
@@ -179,13 +254,21 @@ const MyTasks = ({ useMockData = true }) => {
     navigate(`/tasks/${task.id}`);
   };
 
-  // Функции для работы с модальным окном (без изменений)
+  // Функции для работы с модальным окном
   const openCreateModal = () => {
     setShowCreateModal(true);
     setCreateError('');
     setNewTask({
-      name: '', description: '', status: 'new', project: '', projectName: '',
-      deadline: '', performer: '', performerName: '', director: '', directorName: '', hours: 0
+      name: '', 
+      description: '', 
+      project: '', 
+      projectName: '',
+      deadline: '', 
+      performer: '', 
+      performerName: '', 
+      director: '', 
+      directorName: '', 
+      hours: 0
     });
     
     loadProjectsAndStaff();
@@ -204,7 +287,7 @@ const MyTasks = ({ useMockData = true }) => {
     setNewTask(prev => ({ ...prev, [name]: value }));
   };
 
-  // Обработчики для автодополнения проектов (без изменений)
+  // Обработчики для автодополнения проектов
   const handleProjectInputChange = (e) => {
     const value = e.target.value;
     setNewTask(prev => ({ ...prev, projectName: value, project: '' }));
@@ -228,7 +311,7 @@ const MyTasks = ({ useMockData = true }) => {
     setShowProjectSuggestions(false);
   };
 
-  // Обработчики для автодополнения исполнителей (без изменений)
+  // Обработчики для автодополнения исполнителей
   const handlePerformerInputChange = (e) => {
     const value = e.target.value;
     setNewTask(prev => ({ ...prev, performerName: value, performer: '' }));
@@ -252,7 +335,7 @@ const MyTasks = ({ useMockData = true }) => {
     setShowPerformerSuggestions(false);
   };
 
-  // Обработчики для автодополнения руководителей (без изменений)
+  // Обработчики для автодополнения руководителей
   const handleDirectorInputChange = (e) => {
     const value = e.target.value;
     setNewTask(prev => ({ ...prev, directorName: value, director: '' }));
@@ -360,7 +443,7 @@ const MyTasks = ({ useMockData = true }) => {
       const taskData = {
         name: newTask.name,
         description: newTask.description || newTask.name,
-        status: newTask.status,
+        status: 'new',
         project: newTask.project || null,
         deadline: newTask.deadline + 'T00:00:00+03:00',
         performer: newTask.performer || null,
@@ -372,8 +455,16 @@ const MyTasks = ({ useMockData = true }) => {
       
       setShowCreateModal(false);
       setNewTask({
-        name: '', description: '', status: 'new', project: '', projectName: '',
-        deadline: '', performer: '', performerName: '', director: '', directorName: '', hours: 0
+        name: '', 
+        description: '', 
+        project: '', 
+        projectName: '',
+        deadline: '', 
+        performer: '', 
+        performerName: '', 
+        director: '', 
+        directorName: '', 
+        hours: 0
       });
       
       await loadTasks();
@@ -441,7 +532,6 @@ const MyTasks = ({ useMockData = true }) => {
     );
   }
 
-  // ВЕРСТКА БЕЗ ИЗМЕНЕНИЙ - ТОЧНО ТАКАЯ ЖЕ КАК БЫЛА
   return (
     <div className="mytasks-container">
       <h1 className="mytasks-title">Мои задачи</h1>
@@ -481,8 +571,9 @@ const MyTasks = ({ useMockData = true }) => {
               type="text"
               placeholder="Поиск задач..."
               className="search-input"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={searchInput}
+              onChange={handleSearchChange}
+              onBlur={handleSearchBlur}
             />
           </div>
         </div>
@@ -591,33 +682,6 @@ const MyTasks = ({ useMockData = true }) => {
                 />
               </div>
               
-              <div className="form-group123">
-                <label>Статус</label>
-                <select
-                  name="status"
-                  value={newTask.status}
-                  onChange={handleInputChange}
-                  disabled={creating}
-                >
-                  <option value="draft">Черновик</option>
-                  <option value="new">Новая</option>
-                  <option value="active">В работе</option>
-                  <option value="paused">Приостановлена</option>
-                  <option value="completed">Завершена</option>
-                </select>
-              </div>
-              
-              <div className="form-group123">
-                <label>Дедлайн *</label>
-                <input
-                  type="date"
-                  name="deadline"
-                  value={newTask.deadline}
-                  onChange={handleInputChange}
-                  disabled={creating}
-                />
-              </div>
-              
               <div className="form-group123" ref={projectInputRef} style={{ position: 'relative' }}>
                 <label>Проект (опционально)</label>
                 <input
@@ -647,6 +711,17 @@ const MyTasks = ({ useMockData = true }) => {
                     ))}
                   </div>
                 )}
+              </div>
+              
+              <div className="form-group123">
+                <label>Дедлайн *</label>
+                <input
+                  type="date"
+                  name="deadline"
+                  value={newTask.deadline}
+                  onChange={handleInputChange}
+                  disabled={creating}
+                />
               </div>
               
               <div className="form-row123">

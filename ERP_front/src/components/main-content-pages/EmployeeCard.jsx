@@ -13,37 +13,85 @@ const EmployeeCard = ({ useMockData = true }) => {
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      const employeeData = await getEmployeeById(employeeId, useMockData);
-      setEmployee(employeeData);
-      setLoading(false);
-      setAvatarError(false);
+      try {
+        const employeeData = await getEmployeeById(employeeId, useMockData);
+        console.log('✅ Данные сотрудника получены:', employeeData);
+        console.log('📋 Данные директора:', employeeData.director);
+        setEmployee(employeeData);
+      } catch (error) {
+        console.error('❌ Ошибка загрузки данных сотрудника:', error);
+      } finally {
+        setLoading(false);
+        setAvatarError(false);
+      }
     };
 
-    loadData();
+    if (employeeId) {
+      loadData();
+    }
   }, [employeeId, useMockData]);
 
   const generateAvatar = (name, imageUrl) => {
     const colors = ['#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0', '#118AB2', '#EF476F'];
-    const initials = name.split(' ').slice(0, 2).map(n => n[0]).join('');
-    const colorIndex = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length;
+    
+    let initials = 'НН';
+    if (name && name.trim()) {
+      const parts = name.split(' ').filter(part => part.length > 0);
+      if (parts.length >= 2) {
+        initials = (parts[0][0] + parts[1][0]).toUpperCase();
+      } else if (parts.length === 1) {
+        initials = parts[0][0].toUpperCase();
+      }
+    }
+    
+    const colorIndex = (name || '').split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length;
     
     if (imageUrl && !avatarError) {
       return (
         <div className="avatar-large_employee_card">
           <img 
             src={imageUrl} 
-            alt={name}
+            alt={name || 'Сотрудник'}
             onError={() => setAvatarError(true)}
           />
         </div>
       );
     }
-    console.log(employee)
+    
     return (
       <div className="avatar-large_employee_card" style={{ backgroundColor: colors[colorIndex] }}>
         {initials}
       </div>
     );
+  };
+
+  // Функция для получения инициалов директора
+  const getDirectorInitials = (directorName) => {
+    if (!directorName || directorName === 'Не указан') return 'НР';
+    const parts = directorName.split(' ').filter(part => part.length > 0);
+    
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    } else if (parts.length === 1) {
+      return parts[0][0].toUpperCase();
+    }
+    
+    return 'НР';
+  };
+
+  // Обработчик клика по руководителю
+  const handleDirectorClick = (directorId) => {
+    if (directorId) {
+      navigate(`/staff/${directorId}`);
+    }
+  };
+
+  // Обработчик клика по кнопке задач - переход в MyTasks с фильтром
+  const handleTasksButtonClick = () => {
+    if (employeeId) {
+      // Переходим на страницу задач с параметром фильтрации по исполнителю
+      navigate(`/my-tasks?performer=${employeeId}&performerName=${encodeURIComponent(employee?.name || '')}`);
+    }
   };
 
   if (loading) {
@@ -76,27 +124,47 @@ const EmployeeCard = ({ useMockData = true }) => {
             {generateAvatar(employee.name, employee.image_url)}
             <div className="name-section_employee_card">
               <h2>{employee.name}</h2>
-              <p>{employee.position}</p>
+              <p>{employee.position || employee.post || 'Должность не указана'}</p>
             </div>
           </div>
           
-          <div className="manager-box_employee_card">
-            <div className="manager-label_employee_card">Руководитель</div>
-            <div className="manager-row_employee_card">
-              <div className="small-avatar_employee_card">ВД</div>
-              <div className="manager-details_employee_card">
-                <div className="manager-name_employee_card">Васильев Дмитрий</div>
-                <div className="manager-role_employee_card">Директор</div>
+          {/* Руководитель - данные из API */}
+          {employee.director && employee.director.id ? (
+            <div 
+              className="manager-box_employee_card clickable-manager"
+              onClick={() => handleDirectorClick(employee.director.id)}
+              style={{ cursor: 'pointer' }}
+            >
+              <div className="manager-label_employee_card">Руководитель</div>
+              <div className="manager-row_employee_card">
+                <div className="small-avatar_employee_card">
+                  {getDirectorInitials(employee.director.name)}
+                </div>
+                <div className="manager-details_employee_card">
+                  <div className="manager-name_employee_card">{employee.director.name || 'Не указан'}</div>
+                  <div className="manager-role_employee_card">{employee.director.post || 'Должность не указана'}</div>
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="manager-box_employee_card">
+              <div className="manager-label_employee_card">Руководитель</div>
+              <div className="manager-row_employee_card">
+                <div className="small-avatar_employee_card">НР</div>
+                <div className="manager-details_employee_card">
+                  <div className="manager-name_employee_card">Не назначен</div>
+                  <div className="manager-role_employee_card">-</div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="middle-section_employee_card">
           <div className="contacts-row_employee_card">
             <div className="contact-item_employee_card">
               <span className="contact-label_employee_card">E-mail</span>
-              <span className="contact-value_employee_card">{employee.email}</span>
+              <span className="contact-value_employee_card">{employee.email || 'Не указан'}</span>
             </div>
             <div className="contact-item_employee_card">
               <span className="contact-label_employee_card">Тел.</span>
@@ -108,7 +176,10 @@ const EmployeeCard = ({ useMockData = true }) => {
             </div>
           </div>
           
-          <button className="tasks-button_employee_card">
+          <button 
+            className="tasks-button_employee_card"
+            onClick={handleTasksButtonClick}
+          >
             Задачи сотрудника
           </button>
         </div>
@@ -116,19 +187,19 @@ const EmployeeCard = ({ useMockData = true }) => {
 
       <div className="bottom-cards_employee_card">
         <div className="stat-card_employee_card">
-          <div className="stat-number_employee_card">5</div>
+          <div className="stat-number_employee_card">{employee.current_tasks || 0}</div>
           <div className="stat-label_employee_card">Текущие задачи</div>
         </div>
         <div className="stat-card_employee_card">
-          <div className="stat-number_employee_card">2</div>
+          <div className="stat-number_employee_card">{employee.closed_late_tasks || 0}</div>
           <div className="stat-label_employee_card">Не закрытые в срок</div>
         </div>
         <div className="stat-card_employee_card">
-          <div className="stat-number_employee_card">15</div>
+          <div className="stat-number_employee_card">{employee.closed_on_time_tasks || 0}</div>
           <div className="stat-label_employee_card">Закрытые в срок</div>
         </div>
         <div className="stat-card_employee_card">
-          <div className="stat-number_employee_card">1</div>
+          <div className="stat-number_employee_card">{employee.failed_tasks || 0}</div>
           <div className="stat-label_employee_card">Проваленные задачи</div>
         </div>
       </div>
