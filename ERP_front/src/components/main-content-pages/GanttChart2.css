@@ -1,395 +1,343 @@
-/* Стили для кастомной диаграммы Ганта с гридами */
-
-.time-period2 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  background: #f8f9fa;
-  border-radius: 6px;
-  border: 1px solid #e9ecef;
+/* GanttChart2.css */
+.gantt-container_gantt_class {
+  padding: 2vh;
+  background-color: #F6F6FE;
+  min-height: calc(100vh - 9vh);
+  width: 100%;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.period-label2 {
-  font-size: 14px;
-  color: #666;
+/* Header */
+.gantt-header_gantt_class {
+  margin-bottom: 2vh;
 }
 
-.period-value2 {
-  font-size: 14px;
-  font-weight: 500;
-  color: #333;
+.gantt-title_gantt_class {
+  font-size: 2.2vh;
+  font-weight: 600;
+  color: #5B5B5B;
+  margin: 0;
+  padding: 0;
 }
 
-.today-btn2 {
-  padding: 8px 16px;
-  background: #FF9800;
-  color: white;
-  border: none;
-  border-radius: 4px;
+.gantt-link_gantt_class {
+  color: #5B5B5B;
   cursor: pointer;
-  font-size: 14px;
-  transition: background 0.2s;
 }
 
-.today-btn2:hover {
-  background: #F57C00;
+.gantt-link_gantt_class:hover {
+  text-decoration: underline;
 }
 
-/* Контейнер таймлайна */
-.timeline-container2 {
-  position: relative;
-  flex: 1;
-  overflow: auto;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  background: white;
-}
-
-/* Заголовки месяцев */
-.month-headers2 {
-  display: flex;
-  position: sticky;
-  top: 0;
-  z-index: 30;
-  background: white;
-  border-bottom: 1px solid #dee2e6;
-}
-
-.month-header2 {
-  padding: 8px 0;
-  text-align: center;
-  border-right: 1px solid #e9ecef;
-  min-height: 40px;
+/* Основной контейнер */
+.gantt-main-container_gantt_class {
+  background: #FFFFFF;
+  border-radius: 1.6vh;
+  box-shadow: 0 0.4vh 1.2vh rgba(0, 0, 0, 0.08);
+  height: calc(100vh - 18vh);
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
-}
-
-.month-name2 {
-  font-weight: 600;
-  color: #495057;
-  font-size: 14px;
-  text-transform: capitalize;
-}
-
-.month-days-count2 {
-  font-size: 11px;
-  color: #6c757d;
-  margin-top: 2px;
-}
-
-/* Заголовки дней */
-.day-headers2 {
-  display: flex;
-  position: sticky;
-  top: 40px;
-  z-index: 25;
-  background: white;
-  border-bottom: 2px solid #dee2e6;
-}
-
-.day-header2 {
-  padding: 6px 0;
-  text-align: center;
-  border-right: 1px solid #e9ecef;
-  min-height: 50px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-}
-
-.day-number2 {
-  font-weight: 600;
-  color: #333;
-  font-size: 16px;
-  margin-bottom: 2px;
-}
-
-.day-weekday2 {
-  font-size: 11px;
-  color: #666;
-  text-transform: uppercase;
-  margin-bottom: 2px;
-}
-
-.day-month2 {
-  font-size: 11px;
-  color: #999;
-}
-
-/* Сетка дней */
-.day-grid2 {
-  display: flex;
-  position: absolute;
-  top: 90px;
-  left: 0;
-  right: 0;
-  z-index: 5;
-}
-
-.day-grid-cell2 {
-  height: calc(100% - 90px);
-  border-right: 1px solid #f0f0f0;
-  min-height: 400px;
-}
-
-.day-grid-cell2:nth-child(even) {
-  background-color: #fafafa;
-}
-
-/* Контент таймлайна */
-.timeline-content2 {
-  position: relative;
-  margin-top: 90px;
-  min-height: 400px;
-}
-
-/* Строки участников */
-.member-row2 {
-  position: relative;
-  height: 60px;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.member-row-background2 {
-  display: flex;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 10;
-}
-
-.day-cell2 {
-  height: 100%;
-  border-right: 1px solid #f0f0f0;
-}
-
-/* Задачи */
-.gantt-task2 {
-  position: absolute;
-  top: 10px;
-  height: 40px;
-  border-radius: 8px;
-  cursor: pointer;
-  z-index: 20;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  transition: all 0.2s;
   overflow: hidden;
+  position: relative;
 }
 
-.gantt-task2:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-  z-index: 25;
+/* Обертка диаграммы */
+.gantt-diagram-wrapper_gantt_class {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  position: relative;
 }
 
-.task-content2 {
-  padding: 8px 12px;
-  height: 100%;
+/* Колонка с именами */
+.members-column_gantt_class {
+  width: 200px;
+  background: white;
+  border-right: 2px solid #E9ECEF;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  color: white;
-  position: relative;
-  z-index: 2;
+  z-index: 50;
 }
 
-.task-title2 {
-  font-size: 12px;
-  font-weight: 500;
+.members-header_gantt_class {
+  height: 10vh;
+  background: #F8F9FA;
+  border-bottom: 2px solid #E9ECEF;
+}
+
+.members-list_gantt_class {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.member-name-item_gantt_class {
+  height: 7vh;
+  display: flex;
+  align-items: center;
+  padding: 0 1.5vh;
+  border-bottom: 1px solid #E9ECEF;
+  font-weight: 600;
+  color: #5B5B5B;
+  font-size: 1.4vh;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-bottom: 4px;
+  background: white;
 }
 
-.task-progress2 {
-  height: 4px;
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 2px;
-  overflow: hidden;
-  margin-bottom: 4px;
+/* Колонка с диаграммой */
+.diagram-column_gantt_class {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  position: relative;
 }
 
-.progress-fill2 {
+.diagram-scroll-container_gantt_class {
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: auto;
+  position: relative;
+}
+
+/* Заголовки месяцев */
+.month-headers_gantt_class {
+  display: flex;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: white;
+  border-bottom: 1px solid #E9ECEF;
+}
+
+.month-header_gantt_class {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1vh 0;
+  border-right: 1px solid #E9ECEF;
+  background: #F8F9FA;
+  min-height: 4vh;
+  font-weight: 600;
+  font-size: 1.4vh;
+  color: #5B5B5B;
+  text-transform: capitalize;
+}
+
+/* Заголовки дней */
+.day-headers_gantt_class {
+  display: flex;
+  position: sticky;
+  top: 4vh;
+  z-index: 40;
+  background: white;
+  border-bottom: 2px solid #E9ECEF;
+}
+
+.day-header_gantt_class {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.8vh 0;
+  border-right: 1px solid #f0f0f0;
+  min-height: 6vh;
+  flex-shrink: 0;
+  background: white;
+  font-size: 1.3vh;
+  width: 40px;
+}
+
+.day-header_gantt_class.today_gantt_class {
+  background: #FFF3CD;
+  border-right: 1px solid #FFD166;
+}
+
+.day-number_gantt_class {
+  font-weight: 600;
+  color: #5B5B5B;
+}
+
+.day-weekday_gantt_class {
+  color: #6c757d;
+  margin-top: 0.2vh;
+  text-transform: uppercase;
+  font-size: 1.1vh;
+}
+
+/* Сетка дней */
+.day-grid_gantt_class {
+  display: flex;
+  position: absolute;
+  top: 10vh;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
+}
+
+.day-grid-cell_gantt_class {
+  flex-shrink: 0;
+  border-right: 1px solid #f8f9fa;
   height: 100%;
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: 2px;
+  width: 40px;
 }
 
-.task-dates2 {
-  font-size: 10px;
-  opacity: 0.9;
+.day-grid-cell_gantt_class.even_gantt_class {
+  background: #fafafa;
+}
+
+.day-grid-cell_gantt_class.odd_gantt_class {
+  background: #f5f5f5;
+}
+
+.day-grid-cell_gantt_class.today-cell_gantt_class {
+  background: #FFF9E6;
+  border-right: 1px solid #FFEAA7;
+}
+
+/* Временная шкала */
+.gantt-timeline_gantt_class {
+  position: relative;
+  margin-top: 10vh;
+  z-index: 10;
+}
+
+/* Строка участника */
+.member-row_gantt_class {
+  position: relative;
+  height: 7vh;
+  border-bottom: 1px solid #E9ECEF;
+}
+
+/* Фон строки */
+.member-row-background_gantt_class {
+  display: flex;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.day-cell_gantt_class {
+  flex-shrink: 0;
+  height: 100%;
+  border-right: 1px solid #f8f9fa;
+  width: 40px;
+}
+
+.day-cell_gantt_class.today-cell_gantt_class {
+  background: #FFF9E6;
+  border-right: 1px solid #FFEAA7;
+}
+
+/* Задачи */
+.gantt-task_gantt_class {
+  position: absolute;
+  top: 1vh;
+  height: 5vh;
+  border-radius: 0.6vh;
+  box-shadow: 0 0.2vh 0.4vh rgba(0,0,0,0.1);
+  overflow: hidden;
+  z-index: 15;
+}
+
+.task-content_gantt_class {
+  padding: 0 1vh;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  color: white;
+  font-size: 1.2vh;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Линия сегодняшнего дня */
-.today-line2 {
+.today-line_gantt_class {
   position: absolute;
-  top: 0;
+  top: 10vh;
   bottom: 0;
   width: 2px;
-  background-color: #FF5722;
-  z-index: 15;
+  background: #FF6B6B;
+  z-index: 40;
   pointer-events: none;
 }
 
-.today-line2::before {
+.today-line_gantt_class::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: -3px;
-  width: 8px;
-  height: 8px;
-  background-color: #FF5722;
+  top: -0.8vh;
+  left: -0.4vh;
+  width: 1vh;
+  height: 1vh;
+  background: #FF6B6B;
   border-radius: 50%;
 }
 
-.today-line2::after {
-  content: 'Сегодня';
+/* Сообщение, когда задач нет */
+.no-tasks-message_gantt_class {
   position: absolute;
-  top: -25px;
-  left: -20px;
-  background: #FF5722;
-  color: white;
-  padding: 2px 6px;
-  border-radius: 3px;
-  font-size: 11px;
-  white-space: nowrap;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  z-index: 10;
 }
 
-/* Легенда с линией */
-.legend-line2 {
-  width: 20px;
-  height: 3px;
-  border-radius: 2px;
+.no-tasks-content_gantt_class {
+  background: white;
+  padding: 4vh;
+  border-radius: 1.6vh;
+  box-shadow: 0 0.4vh 1.2vh rgba(0, 0, 0, 0.1);
+  max-width: 40vh;
 }
 
-.legend-line2.today2 {
-  background-color: #FF5722;
+.no-tasks-icon_gantt_class {
+  font-size: 4vh;
+  display: block;
+  margin-bottom: 2vh;
+  color: #6c757d;
 }
 
-/* Детали задачи */
-.task-details-content2 {
-  margin-top: 15px;
+.no-tasks-message_gantt_class h4 {
+  margin: 0 0 1vh 0;
+  color: #5B5B5B;
+  font-size: 2vh;
 }
 
-.detail-row2 {
-  display: flex;
-  align-items: center;
-  margin-bottom: 12px;
+/* Скроллбар */
+.members-list_gantt_class::-webkit-scrollbar {
+  width: 0.5vh;
 }
 
-.detail-row2:last-child {
-  margin-bottom: 0;
-}
-
-.detail-label2 {
-  font-size: 14px;
-  color: #666;
-  min-width: 100px;
-}
-
-.detail-value2 {
-  font-size: 14px;
-  color: #333;
-  font-weight: 500;
-}
-
-.progress-container2 {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex: 1;
-}
-
-.progress-bar-bg2 {
-  flex: 1;
-  height: 8px;
-  background: #e9ecef;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.progress-bar-fill2 {
-  height: 100%;
-  border-radius: 4px;
-  transition: width 0.3s ease;
-}
-
-.progress-value2 {
-  font-size: 14px;
-  font-weight: 500;
-  color: #333;
-  min-width: 40px;
-}
-
-.status-badge2 {
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.status-completed2 {
-  background: #4CAF50;
-  color: white;
-}
-
-.status-in-progress2 {
-  background: #2196F3;
-  color: white;
-}
-
-.status-planned2 {
-  background: #FF9800;
-  color: white;
-}
-
-/* Полоса прокрутки */
-.timeline-container2::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-.timeline-container2::-webkit-scrollbar-track {
+.members-list_gantt_class::-webkit-scrollbar-track {
   background: #f1f1f1;
-  border-radius: 5px;
 }
 
-.timeline-container2::-webkit-scrollbar-thumb {
+.members-list_gantt_class::-webkit-scrollbar-thumb {
   background: #c1c1c1;
-  border-radius: 5px;
+  border-radius: 0.25vh;
 }
 
-.timeline-container2::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+.diagram-column_gantt_class {
+  overflow-x: auto;
 }
 
-/* Адаптивность */
-@media (max-width: 1024px) {
-  .gantt-content2 {
-    flex-direction: column;
-  }
-  
-  .gantt-sidebar2 {
-    width: 100%;
-    max-height: 300px;
-  }
-  
-  .timeline-container2 {
-    min-width: 800px;
-  }
-  
-  .month-header2 {
-    min-width: 200px;
-  }
-  
-  .day-header2 {
-    min-width: 60px;
-  }
+.diagram-column_gantt_class::-webkit-scrollbar {
+  height: 1vh;
+}
+
+.diagram-column_gantt_class::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.diagram-column_gantt_class::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 0.5vh;
 }
