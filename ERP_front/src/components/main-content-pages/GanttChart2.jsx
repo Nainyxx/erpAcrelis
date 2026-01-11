@@ -285,6 +285,13 @@ const GanttChart = ({ useMockData = false }) => {
     return { left, width, startIndex, endIndex };
   };
 
+  // Получить позицию по вертикали для участника
+  const getMemberTopPosition = (memberIndex) => {
+    // 10vh - высота заголовков (месяцы + дни)
+    // 7vh - высота строки участника
+    return 10 + (memberIndex * 7);
+  };
+
   if (isLoading) {
     return (
       <div className="gantt-container_gantt_class">
@@ -338,10 +345,15 @@ const GanttChart = ({ useMockData = false }) => {
         <div className="gantt-diagram-wrapper_gantt_class">
           {/* Имена участников слева */}
           <div className="members-column_gantt_class">
+            {/* Пустой хедер высотой как месяцы и дни */}
             <div className="members-header_gantt_class"></div>
             <div className="members-list_gantt_class">
-              {teamMembers.map(member => (
-                <div key={member.id} className="member-name-item_gantt_class">
+              {teamMembers.map((member, index) => (
+                <div 
+                  key={member.id} 
+                  className="member-name-item_gantt_class"
+                  style={{ height: '7vh' }}
+                >
                   {member.name}
                 </div>
               ))}
@@ -396,11 +408,19 @@ const GanttChart = ({ useMockData = false }) => {
 
             {/* Участники и задачи */}
             <div className="gantt-timeline_gantt_class">
-              {teamMembers.map(member => {
+              {teamMembers.map((member, memberIndex) => {
                 const memberTasks = tasks.filter(task => task.memberId === member.id);
+                const memberTop = getMemberTopPosition(memberIndex);
                 
                 return (
-                  <div key={member.id} className="member-row_gantt_class">
+                  <div 
+                    key={member.id} 
+                    className="member-row_gantt_class"
+                    style={{ 
+                      top: `${memberTop}vh`,
+                      height: '7vh'
+                    }}
+                  >
                     {/* Фон строки */}
                     <div className="member-row-background_gantt_class">
                       {days.map((day, dayIndex) => {
@@ -429,6 +449,7 @@ const GanttChart = ({ useMockData = false }) => {
                           style={{
                             left: `${left}px`,
                             width: `${width}px`,
+                            top: '1vh',
                             backgroundColor: task.color,
                           }}
                         >
