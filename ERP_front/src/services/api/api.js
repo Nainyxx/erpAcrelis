@@ -1,7 +1,7 @@
 // ERP_front/src/services/api/api.js
 const API_CONFIG = {
   BASE_URL: 'https://api.acrelis.ru/',
-  ACCESS_TOKEN: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4MTc0MTAwLCJpYXQiOjE3NjgwODc3MDEsImp0aSI6IjQyM2RkNzdlZGU1NzRmNmI5NGU4NzdiODk5ZTcxYTViIiwidXNlcl9pZCI6IjMifQ.guPCFbAKt8RUno30gVf8mB5TIcrJjMAAScBSbvXwwbw",
+  ACCESS_TOKEN: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NzI0NDc5LCJpYXQiOjE3Njg2MzgwNzksImp0aSI6ImRkMzgxNmIyZTY5NzQ1Yjc5MzYyZmQwYWEwOWMyNTk2IiwidXNlcl9pZCI6IjMifQ.qaL8CQe0i6-oYXMP1vze5KsnDnA3roQXUzUcSQpabuQ",
   CSRF_TOKEN: 'ZvWfFB1bOKo6BawwGWwPwt2GBx1kBzoO'
 };
 

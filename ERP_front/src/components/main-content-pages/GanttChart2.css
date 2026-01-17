@@ -30,6 +30,30 @@
   text-decoration: underline;
 }
 
+.project-dates-info_gantt_class {
+  margin-top: 1vh;
+  font-size: 1.4vh;
+  color: #666;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.date-label_gantt_class {
+  font-weight: 500;
+}
+
+.date-value_gantt_class {
+  background: #f0f0f0;
+  padding: 0.3vh 0.8vh;
+  border-radius: 0.4vh;
+  margin: 0 0.3vh;
+}
+
+.date-separator_gantt_class {
+  margin: 0 0.5vh;
+}
+
 /* Основной контейнер */
 .gantt-main-container_gantt_class {
   background: #FFFFFF;
@@ -48,6 +72,7 @@
   flex: 1;
   min-height: 0;
   position: relative;
+  overflow: hidden;
 }
 
 /* Колонка с именами */
@@ -58,13 +83,15 @@
   display: flex;
   flex-direction: column;
   z-index: 50;
+  flex-shrink: 0;
 }
 
-/* Хедер в колонке с именами - высота как месяцы + дни */
+/* Хедер в колонке с именами - высота как месяцы и дни */
 .members-header_gantt_class {
   height: 10vh; /* 4vh месяцы + 6vh дни */
   background: #F8F9FA;
   border-bottom: 2px solid #E9ECEF;
+  flex-shrink: 0;
 }
 
 .members-list_gantt_class {
@@ -85,17 +112,19 @@
   overflow: hidden;
   text-overflow: ellipsis;
   background: white;
+  flex-shrink: 0;
 }
 
-/* Колонка с диаграммой */
+/* Колонка с диаграммой - ФИКСИРОВАНА для скролла */
 .diagram-column_gantt_class {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
+  display: block;
   position: relative;
-  overflow-x: auto;
-  overflow-y: auto;
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+  min-width: 0;
+  will-change: transform;
+  contain: content;
 }
 
 /* Заголовки месяцев - высота 4vh */
@@ -107,6 +136,8 @@
   background: white;
   border-bottom: 1px solid #E9ECEF;
   height: 4vh;
+  min-width: fit-content;
+  flex-shrink: 0;
 }
 
 .month-header_gantt_class {
@@ -120,6 +151,8 @@
   font-size: 1.4vh;
   color: #5B5B5B;
   text-transform: capitalize;
+  min-width: 3vh;
+  flex-shrink: 0;
 }
 
 /* Заголовки дней - высота 6vh */
@@ -131,6 +164,8 @@
   background: white;
   border-bottom: 2px solid #E9ECEF;
   height: 6vh;
+  min-width: fit-content;
+  flex-shrink: 0;
 }
 
 .day-header_gantt_class {
@@ -142,7 +177,9 @@
   border-right: 1px solid #f0f0f0;
   background: white;
   font-size: 1.3vh;
-  width: 40px;
+  width: 3vh;
+  min-width: 3vh;
+  flex-shrink: 0;
 }
 
 .day-header_gantt_class.today_gantt_class {
@@ -168,16 +205,18 @@
   position: absolute;
   top: 10vh; /* 4vh + 6vh */
   left: 0;
-  right: 0;
-  bottom: 0;
   z-index: 5;
+  min-width: fit-content;
+  min-height: fit-content;
+  will-change: transform;
 }
 
 .day-grid-cell_gantt_class {
   flex-shrink: 0;
   border-right: 1px solid #f8f9fa;
   height: 100%;
-  width: 40px;
+  width: 3vh;
+  min-width: 3vh;
 }
 
 .day-grid-cell_gantt_class.even_gantt_class {
@@ -198,17 +237,18 @@
   position: absolute;
   top: 10vh; /* 4vh + 6vh */
   left: 0;
-  right: 0;
-  bottom: 0;
   z-index: 10;
+  min-width: fit-content;
+  min-height: fit-content;
+  will-change: transform;
 }
 
 /* Строка участника - высота 7vh */
 .member-row_gantt_class {
   position: absolute;
-  width: 100%;
   height: 7vh;
   border-bottom: 1px solid #E9ECEF;
+  min-width: fit-content;
 }
 
 /* Фон строки */
@@ -219,13 +259,16 @@
   left: 0;
   right: 0;
   bottom: 0;
+  min-width: fit-content;
 }
 
 .day-cell_gantt_class {
   flex-shrink: 0;
   height: 100%;
   border-right: 1px solid #f8f9fa;
-  width: 40px;
+  width: 3vh;
+  min-width: 3vh;
+  box-sizing: border-box;
 }
 
 .day-cell_gantt_class.today-cell_gantt_class {
@@ -237,10 +280,12 @@
 .gantt-task_gantt_class {
   position: absolute;
   height: 5vh;
-  border-radius: 0.6vh;
+  border-radius: 3vh;
   box-shadow: 0 0.2vh 0.4vh rgba(0,0,0,0.1);
   overflow: hidden;
   z-index: 15;
+  box-sizing: border-box;
+  min-width: 3vh;
 }
 
 .task-content_gantt_class {
@@ -260,7 +305,6 @@
 .today-line_gantt_class {
   position: absolute;
   top: 10vh;
-  bottom: 0;
   width: 2px;
   background: #FF6B6B;
   z-index: 40;
@@ -335,4 +379,24 @@
 .diagram-column_gantt_class::-webkit-scrollbar-thumb {
   background: #c1c1c1;
   border-radius: 0.5vh;
+}
+
+.diagram-column_gantt_class::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Кнопка назад */
+.gantt-back-btn_gantt_class {
+  background: #4ECDC4;
+  color: white;
+  border: none;
+  padding: 1vh 2vh;
+  border-radius: 0.8vh;
+  font-size: 1.4vh;
+  cursor: pointer;
+  margin-top: 2vh;
+}
+
+.gantt-back-btn_gantt_class:hover {
+  background: #3dbdb4;
 }
