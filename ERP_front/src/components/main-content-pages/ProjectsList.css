@@ -1,17 +1,158 @@
+/* ProjectsList.css */
 .projects-container {
-    padding: 3vh;
+    padding: 2vh;
+    background-color: #F6F6FE;
+    min-height: calc(100vh - 9vh);
     width: 100%;
-    max-width: 100%;
     box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.projects-header {
+    margin-bottom: 2vh;
 }
 
 .projects-title {
-    color: #5B5B5B;
-    margin-bottom: 2.8vh;
-    font-size: 3.2vh;
+    font-size: 2.2vh;
     font-weight: 600;
+    color: #5B5B5B;
+    margin: 0;
+    padding: 0;
 }
 
+/* Универсальные стили загрузки */
+.loading-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    padding: 4vh;
+    border-radius: 1.6vh;
+    max-width: 40vh;
+}
+
+.loading-spinner {
+    border: 4px solid rgba(78, 205, 196, 0.2);
+    border-top: 4px solid #4ECDC4;
+    border-radius: 50%;
+    width: 6vh;
+    height: 6vh;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 2vh;
+}
+
+.loading-title {
+    color: #5B5B5B;
+    margin: 1vh 0;
+    font-size: 2vh;
+}
+
+.loading-subtitle {
+    color: rgba(0, 0, 0, 0.8);
+    font-size: 1.4vh;
+    margin: 0;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Универсальные стили ошибки */
+.error-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    background: white;
+    padding: 4vh;
+    border-radius: 1.6vh;
+    box-shadow: 0 0.4vh 1.2vh rgba(0, 0, 0, 0.1);
+    max-width: 40vh;
+}
+
+.error-icon {
+    font-size: 4vh;
+    display: block;
+    margin-bottom: 2vh;
+}
+
+.error-title {
+    margin: 0 0 1vh 0;
+    color: #5B5B5B;
+    font-size: 2vh;
+}
+
+.error-message {
+    color: #666;
+    font-size: 1.4vh;
+    margin-bottom: 2vh;
+}
+
+.error-retry-btn {
+    background: #4ECDC4;
+    color: white;
+    border: none;
+    padding: 1vh 2vh;
+    border-radius: 0.8vh;
+    font-size: 1.4vh;
+    cursor: pointer;
+}
+
+.error-retry-btn:hover {
+    background: #3dbdb4;
+}
+
+/* Стиль для отсутствия данных */
+.no-data-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    background: white;
+    padding: 4vh;
+    border-radius: 1.6vh;
+    box-shadow: 0 0.4vh 1.2vh rgba(0, 0, 0, 0.1);
+    max-width: 40vh;
+}
+
+.no-data-icon {
+    font-size: 4vh;
+    display: block;
+    margin-bottom: 2vh;
+    color: #6c757d;
+}
+
+.no-data-container h4 {
+    margin: 0 0 1vh 0;
+    color: #5B5B5B;
+    font-size: 2vh;
+}
+
+.no-data-container p {
+    color: #666;
+    font-size: 1.4vh;
+    margin-bottom: 2vh;
+}
+
+.create-first-project-btn {
+    background: #4ECDC4;
+    color: white;
+    border: none;
+    padding: 1vh 2vh;
+    border-radius: 0.8vh;
+    font-size: 1.4vh;
+    cursor: pointer;
+}
+
+.create-first-project-btn:hover {
+    background: #3dbdb4;
+}
+
+/* Остальные стили без изменений */
 .filters-container {
     background: #ffffff;
     border-radius: 2vh;
@@ -38,7 +179,6 @@
     position: relative;
 }
 
-/* ВЫПАДАЮЩИЙ СПИСОК - ЕДИНСТВЕННЫЙ БЛОК СТИЛЕЙ */
 .filter-select {
     width: 25vh;
     appearance: none;
@@ -138,7 +278,6 @@
     background: #f5f5f5;
 }
 
-/* ОСТАЛЬНЫЕ СТИЛИ БЕЗ ИЗМЕНЕНИЙ */
 .projects-table {
     background: #ffffff;
     border-radius: 2vh;
@@ -200,15 +339,6 @@
     text-overflow: ellipsis;
     font-size: inherit;
     padding-left: 3vh;
-}
-
-.project-customer {
-    font-size: 1.4vh;
-    color: #666;
-    margin-top: 0.4vh;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 .team-avatars {

@@ -1,7 +1,6 @@
 // ERP_front/src/services/api/api.js
 const API_CONFIG = {
   BASE_URL: 'https://api.acrelis.ru/',
-  ACCESS_TOKEN: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NzI0NDc5LCJpYXQiOjE3Njg2MzgwNzksImp0aSI6ImRkMzgxNmIyZTY5NzQ1Yjc5MzYyZmQwYWEwOWMyNTk2IiwidXNlcl9pZCI6IjMifQ.qaL8CQe0i6-oYXMP1vze5KsnDnA3roQXUzUcSQpabuQ",
   CSRF_TOKEN: 'ZvWfFB1bOKo6BawwGWwPwt2GBx1kBzoO'
 };
 
@@ -29,6 +28,388 @@ const PROJECT_TYPE_MAP = {
   'прочее': 'other',
   '': 'other'  // Пустое значение
 };
+
+// ============================================
+// ФУНКЦИИ ДЛЯ АУТЕНТИФИКАЦИИ И УПРАВЛЕНИЯ ДАННЫМИ ПОЛЬЗОВАТЕЛЯ
+// ============================================
+
+export async function login(username, password) {
+  console.log('🔄 login: авторизация пользователя');
+  
+  try {
+    const response = await fetch(`${API_CONFIG.BASE_URL}auth/login/`, {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        username: username,
+        password: password
+      })
+    });
+
+    console.log('Статус ответа логина:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Ошибка авторизации:', errorText);
+      
+      // Пробуем получить детали ошибки
+      try {
+        const errorData = JSON.parse(errorText);
+        throw new Error(errorData.detail || 'Ошибка авторизации');
+      } catch {
+        throw new Error(`Ошибка авторизации: ${response.status}`);
+      }
+    }
+
+    const responseData = await response.json();
+    console.log('✅ Успешная авторизация, получены данные:', responseData);
+    
+    // Сохраняем токены
+    saveTokens(responseData);
+    
+    // СОХРАНЯЕМ ДАННЫЕ ПОЛЬЗОВАТЕЛЯ В localStorage
+    saveUserData(responseData);
+    
+    return {
+      success: true,
+      user: {
+        user_id: responseData.user_id,
+        username: responseData.username,
+        staff_id: responseData.staff_id,
+        name: responseData.name,
+        email: responseData.email,
+        post: responseData.post,
+        department: responseData.department,
+        accessToken: responseData.access
+      }
+    };
+    
+  } catch (error) {
+    console.error('❌ Ошибка входа:', error);
+    throw error;
+  }
+}
+
+export async function register(userData) {
+  console.log('🔄 register: регистрация нового пользователя');
+  
+  try {
+    const response = await fetch(`${API_CONFIG.BASE_URL}auth/register/`, {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        username: userData.username,
+        password: userData.password,
+        email: userData.email || '',
+        first_name: userData.firstName || '',
+        last_name: userData.lastName || ''
+      })
+    });
+
+    console.log('Статус ответа регистрации:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Ошибка регистрации:', errorText);
+      
+      try {
+        const errorData = JSON.parse(errorText);
+        const errorMessage = Object.values(errorData).flat().join(', ') || 'Ошибка регистрации';
+        throw new Error(errorMessage);
+      } catch {
+        throw new Error(`Ошибка регистрации: ${response.status}`);
+      }
+    }
+
+    const result = await response.json();
+    console.log('✅ Успешная регистрация');
+    
+    return {
+      success: true,
+      message: 'Регистрация прошла успешно'
+    };
+    
+  } catch (error) {
+    console.error('❌ Ошибка регистрации:', error);
+    throw error;
+  }
+}
+
+export async function refreshAccessToken() {
+  const refreshToken = getRefreshToken();
+  
+  if (!refreshToken) {
+    console.error('❌ Нет refresh токена');
+    throw new Error('Требуется повторная авторизация');
+  }
+  
+  try {
+    const response = await fetch(`${API_CONFIG.BASE_URL}auth/refresh/`, {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        refresh: refreshToken
+      })
+    });
+
+    console.log('Статус ответа refresh:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Ошибка обновления токена:', errorText);
+      
+      // Удаляем токены если refresh истёк
+      clearTokens();
+      throw new Error('Сессия истекла. Требуется повторная авторизация');
+    }
+
+    const newTokens = await response.json();
+    console.log('✅ Токен обновлён');
+    
+    // Обновляем токены
+    saveTokens(newTokens);
+    
+    return newTokens.access;
+    
+  } catch (error) {
+    console.error('❌ Ошибка обновления токена:', error);
+    throw error;
+  }
+}
+
+// ============================================
+// ФУНКЦИИ ДЛЯ РАБОТЫ С ТОКЕНАМИ И ДАННЫМИ ПОЛЬЗОВАТЕЛЯ
+// ============================================
+
+export function saveTokens(tokens) {
+  try {
+    localStorage.setItem('access_token', tokens.access);
+    localStorage.setItem('refresh_token', tokens.refresh);
+    
+    // Также обновляем токен в API_CONFIG для текущей сессии
+    API_CONFIG.ACCESS_TOKEN = tokens.access;
+    
+    console.log('✅ Токены сохранены');
+  } catch (error) {
+    console.error('❌ Ошибка сохранения токенов:', error);
+  }
+}
+
+// Функция сохранения данных пользователя в localStorage
+export function saveUserData(userData) {
+  try {
+    localStorage.setItem('user_id', userData.user_id?.toString() || '');
+    localStorage.setItem('staff_id', userData.staff_id?.toString() || '');
+    localStorage.setItem('username', userData.username || '');
+    localStorage.setItem('name', userData.name || '');
+    localStorage.setItem('email', userData.email || '');
+    localStorage.setItem('post', userData.post || '');
+    localStorage.setItem('department', userData.department || '');
+    
+    console.log('✅ Данные пользователя сохранены в localStorage:', {
+      user_id: userData.user_id,
+      staff_id: userData.staff_id,
+      username: userData.username,
+      name: userData.name
+    });
+  } catch (error) {
+    console.error('❌ Ошибка сохранения данных пользователя:', error);
+  }
+}
+
+// Функция очистки данных пользователя
+export function clearUserData() {
+  try {
+    localStorage.removeItem('user_id');
+    localStorage.removeItem('staff_id');
+    localStorage.removeItem('username');
+    localStorage.removeItem('name');
+    localStorage.removeItem('email');
+    localStorage.removeItem('post');
+    localStorage.removeItem('department');
+    
+    console.log('✅ Данные пользователя удалены из localStorage');
+  } catch (error) {
+    console.error('❌ Ошибка удаления данных пользователя:', error);
+  }
+}
+
+export function getAccessToken() {
+  const token = localStorage.getItem('access_token') || API_CONFIG.ACCESS_TOKEN;
+  return token;
+}
+
+export function getRefreshToken() {
+  return localStorage.getItem('refresh_token');
+}
+
+export function clearTokens() {
+  try {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    
+    // Очищаем и данные пользователя
+    clearUserData();
+    
+    // Сбрасываем токен в конфиге
+    API_CONFIG.ACCESS_TOKEN = '';
+    
+    console.log('✅ Токены и данные пользователя удалены');
+  } catch (error) {
+    console.error('❌ Ошибка удаления токенов:', error);
+  }
+}
+
+export function isAuthenticated() {
+  const token = getAccessToken();
+  return !!token && token !== '';
+}
+
+// Обновленная функция получения данных текущего пользователя
+export function getCurrentUser() {
+  const token = getAccessToken();
+  
+  if (!token) {
+    console.log('⚠️ Токен не найден, пользователь не авторизован');
+    return {
+      user_id: null,
+      staff_id: null,
+      name: 'Гость'
+    };
+  }
+  
+  try {
+    // Сначала пытаемся получить данные из localStorage (самый надежный способ)
+    const storedUserId = localStorage.getItem('user_id');
+    const storedStaffId = localStorage.getItem('staff_id');
+    const storedName = localStorage.getItem('name');
+    const storedUsername = localStorage.getItem('username');
+    
+    // Если данные есть в localStorage, используем их
+    if (storedUserId || storedStaffId) {
+      console.log('📋 Данные пользователя из localStorage:', {
+        user_id: storedUserId,
+        staff_id: storedStaffId,
+        name: storedName,
+        username: storedUsername
+      });
+      
+      return {
+        user_id: storedUserId || null,
+        staff_id: storedStaffId || null,
+        id: storedStaffId || storedUserId || null, // для обратной совместимости
+        username: storedUsername || '',
+        name: storedName || storedUsername || 'Текущий пользователь',
+        email: localStorage.getItem('email') || '',
+        post: localStorage.getItem('post') || '',
+        department: localStorage.getItem('department') || ''
+      };
+    }
+    
+    // Если в localStorage нет данных, пробуем декодировать токен (fallback)
+    console.log('⚠️ Данных нет в localStorage, декодируем токен');
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    
+    console.log('📋 Данные пользователя из токена:', {
+      user_id: payload.user_id,
+      staff_id: payload.staff_id,
+      username: payload.username,
+      name: payload.name || payload.username
+    });
+    
+    return {
+      user_id: payload.user_id || null,
+      staff_id: payload.staff_id || null,
+      id: payload.staff_id || payload.user_id || null, // для обратной совместимости
+      username: payload.username || '',
+      name: payload.name || payload.username || 'Текущий пользователь',
+      exp: payload.exp
+    };
+  } catch (error) {
+    console.error('❌ Ошибка получения данных пользователя:', error);
+    // Возвращаем fallback данные если токен не валидный
+    return {
+      user_id: null,
+      staff_id: null,
+      id: null,
+      name: 'Текущий пользователь'
+    };
+  }
+}
+
+// ============================================
+// ОБЕРТКА ДЛЯ API ЗАПРОСОВ С АВТООБНОВЛЕНИЕМ ТОКЕНА
+// ============================================
+
+export async function authFetch(url, options = {}) {
+  // Добавляем заголовок авторизации
+  const token = getAccessToken();
+  const headers = {
+    ...options.headers,
+    'Authorization': `Bearer ${token}`,
+    'accept': 'application/json',
+  };
+  
+  // Если это не логин/регистрация/refresh, добавляем CSRF токен
+  if (!url.includes('auth/')) {
+    headers['X-CSRFTOKEN'] = API_CONFIG.CSRF_TOKEN;
+  }
+  
+  const requestOptions = {
+    ...options,
+    headers: headers
+  };
+  
+  try {
+    const response = await fetch(url, requestOptions);
+    
+    // Если 401 - пробуем обновить токен и повторить запрос
+    if (response.status === 401) {
+      console.log('🔄 401 ошибка, пробуем обновить токен');
+      
+      try {
+        const newAccessToken = await refreshAccessToken();
+        
+        // Обновляем заголовок с новым токеном
+        requestOptions.headers['Authorization'] = `Bearer ${newAccessToken}`;
+        
+        // Повторяем запрос с новым токеном
+        const retryResponse = await fetch(url, requestOptions);
+        
+        if (!retryResponse.ok) {
+          // Если всё равно ошибка - возможно refresh токен тоже истёк
+          if (retryResponse.status === 401) {
+            clearTokens();
+            window.location.href = '/login';
+          }
+        }
+        
+        return retryResponse;
+        
+      } catch (refreshError) {
+        console.error('❌ Не удалось обновить токен:', refreshError);
+        clearTokens();
+        window.location.href = '/login';
+        throw refreshError;
+      }
+    }
+    
+    return response;
+    
+  } catch (error) {
+    console.error('❌ Ошибка authFetch:', error);
+    throw error;
+  }
+}
 
 // ============================================
 // ФУНКЦИИ ДЛЯ ПРОЕКТОВ
@@ -63,12 +444,8 @@ export async function getProjects(USE_MOCK_DATA, filters = {}) {
     
     console.log('📡 GET проекты:', url.toString());
     
-    const response = await fetch(url.toString(), {
-      method: 'GET',
-      headers: {
-        'accept': 'application/json',
-        'Authorization': `Bearer ${API_CONFIG.ACCESS_TOKEN}`
-      }
+    const response = await authFetch(url.toString(), {
+      method: 'GET'
     });
 
     if (!response.ok) {
@@ -112,12 +489,8 @@ export async function getProjectById(projectId, USE_MOCK_DATA) {
   }
   
   try {
-    const response = await fetch(`${API_CONFIG.BASE_URL}projects/${projectId}/`, {
-      method: 'GET',
-      headers: {
-        'accept': 'application/json',
-        'Authorization': `Bearer ${API_CONFIG.ACCESS_TOKEN}`
-      }
+    const response = await authFetch(`${API_CONFIG.BASE_URL}projects/${projectId}/`, {
+      method: 'GET'
     });
 
     if (!response.ok) {
@@ -190,13 +563,8 @@ export async function updateProject(projectId, updateData, USE_MOCK_DATA) {
   }
   
   try {
-    const response = await fetch(`${API_CONFIG.BASE_URL}projects/${projectId}/`, {
+    const response = await authFetch(`${API_CONFIG.BASE_URL}projects/${projectId}/`, {
       method: 'PATCH',
-      headers: {
-        'accept': 'application/json',
-        'Authorization': `Bearer ${API_CONFIG.ACCESS_TOKEN}`,
-        'X-CSRFTOKEN': API_CONFIG.CSRF_TOKEN
-      },
       body: formData
     });
 
@@ -216,6 +584,237 @@ export async function updateProject(projectId, updateData, USE_MOCK_DATA) {
   } catch (error) {
     console.error(`❌ Ошибка обновления проекта:`, error);
     throw error;
+  }
+}
+
+export async function createProject(projectData, USE_MOCK_DATA) {
+  console.log('🔄 createProject: создаю проект:', projectData);
+  
+  if (USE_MOCK_DATA) {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    const mockId = Math.floor(Math.random() * 1000) + 100;
+    
+    const mockProject = {
+      id: mockId,
+      name: projectData.name || 'Новый проект',
+      type: projectData.type || 'website',
+      status: projectData.status || 'draft',
+      price: projectData.price || "0.00",
+      hours: projectData.hours || 0,
+      customer: projectData.customer || 'Не указан',
+      deadline: projectData.deadline || new Date().toISOString(),
+      created: new Date().toISOString(),
+      available: projectData.available || false,
+      team: [],
+      files: [],
+      changes: []
+    };
+    
+    return formatProjectData(mockProject);
+  }
+  
+  const formData = new FormData();
+  
+  formData.append('name', projectData.name);
+  formData.append('type', projectData.type);
+  formData.append('status', projectData.status);
+  formData.append('customer', projectData.customer);
+  formData.append('deadline', projectData.deadline + 'T00:00:00+03:00');
+  formData.append('hours', projectData.hours.toString());
+  
+  if (projectData.price) {
+    formData.append('price', cleanPriceForAPI(projectData.price));
+  }
+  
+  if (projectData.available !== undefined) {
+    formData.append('available', projectData.available.toString());
+  }
+  
+  console.log('Отправляемые данные для создания:');
+  for (let [key, value] of formData.entries()) {
+    console.log(`${key}: ${value}`);
+  }
+  
+  try {
+    const response = await authFetch(`${API_CONFIG.BASE_URL}projects/`, {
+      method: 'POST',
+      body: formData
+    });
+
+    console.log('Статус ответа:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Ошибка API при создании:', errorText);
+      throw new Error(`API Error: ${response.status} - ${errorText}`);
+    }
+
+    const responseData = await response.json();
+    console.log('✅ Проект создан через API:', responseData);
+    
+    return formatProjectData(responseData);
+    
+  } catch (error) {
+    console.error('❌ Ошибка создания проекта:', error);
+    throw error;
+  }
+}
+
+export async function uploadFileToProject(projectId, file, USE_MOCK_DATA) {
+  console.log(`📤 uploadFileToProject: проект ${projectId}, файл ${file.name}`);
+  
+  if (USE_MOCK_DATA) {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    const mockFile = {
+      id: Math.floor(Math.random() * 1000),
+      name: file.name,
+      file: `https://example.com/files/${file.name}`,
+      uploaded_at: new Date().toISOString(),
+      size: file.size
+    };
+    
+    console.log('✅ Моковая загрузка файла:', mockFile);
+    return mockFile;
+  }
+  
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  console.log('Отправляю файл на сервер:', file.name, file.size);
+  
+  try {
+    const response = await authFetch(`${API_CONFIG.BASE_URL}projects/${projectId}/files/`, {
+      method: 'POST',
+      body: formData
+    });
+
+    console.log('Статус ответа загрузки файла:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Ошибка загрузки файла:', errorText);
+      throw new Error(`Ошибка загрузки файла: ${response.status} - ${errorText}`);
+    }
+
+    const responseData = await response.json();
+    console.log('✅ Файл загружен:', responseData);
+    
+    return {
+      id: responseData.id,
+      name: file.name,
+      file: responseData.file,
+      uploaded_at: responseData.uploaded_at,
+      size: file.size
+    };
+    
+  } catch (error) {
+    console.error('❌ Ошибка загрузки:', error);
+    throw error;
+  }
+}
+
+export async function addPerformerToProject(projectId, staffId, USE_MOCK_DATA) {
+  console.log(`🔄 addPerformerToProject: проект ${projectId}, сотрудник ${staffId}`);
+  
+  if (USE_MOCK_DATA) {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    const mockPerformer = {
+      id: Math.floor(Math.random() * 1000),
+      staff: staffId,
+      staff_name: 'Иван Иванов',
+      staff_post: 'Разработчик',
+      assigned_at: new Date().toISOString()
+    };
+    
+    console.log('✅ Моковый исполнитель добавлен:', mockPerformer);
+    return mockPerformer;
+  }
+  
+  try {
+    const response = await authFetch(`${API_CONFIG.BASE_URL}projects/${projectId}/performers/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        project: parseInt(projectId),
+        staff: parseInt(staffId)
+      })
+    });
+
+    console.log('Статус ответа:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Ошибка добавления исполнителя:', errorText);
+      throw new Error(`Ошибка: ${response.status} - ${errorText}`);
+    }
+
+    const responseData = await response.json();
+    console.log('✅ Исполнитель добавлен:', responseData);
+    
+    return responseData;
+    
+  } catch (error) {
+    console.error('❌ Ошибка добавления:', error);
+    throw error;
+  }
+}
+
+export async function getProjectLogs(projectId, USE_MOCK_DATA) {
+  console.log(`🔄 getProjectLogs: проект ${projectId}`);
+
+  if (USE_MOCK_DATA) {
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
+    const mockLogs = [
+      {
+        id: 1,
+        content: "Проект создан",
+        created: "2025-12-23T10:00:00+03:00"
+      },
+      {
+        id: 2, 
+        content: "Добавлен исполнитель",
+        created: "2025-12-23T11:30:00+03:00"
+      }
+    ];
+    
+    return mockLogs.map(log => ({
+      id: log.id,
+      action: log.content,
+      date: formatDateTime(log.created)
+    }));
+  }
+  
+  try {
+    const response = await authFetch(`${API_CONFIG.BASE_URL}projects/${projectId}/logs/?page=1`, {
+      method: 'GET'
+    });
+
+    console.log('Статус ответа логов:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Ошибка API логов:', errorText);
+      throw new Error(`API Error: ${response.status} - ${errorText}`);
+    }
+
+    const logsData = await response.json();
+    console.log('✅ Логи получены:', logsData);
+    
+    return logsData.map(log => ({
+      id: log.id,
+      action: log.content,
+      date: formatDateTime(log.created)
+    }));
+    
+  } catch (error) {
+    console.error('❌ Ошибка загрузки логов:', error);
+    return [];
   }
 }
 
@@ -302,13 +901,8 @@ export async function getTasks(USE_MOCK_DATA, filters = {}) {
     
     console.log('📡 Отправляю GET задачи:', url.toString());
     
-    const response = await fetch(url.toString(), {
-      method: 'GET',
-      headers: {
-        'accept': 'application/json',
-        'Authorization': `Bearer ${API_CONFIG.ACCESS_TOKEN}`,
-        'X-CSRFTOKEN': API_CONFIG.CSRF_TOKEN
-      }
+    const response = await authFetch(url.toString(), {
+      method: 'GET'
     });
 
     if (!response.ok) {
@@ -427,13 +1021,8 @@ export async function createTask(taskData, USE_MOCK_DATA) {
   }
   
   try {
-    const response = await fetch(`${API_CONFIG.BASE_URL}tasks/`, {
+    const response = await authFetch(`${API_CONFIG.BASE_URL}tasks/`, {
       method: 'POST',
-      headers: {
-        'accept': 'application/json',
-        'Authorization': `Bearer ${API_CONFIG.ACCESS_TOKEN}`,
-        'X-CSRFTOKEN': API_CONFIG.CSRF_TOKEN
-      },
       body: formData
     });
 
@@ -501,15 +1090,9 @@ export async function getTaskById(taskId, USE_MOCK_DATA) {
   }
   
   try {
-    const response = await fetch(`${API_CONFIG.BASE_URL}tasks/${taskId}/`, {
-      method: 'GET',
-      headers: {
-        'accept': 'application/json',
-        'Authorization': `Bearer ${API_CONFIG.ACCESS_TOKEN}`,
-        'X-CSRFTOKEN': API_CONFIG.CSRF_TOKEN
-      }
+    const response = await authFetch(`${API_CONFIG.BASE_URL}tasks/${taskId}/`, {
+      method: 'GET'
     });
-    console.log(response)
 
     console.log('Статус ответа задачи:', response.status);
     
@@ -594,13 +1177,8 @@ export async function updateTask(taskId, updateData, USE_MOCK_DATA) {
   }
   
   try {
-    const response = await fetch(`${API_CONFIG.BASE_URL}tasks/${taskId}/`, {
+    const response = await authFetch(`${API_CONFIG.BASE_URL}tasks/${taskId}/`, {
       method: 'PATCH',
-      headers: {
-        'accept': 'application/json',
-        'Authorization': `Bearer ${API_CONFIG.ACCESS_TOKEN}`,
-        'X-CSRFTOKEN': API_CONFIG.CSRF_TOKEN
-      },
       body: formData
     });
 
@@ -645,13 +1223,8 @@ export async function uploadFileToTask(taskId, file, USE_MOCK_DATA) {
   console.log('Отправляю файл задачи на сервер:', file.name);
   
   try {
-    const response = await fetch(`${API_CONFIG.BASE_URL}tasks/${taskId}/files/`, {
+    const response = await authFetch(`${API_CONFIG.BASE_URL}tasks/${taskId}/files/`, {
       method: 'POST',
-      headers: {
-        'accept': 'application/json',
-        'Authorization': `Bearer ${API_CONFIG.ACCESS_TOKEN}`,
-        'X-CSRFTOKEN': API_CONFIG.CSRF_TOKEN
-      },
       body: formData
     });
 
@@ -692,13 +1265,10 @@ export async function addCommentToTask(taskId, commentData, USE_MOCK_DATA) {
   }
   
   try {
-    const response = await fetch(`${API_CONFIG.BASE_URL}tasks/${taskId}/comments/`, {
+    const response = await authFetch(`${API_CONFIG.BASE_URL}tasks/${taskId}/comments/`, {
       method: 'POST',
       headers: {
-        'accept': 'application/json',
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_CONFIG.ACCESS_TOKEN}`,
-        'X-CSRFTOKEN': API_CONFIG.CSRF_TOKEN
       },
       body: JSON.stringify({
         content: commentData.content
@@ -756,13 +1326,8 @@ export async function getStaffDepartments(USE_MOCK_DATA) {
   }
   
   try {
-    const response = await fetch(`${API_CONFIG.BASE_URL}staff/departments/`, {
-      method: 'GET',
-      headers: {
-        'accept': 'application/json',
-        'Authorization': `Bearer ${API_CONFIG.ACCESS_TOKEN}`,
-        'X-CSRFTOKEN': API_CONFIG.CSRF_TOKEN
-      }
+    const response = await authFetch(`${API_CONFIG.BASE_URL}staff/departments/`, {
+      method: 'GET'
     });
 
     console.log('Статус ответа отделов:', response.status);
@@ -852,13 +1417,8 @@ export async function getStaffList(USE_MOCK_DATA, filters = {}) {
     
     console.log('📡 GET сотрудники:', url.toString());
     
-    const response = await fetch(url.toString(), {
-      method: 'GET',
-      headers: {
-        'accept': 'application/json',
-        'Authorization': `Bearer ${API_CONFIG.ACCESS_TOKEN}`,
-        'X-CSRFTOKEN': API_CONFIG.CSRF_TOKEN
-      }
+    const response = await authFetch(url.toString(), {
+      method: 'GET'
     });
 
     console.log('Статус ответа сотрудников:', response.status);
@@ -954,13 +1514,8 @@ export async function getEmployeeById(employeeId, USE_MOCK_DATA) {
   }
   
   try {
-    const response = await fetch(`${API_CONFIG.BASE_URL}staff/staff/${employeeId}/`, {
-      method: 'GET',
-      headers: {
-        'accept': 'application/json',
-        'Authorization': `Bearer ${API_CONFIG.ACCESS_TOKEN}`,
-        'X-CSRFTOKEN': API_CONFIG.CSRF_TOKEN
-      }
+    const response = await authFetch(`${API_CONFIG.BASE_URL}staff/staff/${employeeId}/`, {
+      method: 'GET'
     });
 
     console.log('Статус ответа сотрудника:', response.status);
@@ -1009,30 +1564,6 @@ export async function getEmployeeById(employeeId, USE_MOCK_DATA) {
 // ============================================
 // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
 // ============================================
-
-export function getCurrentUser() {
-  const token = API_CONFIG.ACCESS_TOKEN;
-  if (token) {
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      return {
-        id: payload.user_id || 4,
-        name: 'Текущий пользователь'
-      };
-    } catch (error) {
-      console.error('Ошибка декодирования токена:', error);
-      return {
-        id: 4,
-        name: 'Лутфуллин Амир Айратович'
-      };
-    }
-  }
-  
-  return {
-    id: 4,
-    name: 'Лутфуллин Амир Айратович'
-  };
-}
 
 function formatProjectData(project) {
   return {
@@ -1202,253 +1733,4 @@ function getFallbackProject() {
     files: [],
     changes: []
   };
-}
-
-export async function createProject(projectData, USE_MOCK_DATA) {
-  console.log('🔄 createProject: создаю проект:', projectData);
-  
-  if (USE_MOCK_DATA) {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    const mockId = Math.floor(Math.random() * 1000) + 100;
-    
-    const mockProject = {
-      id: mockId,
-      name: projectData.name || 'Новый проект',
-      type: projectData.type || 'website',
-      status: projectData.status || 'draft',
-      price: projectData.price || "0.00",
-      hours: projectData.hours || 0,
-      customer: projectData.customer || 'Не указан',
-      deadline: projectData.deadline || new Date().toISOString(),
-      created: new Date().toISOString(),
-      available: projectData.available || false,
-      team: [],
-      files: [],
-      changes: []
-    };
-    
-    return formatProjectData(mockProject);
-  }
-  
-  const formData = new FormData();
-  
-  formData.append('name', projectData.name);
-  formData.append('type', projectData.type);
-  formData.append('status', projectData.status);
-  formData.append('customer', projectData.customer);
-  formData.append('deadline', projectData.deadline + 'T00:00:00+03:00');
-  formData.append('hours', projectData.hours.toString());
-  
-  if (projectData.price) {
-    formData.append('price', cleanPriceForAPI(projectData.price));
-  }
-  
-  if (projectData.available !== undefined) {
-    formData.append('available', projectData.available.toString());
-  }
-  
-  console.log('Отправляемые данные для создания:');
-  for (let [key, value] of formData.entries()) {
-    console.log(`${key}: ${value}`);
-  }
-  
-  try {
-    const response = await fetch(`${API_CONFIG.BASE_URL}projects/`, {
-      method: 'POST',
-      headers: {
-        'accept': 'application/json',
-        'Authorization': `Bearer ${API_CONFIG.ACCESS_TOKEN}`,
-        'X-CSRFTOKEN': API_CONFIG.CSRF_TOKEN
-      },
-      body: formData
-    });
-
-    console.log('Статус ответа:', response.status);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ Ошибка API при создании:', errorText);
-      throw new Error(`API Error: ${response.status} - ${errorText}`);
-    }
-
-    const responseData = await response.json();
-    console.log('✅ Проект создан через API:', responseData);
-    
-    return formatProjectData(responseData);
-    
-  } catch (error) {
-    console.error('❌ Ошибка создания проекта:', error);
-    throw error;
-  }
-}
-
-export async function uploadFileToProject(projectId, file, USE_MOCK_DATA) {
-  console.log(`📤 uploadFileToProject: проект ${projectId}, файл ${file.name}`);
-  
-  if (USE_MOCK_DATA) {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const mockFile = {
-      id: Math.floor(Math.random() * 1000),
-      name: file.name,
-      file: `https://example.com/files/${file.name}`,
-      uploaded_at: new Date().toISOString(),
-      size: file.size
-    };
-    
-    console.log('✅ Моковая загрузка файла:', mockFile);
-    return mockFile;
-  }
-  
-  const formData = new FormData();
-  formData.append('file', file);
-  
-  console.log('Отправляю файл на сервер:', file.name, file.size);
-  
-  try {
-    const response = await fetch(`${API_CONFIG.BASE_URL}projects/${projectId}/files/`, {
-      method: 'POST',
-      headers: {
-        'accept': 'application/json',
-        'Authorization': `Bearer ${API_CONFIG.ACCESS_TOKEN}`,
-        'X-CSRFTOKEN': API_CONFIG.CSRF_TOKEN
-      },
-      body: formData
-    });
-
-    console.log('Статус ответа загрузки файла:', response.status);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ Ошибка загрузки файла:', errorText);
-      throw new Error(`Ошибка загрузки файла: ${response.status} - ${errorText}`);
-    }
-
-    const responseData = await response.json();
-    console.log('✅ Файл загружен:', responseData);
-    
-    return {
-      id: responseData.id,
-      name: file.name,
-      file: responseData.file,
-      uploaded_at: responseData.uploaded_at,
-      size: file.size
-    };
-    
-  } catch (error) {
-    console.error('❌ Ошибка загрузки:', error);
-    throw error;
-  }
-}
-
-export async function addPerformerToProject(projectId, staffId, USE_MOCK_DATA) {
-  console.log(`🔄 addPerformerToProject: проект ${projectId}, сотрудник ${staffId}`);
-  
-  if (USE_MOCK_DATA) {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    const mockPerformer = {
-      id: Math.floor(Math.random() * 1000),
-      staff: staffId,
-      staff_name: 'Иван Иванов',
-      staff_post: 'Разработчик',
-      assigned_at: new Date().toISOString()
-    };
-    
-    console.log('✅ Моковый исполнитель добавлен:', mockPerformer);
-    return mockPerformer;
-  }
-  
-  try {
-    const response = await fetch(`${API_CONFIG.BASE_URL}projects/${projectId}/performers/`, {
-      method: 'POST',
-      headers: {
-        'accept': 'application/json',
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_CONFIG.ACCESS_TOKEN}`,
-        'X-CSRFTOKEN': API_CONFIG.CSRF_TOKEN
-      },
-      body: JSON.stringify({
-        project: parseInt(projectId),
-        staff: parseInt(staffId)
-      })
-    });
-
-    console.log('Статус ответа:', response.status);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ Ошибка добавления исполнителя:', errorText);
-      throw new Error(`Ошибка: ${response.status} - ${errorText}`);
-    }
-
-    const responseData = await response.json();
-    console.log('✅ Исполнитель добавлен:', responseData);
-    
-    return responseData;
-    
-  } catch (error) {
-    console.error('❌ Ошибка добавления:', error);
-    throw error;
-  }
-}
-
-export async function getProjectLogs(projectId, USE_MOCK_DATA) {
-  console.log(`🔄 getProjectLogs: проект ${projectId}`);
-
-  if (USE_MOCK_DATA) {
-    await new Promise(resolve => setTimeout(resolve, 200));
-    
-    const mockLogs = [
-      {
-        id: 1,
-        content: "Проект создан",
-        created: "2025-12-23T10:00:00+03:00"
-      },
-      {
-        id: 2, 
-        content: "Добавлен исполнитель",
-        created: "2025-12-23T11:30:00+03:00"
-      }
-    ];
-    
-    return mockLogs.map(log => ({
-      id: log.id,
-      action: log.content,
-      date: formatDateTime(log.created)
-    }));
-  }
-  
-  try {
-    const response = await fetch(`${API_CONFIG.BASE_URL}projects/${projectId}/logs/?page=1`, {
-      method: 'GET',
-      headers: {
-        'accept': 'application/json',
-        'Authorization': `Bearer ${API_CONFIG.ACCESS_TOKEN}`,
-        'X-CSRFTOKEN': API_CONFIG.CSRF_TOKEN
-      }
-    });
-
-    console.log('Статус ответа логов:', response.status);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ Ошибка API логов:', errorText);
-      throw new Error(`API Error: ${response.status} - ${errorText}`);
-    }
-
-    const logsData = await response.json();
-    console.log('✅ Логи получены:', logsData);
-    
-    return logsData.map(log => ({
-      id: log.id,
-      action: log.content,
-      date: formatDateTime(log.created)
-    }));
-    
-  } catch (error) {
-    console.error('❌ Ошибка загрузки логов:', error);
-    return [];
-  }
 }

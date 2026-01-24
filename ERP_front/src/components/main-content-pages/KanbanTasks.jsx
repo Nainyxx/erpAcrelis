@@ -13,6 +13,8 @@ const KanbanTasks = ({ useMockData = true }) => {
   const { projectId } = useParams();
   
   const [tasks, setTasks] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [isCreating, setIsCreating] = useState(false);
 
   const columns = [
@@ -58,22 +60,15 @@ const KanbanTasks = ({ useMockData = true }) => {
   const directorInputRef = useRef(null);
 
   // Загрузка задач проекта
-  useEffect(() => {
-    loadProjectTasks();
-  }, [projectId, useMockData]);
-
-  // Загрузка сотрудников для автодополнения
-  const loadStaffList = async () => {
-    try {
-      const staffResult = await getStaffList(useMockData);
-      const staffData = staffResult.employees || [];
-      setAllStaff(staffData);
-    } catch (error) {
-      console.error('Ошибка загрузки сотрудников:', error);
-    }
-  };
-
   const loadProjectTasks = async () => {
+    if (!projectId) {
+      navigate('/projects');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    
     try {
       console.log(`🔄 Загружаю задачи для проекта ${projectId}`);
       
@@ -106,9 +101,27 @@ const KanbanTasks = ({ useMockData = true }) => {
       
     } catch (error) {
       console.error('❌ Ошибка загрузки задач:', error);
+      setError('Не удалось загрузить задачи. Проверьте подключение.');
       setTasks([]);
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  // Загрузка сотрудников для автодополнения
+  const loadStaffList = async () => {
+    try {
+      const staffResult = await getStaffList(useMockData);
+      const staffData = staffResult.employees || [];
+      setAllStaff(staffData);
+    } catch (error) {
+      console.error('Ошибка загрузки сотрудников:', error);
+    }
+  };
+
+  useEffect(() => {
+    loadProjectTasks();
+  }, [projectId, useMockData]);
 
   // ОТКРЫТИЕ МОДАЛЬНОГО ОКНА СОЗДАНИЯ
   const openCreateModal = () => {
@@ -350,13 +363,116 @@ const KanbanTasks = ({ useMockData = true }) => {
     navigate(`/tasks/${task.id}`);
   };
 
-// В KanbanTasks.jsx замени:
-const handleAvatarClick = (e, task) => {
-  e.stopPropagation();
-  if (task.assigneeId && task.assigneeId !== 'Не назначен') {
-    navigate(`/staff/${task.assigneeId}`); // ← используем /staff вместо /employees
+  // Клик по аватару
+  const handleAvatarClick = (e, task) => {
+    e.stopPropagation();
+    if (task.assigneeId && task.assigneeId !== 'Не назначен') {
+      navigate(`/staff/${task.assigneeId}`);
+    }
+  };
+
+  // ЗАГРУЗКА - ТАК ЖЕ КАК В ГАНТЕ
+  if (isLoading) {
+    return (
+      <div className="kanban-container">
+        <div className="gantt-loading_gantt_class">
+          <div className="loading-spinner_gantt_class"></div>
+          <h3 style={{ color: 'black', margin: '1vh 0', fontSize: '2vh' }}>Загрузка канбана задач...</h3>
+          <p style={{ color: 'rgba(0, 0, 0, 0.8)', fontSize: '1.4vh' }}>
+            Подготавливаем список задач проекта
+          </p>
+        </div>
+      </div>
+    );
   }
-};
+
+  // ОШИБКА ЗАГРУЗКИ - ТАК ЖЕ КАК В ГАНТЕ
+  if (error) {
+    return (
+      <div className="kanban-container">
+        <div className="kanban-header">
+          <h1 className="kanban-title">
+            <span 
+              className="breadcrumb-link" 
+              onClick={() => navigate('/projects')}
+            >
+              Проекты
+            </span>
+            {' — '}
+            <span 
+              className="breadcrumb-link" 
+              onClick={() => navigate(`/projects/${projectId}`)}
+            >
+              Карточка проекта
+            </span>
+            {' — Канбан задач'}
+          </h1>
+        </div>
+        
+        <div className="no-tasks-message_gantt_class">
+          <div className="no-tasks-content_gantt_class">
+            <span className="no-tasks-icon_gantt_class">⚠️</span>
+            <h4>Ошибка загрузки</h4>
+            <p>{error}</p>
+            <button 
+              onClick={loadProjectTasks}
+              className="gantt-back-btn_gantt_class"
+              style={{ marginTop: '2vh' }}
+            >
+              Повторить попытку
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // НЕТ ЗАДАЧ - ТАК ЖЕ КАК В ГАНТЕ
+  if (tasks.length === 0) {
+    return (
+      <div className="kanban-container">
+        <div className="kanban-header">
+          <h1 className="kanban-title">
+            <span 
+              className="breadcrumb-link" 
+              onClick={() => navigate('/projects')}
+            >
+              Проекты
+            </span>
+            {' — '}
+            <span 
+              className="breadcrumb-link" 
+              onClick={() => navigate(`/projects/${projectId}`)}
+            >
+              Карточка проекта
+            </span>
+            {' — Канбан задач'}
+          </h1>
+        </div>
+
+        <div className="create-task-section">
+          <button className="create-task-btn" onClick={openCreateModal}>
+            Создать задачу
+          </button>
+        </div>
+
+        <div className="no-tasks-message_gantt_class">
+          <div className="no-tasks-content_gantt_class">
+            <span className="no-tasks-icon_gantt_class">📋</span>
+            <h4>В проекте пока нет задач</h4>
+            <p>Создайте первую задачу для проекта</p>
+            <button 
+              onClick={openCreateModal}
+              className="gantt-back-btn_gantt_class"
+              style={{ marginTop: '2vh' }}
+            >
+              Создать задачу
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="kanban-container">

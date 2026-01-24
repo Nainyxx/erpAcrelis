@@ -497,36 +497,39 @@ const handleDownloadFile = async (file) => {
   useEffect(() => {
     loadProjectAndLogs();
   }, [projectId, useMockData, currentUser]);
-  
+
+  // ЗАГРУЗКА - ТАК ЖЕ КАК В ГАНТЕ
   if (isLoading) {
     return (
       <div className="projectcard-container">
-        <div style={{padding: '5vh', textAlign: 'center'}}>
-          Загрузка проекта...
+        <div className="gantt-loading_gantt_class">
+          <div className="loading-spinner_gantt_class"></div>
+          <h3 style={{ color: 'black', margin: '1vh 0', fontSize: '2vh' }}>Загрузка карточки проекта...</h3>
+          <p style={{ color: 'rgba(0, 0, 0, 0.8)', fontSize: '1.4vh' }}>
+            Подготавливаем данные проекта
+          </p>
         </div>
       </div>
     );
   }
   
+  // ПРОЕКТ НЕ НАЙДЕН - ТАК ЖЕ КАК В ГАНТЕ
   if (!project) {
     return (
       <div className="projectcard-container">
-        <div style={{padding: '5vh', textAlign: 'center'}}>
-          <h2>Проект не найден</h2>
-          <button 
-            onClick={() => navigate('/projects')}
-            style={{
-              padding: '1vh 2vh',
-              background: '#0066CC',
-              color: 'white',
-              border: 'none',
-              borderRadius: '0.4vh',
-              cursor: 'pointer',
-              marginTop: '2vh'
-            }}
-          >
-            Вернуться к списку проектов
-          </button>
+        <div className="no-tasks-message_gantt_class">
+          <div className="no-tasks-content_gantt_class">
+            <span className="no-tasks-icon_gantt_class">⚠️</span>
+            <h4>Проект не найден</h4>
+            <p>Запрошенный проект не существует или был удален</p>
+            <button 
+              onClick={() => navigate('/projects')}
+              className="gantt-back-btn_gantt_class"
+              style={{ marginTop: '2vh' }}
+            >
+              Вернуться к списку проектов
+            </button>
+          </div>
         </div>
       </div>
     );

@@ -8,27 +8,39 @@ const EmployeeCard = ({ useMockData = true }) => {
   const navigate = useNavigate();
   const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [avatarError, setAvatarError] = useState(false);
 
-  useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      try {
-        const employeeData = await getEmployeeById(employeeId, useMockData);
-        console.log('✅ Данные сотрудника получены:', employeeData);
-        console.log('📋 Данные директора:', employeeData.director);
-        setEmployee(employeeData);
-      } catch (error) {
-        console.error('❌ Ошибка загрузки данных сотрудника:', error);
-      } finally {
-        setLoading(false);
-        setAvatarError(false);
+  const loadEmployeeData = async () => {
+    setLoading(true);
+    setError(null);
+    setAvatarError(false);
+    
+    try {
+      if (!employeeId) {
+        throw new Error('Не указан ID сотрудника');
       }
-    };
-
-    if (employeeId) {
-      loadData();
+      
+      const employeeData = await getEmployeeById(employeeId, useMockData);
+      console.log('✅ Данные сотрудника получены:', employeeData);
+      
+      if (!employeeData || !employeeData.id) {
+        throw new Error('Сотрудник не найден');
+      }
+      
+      setEmployee(employeeData);
+      
+    } catch (error) {
+      console.error('❌ Ошибка загрузки данных сотрудника:', error);
+      setError('Не удалось загрузить данные сотрудника. Проверьте подключение.');
+      setEmployee(null);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    loadEmployeeData();
   }, [employeeId, useMockData]);
 
   const generateAvatar = (name, imageUrl) => {
@@ -89,25 +101,74 @@ const EmployeeCard = ({ useMockData = true }) => {
   // Обработчик клика по кнопке задач - переход в MyTasks с фильтром
   const handleTasksButtonClick = () => {
     if (employeeId) {
-      // Переходим на страницу задач с параметром фильтрации по исполнителю
       navigate(`/my-tasks?performer=${employeeId}&performerName=${encodeURIComponent(employee?.name || '')}`);
     }
   };
 
+  // ЗАГРУЗКА - ТАК ЖЕ КАК В ГАНТЕ
   if (loading) {
     return (
       <div className="employee-page_employee_card">
-        <h1 className="page-title_employee_card">Сотрудники — Карточка сотрудника</h1>
-        <div>Загрузка...</div>
+        <h1 className="page-title_employee_card">
+          <span className="clickable_employee_card" onClick={() => navigate('/staff')}>Сотрудники</span> — Карточка сотрудника
+        </h1>
+        <div className="gantt-loading_gantt_class">
+          <div className="loading-spinner_gantt_class"></div>
+          <h3 style={{ color: 'black', margin: '1vh 0', fontSize: '2vh' }}>Загрузка карточки сотрудника...</h3>
+          <p style={{ color: 'rgba(0, 0, 0, 0.8)', fontSize: '1.4vh' }}>
+            Подготавливаем данные сотрудника
+          </p>
+        </div>
       </div>
     );
   }
 
+  // ОШИБКА ЗАГРУЗКИ - ТАК ЖЕ КАК В ГАНТЕ
+  if (error) {
+    return (
+      <div className="employee-page_employee_card">
+        <h1 className="page-title_employee_card">
+          <span className="clickable_employee_card" onClick={() => navigate('/staff')}>Сотрудники</span> — Карточка сотрудника
+        </h1>
+        <div className="no-tasks-message_gantt_class">
+          <div className="no-tasks-content_gantt_class">
+            <span className="no-tasks-icon_gantt_class">⚠️</span>
+            <h4>Ошибка загрузки</h4>
+            <p>{error}</p>
+            <button 
+              onClick={loadEmployeeData}
+              className="gantt-back-btn_gantt_class"
+              style={{ marginTop: '2vh' }}
+            >
+              Повторить попытку
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // СОТРУДНИК НЕ НАЙДЕН - ТАК ЖЕ КАК В ГАНТЕ
   if (!employee) {
     return (
       <div className="employee-page_employee_card">
-        <h1 className="page-title_employee_card">Сотрудники — Карточка сотрудника</h1>
-        <div>Сотрудник не найден</div>
+        <h1 className="page-title_employee_card">
+          <span className="clickable_employee_card" onClick={() => navigate('/staff')}>Сотрудники</span> — Карточка сотрудника
+        </h1>
+        <div className="no-tasks-message_gantt_class">
+          <div className="no-tasks-content_gantt_class">
+            <span className="no-tasks-icon_gantt_class">👤</span>
+            <h4>Сотрудник не найден</h4>
+            <p>Запрошенный сотрудник не существует или был удален</p>
+            <button 
+              onClick={() => navigate('/staff')}
+              className="gantt-back-btn_gantt_class"
+              style={{ marginTop: '2vh' }}
+            >
+              Вернуться к списку сотрудников
+            </button>
+          </div>
+        </div>
       </div>
     );
   }

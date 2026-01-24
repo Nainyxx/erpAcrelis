@@ -233,97 +233,97 @@ const TaskCard = ({ useMockData = false }) => {
   };
 
   // Загрузка данных задачи
-  useEffect(() => {
-    const loadTask = async () => {
-      setLoading(true);
-      setError(null);
-      
-      try {
-        const taskData = await getTaskById(taskId, useMockData);
-        setTask(taskData);
-        
-        if (taskData.description) {
-          setComment(taskData.description);
-        }
-        
-        if (taskData.created) {
-          const createdDate = new Date(taskData.created);
-          const formattedStart = `${createdDate.getDate().toString().padStart(2, '0')}.${(createdDate.getMonth() + 1).toString().padStart(2, '0')}.${createdDate.getFullYear()}`;
-          setStartDate(formattedStart);
-        }
-        
-        if (taskData.deadline) {
-          const deadlineDate = new Date(taskData.deadline);
-          const formattedDeadline = `${deadlineDate.getDate().toString().padStart(2, '0')}.${(deadlineDate.getMonth() + 1).toString().padStart(2, '0')}.${deadlineDate.getFullYear()}`;
-          setDeadline(formattedDeadline);
-        }
-        
-        if (taskData.status_display) {
-          setStatus(taskData.status_display);
-          const statusOption = statusOptions.find(opt => opt.label === taskData.status_display);
-          setProgress(statusOption ? statusOption.progress : 50);
-        }
-        
-        if (taskData.performer_name) {
-          const initials = taskData.performer_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-          setAssignee({
-            name: taskData.performer_name,
-            initials: initials,
-            color: '#FF6B6B'
-          });
-        }
-        
-        if (taskData.director_name) {
-          const initials = taskData.director_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-          setManager({
-            name: taskData.director_name,
-            initials: initials,
-            color: '#4ECDC4'
-          });
-        }
-        
-        if (taskData.comments && taskData.comments.length > 0) {
-          const formattedComments = taskData.comments.map(comment => {
-            const commentDate = new Date(comment.created);
-            return {
-              id: comment.id,
-              userId: `comment_${comment.id}`,
-              userName: comment.author_name || 'Автор',
-              userInitials: comment.author_name 
-                ? comment.author_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-                : '??',
-              userColor: '#4ECDC4',
-              text: comment.content,
-              date: `${commentDate.getDate().toString().padStart(2, '0')}.${(commentDate.getMonth() + 1).toString().padStart(2, '0')}.${commentDate.getFullYear()}`,
-              time: `${commentDate.getHours().toString().padStart(2, '0')}:${commentDate.getMinutes().toString().padStart(2, '0')}`,
-              replies: []
-            };
-          });
-          setCommentsList(formattedComments);
-        } else {
-          setCommentsList([]);
-        }
-        
-        if (taskData.files && taskData.files.length > 0) {
-          const formattedFiles = taskData.files.map(file => ({
-            id: file.id,
-            name: file.file ? file.file.split('/').pop() : 'Файл',
-            size: formatFileSize(file.size) || 'Неизвестно',
-            fileData: file
-          }));
-          setFiles(formattedFiles);
-        } else {
-          setFiles([]);
-        }
-        
-      } catch (error) {
-        console.error('❌ Ошибка загрузки задачи:', error);
-        setError('Не удалось загрузить задачу');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const loadTask = async () => {
+    setLoading(true);
+    setError(null);
     
+    try {
+      const taskData = await getTaskById(taskId, useMockData);
+      setTask(taskData);
+      
+      if (taskData.description) {
+        setComment(taskData.description);
+      }
+      
+      if (taskData.created) {
+        const createdDate = new Date(taskData.created);
+        const formattedStart = `${createdDate.getDate().toString().padStart(2, '0')}.${(createdDate.getMonth() + 1).toString().padStart(2, '0')}.${createdDate.getFullYear()}`;
+        setStartDate(formattedStart);
+      }
+      
+      if (taskData.deadline) {
+        const deadlineDate = new Date(taskData.deadline);
+        const formattedDeadline = `${deadlineDate.getDate().toString().padStart(2, '0')}.${(deadlineDate.getMonth() + 1).toString().padStart(2, '0')}.${deadlineDate.getFullYear()}`;
+        setDeadline(formattedDeadline);
+      }
+      
+      if (taskData.status_display) {
+        setStatus(taskData.status_display);
+        const statusOption = statusOptions.find(opt => opt.label === taskData.status_display);
+        setProgress(statusOption ? statusOption.progress : 50);
+      }
+      
+      if (taskData.performer_name) {
+        const initials = taskData.performer_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+        setAssignee({
+          name: taskData.performer_name,
+          initials: initials,
+          color: '#FF6B6B'
+        });
+      }
+      
+      if (taskData.director_name) {
+        const initials = taskData.director_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+        setManager({
+          name: taskData.director_name,
+          initials: initials,
+          color: '#4ECDC4'
+        });
+      }
+      
+      if (taskData.comments && taskData.comments.length > 0) {
+        const formattedComments = taskData.comments.map(comment => {
+          const commentDate = new Date(comment.created);
+          return {
+            id: comment.id,
+            userId: `comment_${comment.id}`,
+            userName: comment.author_name || 'Автор',
+            userInitials: comment.author_name 
+              ? comment.author_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+              : '??',
+            userColor: '#4ECDC4',
+            text: comment.content,
+            date: `${commentDate.getDate().toString().padStart(2, '0')}.${(commentDate.getMonth() + 1).toString().padStart(2, '0')}.${commentDate.getFullYear()}`,
+            time: `${commentDate.getHours().toString().padStart(2, '0')}:${commentDate.getMinutes().toString().padStart(2, '0')}`,
+            replies: []
+          };
+        });
+        setCommentsList(formattedComments);
+      } else {
+        setCommentsList([]);
+      }
+      
+      if (taskData.files && taskData.files.length > 0) {
+        const formattedFiles = taskData.files.map(file => ({
+          id: file.id,
+          name: file.file ? file.file.split('/').pop() : 'Файл',
+          size: formatFileSize(file.size) || 'Неизвестно',
+          fileData: file
+        }));
+        setFiles(formattedFiles);
+      } else {
+        setFiles([]);
+      }
+      
+    } catch (error) {
+      console.error('❌ Ошибка загрузки задачи:', error);
+      setError('Не удалось загрузить задачу. Проверьте подключение.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     loadTask();
     
     return () => {
@@ -368,22 +368,60 @@ const TaskCard = ({ useMockData = false }) => {
     }
   }, [commentsList]);
 
+  // ЗАГРУЗКА - ТАК ЖЕ КАК В ГАНТЕ
   if (loading) {
     return (
       <div className="taskcard-container">
-        <div className="loading">Загрузка задачи...</div>
+        <div className="gantt-loading_gantt_class">
+          <div className="loading-spinner_gantt_class"></div>
+          <h3 style={{ color: 'black', margin: '1vh 0', fontSize: '2vh' }}>Загрузка задачи...</h3>
+          <p style={{ color: 'rgba(0, 0, 0, 0.8)', fontSize: '1.4vh' }}>
+            Подготавливаем данные задачи
+          </p>
+        </div>
       </div>
     );
   }
 
+  // ОШИБКА ЗАГРУЗКИ - ТАК ЖЕ КАК В ГАНТЕ
   if (error) {
     return (
       <div className="taskcard-container">
-        <div className="error-message">
-          {error}
-          <button onClick={() => navigate('/my-tasks')} className="retry-btn">
-            Вернуться к задачам
-          </button>
+        <div className="no-tasks-message_gantt_class">
+          <div className="no-tasks-content_gantt_class">
+            <span className="no-tasks-icon_gantt_class">⚠️</span>
+            <h4>Ошибка загрузки</h4>
+            <p>{error}</p>
+            <button 
+              onClick={loadTask}
+              className="gantt-back-btn_gantt_class"
+              style={{ marginTop: '2vh' }}
+            >
+              Повторить попытку
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ЗАДАЧА НЕ НАЙДЕНА - ТАК ЖЕ КАК В ГАНТЕ
+  if (!task) {
+    return (
+      <div className="taskcard-container">
+        <div className="no-tasks-message_gantt_class">
+          <div className="no-tasks-content_gantt_class">
+            <span className="no-tasks-icon_gantt_class">📋</span>
+            <h4>Задача не найдена</h4>
+            <p>Запрошенная задача не существует или была удалена</p>
+            <button 
+              onClick={() => navigate('/my-tasks')}
+              className="gantt-back-btn_gantt_class"
+              style={{ marginTop: '2vh' }}
+            >
+              Вернуться к моим задачам
+            </button>
+          </div>
         </div>
       </div>
     );

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import './GanttChart2.css';
 import { getProjectById, getTasks } from '../../services/api/api';
@@ -16,12 +16,72 @@ const GanttChart = ({ useMockData = false }) => {
   // Константы для отображения (в vh, где 1vh = 10px)
   const DAY_WIDTH_VH = 3; // 3vh = 30px (уменьшили для больших проектов)
   const TASK_MIN_WIDTH_VH = DAY_WIDTH_VH; // Минимальная ширина задачи
+  const MEMBER_ROW_HEIGHT_VH = 7; // Высота строки участника
+  const TASK_ROW_HEIGHT_VH = 5; // Высота задачи
+  const TASK_MARGIN_TOP_VH = 1; // Отступ сверху для задачи
+  const TASK_BORDER_WIDTH_VH = 0.2; // Толщина бордера задачи (кружка)
   
   // Цвета для задач
   const taskColors = [
     '#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0', '#118AB2', 
     '#EF476F', '#073B4C', '#7209B7', '#F3722C', '#43AA8B'
   ];
+
+  // Функция для сокращения названия месяца до 3 букв
+  const getShortMonthName = (fullMonthName) => {
+    const monthMap = {
+      'январь': 'янв',
+      'февраль': 'фев',
+      'март': 'мар',
+      'апрель': 'апр',
+      'май': 'май',
+      'июнь': 'июн',
+      'июль': 'июл',
+      'август': 'авг',
+      'сентябрь': 'сен',
+      'октябрь': 'окт',
+      'ноябрь': 'ноя',
+      'декабрь': 'дек',
+      'january': 'jan',
+      'february': 'feb',
+      'march': 'mar',
+      'april': 'apr',
+      'may': 'may',
+      'june': 'jun',
+      'july': 'jul',
+      'august': 'aug',
+      'september': 'sep',
+      'october': 'oct',
+      'november': 'nov',
+      'december': 'dec'
+    };
+    
+    const lowerMonth = fullMonthName.toLowerCase();
+    return monthMap[lowerMonth] || fullMonthName.slice(0, 3);
+  };
+
+  // Функция для сокращения дня недели до 3 букв
+  const getShortWeekdayName = (fullWeekdayName) => {
+    const weekdayMap = {
+      'понедельник': 'пн',
+      'вторник': 'вт',
+      'среда': 'ср',
+      'четверг': 'чт',
+      'пятница': 'пт',
+      'суббота': 'сб',
+      'воскресенье': 'вс',
+      'monday': 'mon',
+      'tuesday': 'tue',
+      'wednesday': 'wed',
+      'thursday': 'thu',
+      'friday': 'fri',
+      'saturday': 'sat',
+      'sunday': 'sun'
+    };
+    
+    const lowerWeekday = fullWeekdayName.toLowerCase();
+    return weekdayMap[lowerWeekday] || fullWeekdayName.slice(0, 3);
+  };
 
   // Загрузка проекта и его задач
   useEffect(() => {
@@ -185,6 +245,7 @@ const GanttChart = ({ useMockData = false }) => {
       }
       
       const color = teamMember ? teamMember.color : taskColors[index % taskColors.length];
+      const isCompleted = task.status === 'completed';
 
       ganttTasks.push({
         id: task.id,
@@ -193,12 +254,93 @@ const GanttChart = ({ useMockData = false }) => {
         startDate: startDate,
         deadline: deadline,
         color: color,
+        isCompleted: isCompleted,
         originalTask: task
       });
     });
 
     return { ganttTasks, team };
   };
+
+  // Функция для определения пересечений задач и распределения по строкам
+  const distributeTasksToRows = useMemo(() => {
+    if (!tasks.length) return {};
+
+    const tasksByMember = {};
+    
+    // Группируем задачи по участникам
+    tasks.forEach(task => {
+      if (!tasksByMember[task.memberId]) {
+        tasksByMember[task.memberId] = [];
+      }
+      tasksByMember[task.memberId].push({
+        ...task,
+        startDate: new Date(task.startDate),
+        deadline: new Date(task.deadline)
+      });
+    });
+
+    const result = {};
+    
+    // Для каждого участника распределяем задачи по строкам
+    Object.keys(tasksByMember).forEach((memberId) => {
+      const memberTasks = [...tasksByMember[memberId]];
+      
+      // Сортируем задачи по дате начала
+      memberTasks.sort((a, b) => a.startDate - b.startDate);
+      
+      const rows = [];
+      
+      // Алгоритм распределения задач по строкам (поиск минимального количества строк)
+      memberTasks.forEach(task => {
+        let placed = false;
+        
+        // Пробуем разместить задачу в существующих строках
+        for (let i = 0; i < rows.length; i++) {
+          const rowTasks = rows[i];
+          const canPlace = rowTasks.every(existingTask => {
+            // Проверяем пересечение задач
+            return (
+              task.deadline < existingTask.startDate || 
+              task.startDate > existingTask.deadline
+            );
+          });
+          
+          if (canPlace) {
+            rowTasks.push(task);
+            task.row = i; // Сохраняем номер строки для задачи
+            placed = true;
+            break;
+          }
+        }
+        
+        // Если не удалось разместить, создаем новую строку
+        if (!placed) {
+          const newRow = [task];
+          rows.push(newRow);
+          task.row = rows.length - 1;
+        }
+      });
+      
+      result[memberId] = {
+        tasks: memberTasks,
+        rowsCount: rows.length
+      };
+    });
+    
+    return result;
+  }, [tasks]);
+
+  // Рассчитываем общую высоту для участника с учетом всех строк
+  const getMemberTotalHeight = (memberId) => {
+    if (!distributeTasksToRows[memberId]) return MEMBER_ROW_HEIGHT_VH;
+    return distributeTasksToRows[memberId].rowsCount * MEMBER_ROW_HEIGHT_VH;
+  };
+
+  // Рассчитываем общую высоту всех участников
+  const totalHeight = teamMembers.reduce((sum, member) => {
+    return sum + getMemberTotalHeight(member.id);
+  }, 0);
 
   // Генерируем дни на основе дат ПРОЕКТА (БЕЗ ОГРАНИЧЕНИЙ)
   const generateDays = () => {
@@ -216,12 +358,17 @@ const GanttChart = ({ useMockData = false }) => {
         const date = new Date(year, 0, 1);
         date.setDate(date.getDate() + i);
         
+        const fullMonth = date.toLocaleString('ru-RU', { month: 'long' });
+        const fullWeekday = date.toLocaleString('ru-RU', { weekday: 'long' });
+        
         days.push({
           date: date,
           day: date.getDate(),
-          month: date.toLocaleString('ru-RU', { month: 'long' }),
+          month: fullMonth,
+          shortMonth: getShortMonthName(fullMonth),
           year: date.getFullYear(),
-          weekday: date.toLocaleString('ru-RU', { weekday: 'short' }),
+          weekday: fullWeekday,
+          shortWeekday: getShortWeekdayName(fullWeekday),
           isToday: date.toDateString() === new Date().toDateString()
         });
       }
@@ -248,12 +395,17 @@ const GanttChart = ({ useMockData = false }) => {
       const dayCopy = new Date(current);
       dayCopy.setDate(current.getDate() + i);
       
+      const fullMonth = dayCopy.toLocaleString('ru-RU', { month: 'long' });
+      const fullWeekday = dayCopy.toLocaleString('ru-RU', { weekday: 'long' });
+      
       days.push({
         date: dayCopy,
         day: dayCopy.getDate(),
-        month: dayCopy.toLocaleString('ru-RU', { month: 'long' }),
+        month: fullMonth,
+        shortMonth: getShortMonthName(fullMonth),
         year: dayCopy.getFullYear(),
-        weekday: dayCopy.toLocaleString('ru-RU', { weekday: 'short' }),
+        weekday: fullWeekday,
+        shortWeekday: getShortWeekdayName(fullWeekday),
         isToday: dayCopy.toDateString() === new Date().toDateString()
       });
     }
@@ -263,15 +415,8 @@ const GanttChart = ({ useMockData = false }) => {
 
   const days = generateDays();
   const totalWidth = days.length * DAY_WIDTH_VH; // Общая ширина всех дней в vh
-  const totalHeight = teamMembers.length * 7; // Общая высота всех строк участников в vh
 
-  console.log(`📊 Итоговая статистика:`);
-  console.log(`   Дней в проекте: ${days.length}`);
-  console.log(`   Общая ширина: ${totalWidth}vh (${totalWidth * 10}px)`);
-  console.log(`   Участников: ${teamMembers.length}`);
-  console.log(`   Общая высота: ${totalHeight}vh`);
-
-  // Группируем дни по месяцам
+  // Группируем дни по месяцам с учетом коротких названий
   const monthGroups = [];
   let currentMonth = null;
   let monthStart = 0;
@@ -282,6 +427,7 @@ const GanttChart = ({ useMockData = false }) => {
       if (currentMonth !== null) {
         monthGroups.push({
           month: days[monthStart].month,
+          shortMonth: days[monthStart].shortMonth,
           year: days[monthStart].year,
           start: monthStart,
           end: index - 1,
@@ -296,32 +442,13 @@ const GanttChart = ({ useMockData = false }) => {
   if (currentMonth !== null) {
     monthGroups.push({
       month: days[monthStart].month,
+      shortMonth: days[monthStart].shortMonth,
       year: days[monthStart].year,
       start: monthStart,
       end: days.length - 1,
       daysCount: days.length - monthStart
     });
   }
-
-  console.log(`📅 Месяцев: ${monthGroups.length}`);
-
-  // Найти задачу для конкретного участника и дня
-  const getTaskForMemberAndDay = (memberId, date) => {
-    return tasks.find(task => {
-      if (task.memberId !== memberId) return false;
-      
-      const taskStart = new Date(task.startDate);
-      const taskEnd = new Date(task.deadline);
-      const currentDate = new Date(date);
-      
-      // Нормализуем все даты до начала дня
-      taskStart.setHours(0, 0, 0, 0);
-      taskEnd.setHours(0, 0, 0, 0);
-      currentDate.setHours(0, 0, 0, 0);
-      
-      return currentDate >= taskStart && currentDate <= taskEnd;
-    });
-  };
 
   // Получить позицию и ширину задачи
   const getTaskPositionAndWidth = (task, days) => {
@@ -378,11 +505,31 @@ const GanttChart = ({ useMockData = false }) => {
     return { left, width, startIndex, endIndex };
   };
 
+  // Рассчитать позицию Y для задачи с учетом строки
+  const getTaskTopPosition = (memberId, rowIndex) => {
+    // Найти индекс участника в массиве
+    const memberIndex = teamMembers.findIndex(member => member.id === memberId);
+    if (memberIndex === -1) return TASK_MARGIN_TOP_VH;
+    
+    // Рассчитать позицию Y для участника (сумма высот предыдущих участников)
+    let memberTop = 0;
+    for (let i = 0; i < memberIndex; i++) {
+      memberTop += getMemberTotalHeight(teamMembers[i].id);
+    }
+    
+    // Добавить отступ для строки внутри участника
+    return memberTop + (rowIndex * MEMBER_ROW_HEIGHT_VH) + TASK_MARGIN_TOP_VH;
+  };
+
   if (isLoading) {
     return (
       <div className="gantt-container_gantt_class">
-        <div style={{ padding: '5vh', textAlign: 'center' }}>
-          Загрузка диаграммы Ганта...
+        <div className="gantt-loading_gantt_class">
+          <div className="loading-spinner_gantt_class"></div>
+          <h3 style={{ color: 'black', margin: '1vh 0', fontSize: '2vh' }}>Загрузка диаграммы Ганта...</h3>
+          <p style={{ color: 'rgba(0, 0, 0, 0.8)', fontSize: '1.4vh' }}>
+            Подготавливаем визуализацию проекта
+          </p>
         </div>
       </div>
     );
@@ -424,19 +571,6 @@ const GanttChart = ({ useMockData = false }) => {
           </span>
           {' — Диаграмма Ганта'}
         </h1>
-        <div className="project-dates-info_gantt_class">
-          <span className="date-label_gantt_class">Сроки проекта: </span>
-          <span className="date-value_gantt_class">
-            {project.created ? new Date(project.created).toLocaleDateString('ru-RU') : '-'}
-          </span>
-          <span className="date-separator_gantt_class"> — </span>
-          <span className="date-value_gantt_class">
-            {project.deadline ? new Date(project.deadline).toLocaleDateString('ru-RU') : '-'}
-          </span>
-          <span className="date-label_gantt_class" style={{ marginLeft: '2vh' }}>
-            (Всего дней: {days.length})
-          </span>
-        </div>
       </div>
 
       {/* Основной контейнер */}
@@ -444,18 +578,30 @@ const GanttChart = ({ useMockData = false }) => {
         <div className="gantt-diagram-wrapper_gantt_class">
           {/* Имена участников слева */}
           <div className="members-column_gantt_class">
-            {/* Пустой хедер высотой как месяцы и дни */}
             <div className="members-header_gantt_class"></div>
             <div className="members-list_gantt_class">
-              {teamMembers.map((member, index) => (
-                <div 
-                  key={member.id} 
-                  className="member-name-item_gantt_class"
-                  style={{ height: '7vh' }}
-                >
-                  {member.name}
-                </div>
-              ))}
+              {teamMembers.map((member, memberIndex) => {
+                const memberTasks = distributeTasksToRows[member.id];
+                const rowsCount = memberTasks ? memberTasks.rowsCount : 1;
+                
+                // Вычисляем высоту для этого участника
+                const memberHeight = rowsCount * MEMBER_ROW_HEIGHT_VH;
+                
+                return (
+                  <div 
+                    key={member.id} 
+                    className="member-name-item_gantt_class"
+                    style={{ 
+                      height: `${memberHeight}vh`,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: rowsCount > 1 ? 'space-between' : 'center'
+                    }}
+                  >
+                    <div className='member-name123'>{member.name}</div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -466,9 +612,9 @@ const GanttChart = ({ useMockData = false }) => {
               position: 'relative',
               minWidth: `${totalWidth}vh`,
               width: `${totalWidth}vh`,
-              height: '100%'
+              height: `${totalHeight}vh`
             }}>
-              {/* Заголовки месяцев */}
+              {/* Заголовки месяцев - теперь показываем сокращенные названия */}
               <div className="month-headers_gantt_class" style={{ 
                 minWidth: `${totalWidth}vh`,
                 width: `${totalWidth}vh`
@@ -483,13 +629,13 @@ const GanttChart = ({ useMockData = false }) => {
                     }}
                   >
                     <div className="month-name_gantt_class">
-                      {monthGroup.month} {monthGroup.year}
+                      {monthGroup.shortMonth} {monthGroup.year}
                     </div>
                   </div>
                 ))}
               </div>
 
-              {/* Заголовки дней */}
+              {/* Заголовки дней - теперь показываем сокращенные названия дней недели */}
               <div className="day-headers_gantt_class" style={{ 
                 minWidth: `${totalWidth}vh`,
                 width: `${totalWidth}vh`
@@ -504,7 +650,7 @@ const GanttChart = ({ useMockData = false }) => {
                     }}
                   >
                     <div className="day-number_gantt_class">{day.day}</div>
-                    <div className="day-weekday_gantt_class">{day.weekday}</div>
+                    <div className="day-weekday_gantt_class">{day.shortWeekday}</div>
                   </div>
                 ))}
               </div>
@@ -540,16 +686,84 @@ const GanttChart = ({ useMockData = false }) => {
                   height: `${totalHeight}vh`
                 }}
               >
-                {teamMembers.map((member, memberIndex) => {
-                  const memberTasks = tasks.filter(task => task.memberId === member.id);
+                {/* Рендерим задачи для каждого участника */}
+                {teamMembers.map((member) => {
+                  const memberTasks = distributeTasksToRows[member.id];
+                  if (!memberTasks || !memberTasks.tasks) return null;
                   
-                  return (
+                  return memberTasks.tasks.map((task) => {
+                    const { left, width } = getTaskPositionAndWidth(task, days);
+                    const top = getTaskTopPosition(member.id, task.row || 0);
+                    
+                    return (
+                      <div 
+                        key={task.id}
+                        className="gantt-task_gantt_class"
+                        style={{
+                          left: `${left}vh`,
+                          width: `${width}vh`,
+                          backgroundColor: task.color,
+                          height: `${TASK_ROW_HEIGHT_VH}vh`,
+                          top: `${top}vh`,
+                          minWidth: `${TASK_MIN_WIDTH_VH}vh`,
+                          display: 'flex',
+                          alignItems: 'center',
+                          borderWidth: `${TASK_BORDER_WIDTH_VH}vh`,
+                          borderStyle: 'solid',
+                          borderColor: 'rgba(255, 255, 255, 0.5)',
+                          boxSizing: 'border-box'
+                        }}
+                        onClick={() => navigate(`/tasks/${task.id}`)}
+                        title={`${task.title}\nСтатус: ${task.isCompleted ? 'Завершено' : 'В работе'}`}
+                      >
+                        {/* Кружок слева - УВЕЛИЧЕННЫЙ с галочкой при статусе completed */}
+                        <div className="task-status-circle_gantt_class">
+                          {task.isCompleted && (
+                            <svg 
+                              width="16" 
+                              height="16" 
+                              viewBox="0 0 24 24" 
+                              fill="none"
+                              style={{ display: 'block' }}
+                            >
+                              <path 
+                                d="M20 6L9 17L4 12" 
+                                stroke="#4ECDC4" 
+                                strokeWidth="3" 
+                                strokeLinecap="round" 
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                          )}
+                        </div>
+                        
+                        <div className="task-content_gantt_class">
+                          {width > 10 ? task.title : '●'}
+                        </div>
+                      </div>
+                    );
+                  });
+                })}
+
+                {/* Рендерим границы строк для каждого участника */}
+                {teamMembers.map((member, memberIndex) => {
+                  const memberTasks = distributeTasksToRows[member.id];
+                  const rowsCount = memberTasks ? memberTasks.rowsCount : 1;
+                  
+                  // Рассчитать позицию Y для участника
+                  let memberTop = 0;
+                  for (let i = 0; i < memberIndex; i++) {
+                    memberTop += getMemberTotalHeight(teamMembers[i].id);
+                  }
+                  
+                  // Создать строки для участника
+                  return Array.from({ length: rowsCount }).map((_, rowIndex) => (
                     <div 
-                      key={member.id} 
+                      key={`member-${member.id}-row-${rowIndex}`}
                       className="member-row_gantt_class"
                       style={{ 
-                        top: `${memberIndex * 7}vh`,
-                        height: '7vh',
+                        top: `${memberTop + (rowIndex * MEMBER_ROW_HEIGHT_VH)}vh`,
+                        height: `${MEMBER_ROW_HEIGHT_VH}vh`,
                         minWidth: `${totalWidth}vh`,
                         width: `${totalWidth}vh`
                       }}
@@ -559,47 +773,19 @@ const GanttChart = ({ useMockData = false }) => {
                         minWidth: `${totalWidth}vh`,
                         width: `${totalWidth}vh`
                       }}>
-                        {days.map((day, dayIndex) => {
-                          const task = getTaskForMemberAndDay(member.id, day.date);
-                          return (
-                            <div 
-                              key={`cell-${member.id}-${dayIndex}`}
-                              className={`day-cell_gantt_class ${day.isToday ? 'today-cell_gantt_class' : ''}`}
-                              style={{ 
-                                width: `${DAY_WIDTH_VH}vh`,
-                                minWidth: `${DAY_WIDTH_VH}vh`,
-                                backgroundColor: task ? `${task.color}20` : 'transparent'
-                              }}
-                            />
-                          );
-                        })}
-                      </div>
-                      
-                      {/* Задачи участника */}
-                      {memberTasks.map(task => {
-                        const { left, width } = getTaskPositionAndWidth(task, days);
-                        
-                        return (
+                        {days.map((day, dayIndex) => (
                           <div 
-                            key={task.id}
-                            className="gantt-task_gantt_class"
-                            style={{
-                              left: `${left}vh`,
-                              width: `${width}vh`,
-                              backgroundColor: task.color,
-                              height: '5vh',
-                              top: '1vh',
-                              minWidth: `${TASK_MIN_WIDTH_VH}vh`
+                            key={`cell-${member.id}-${rowIndex}-${dayIndex}`}
+                            className={`day-cell_gantt_class ${day.isToday ? 'today-cell_gantt_class' : ''}`}
+                            style={{ 
+                              width: `${DAY_WIDTH_VH}vh`,
+                              minWidth: `${DAY_WIDTH_VH}vh`,
                             }}
-                          >
-                            <div className="task-content_gantt_class">
-                              {task.title}
-                            </div>
-                          </div>
-                        );
-                      })}
+                          />
+                        ))}
+                      </div>
                     </div>
-                  );
+                  ));
                 })}
               </div>
 
@@ -623,6 +809,7 @@ const GanttChart = ({ useMockData = false }) => {
             <div className="no-tasks-content_gantt_class">
               <span className="no-tasks-icon_gantt_class">📋</span>
               <h4>В проекте пока нет задач</h4>
+              <p>Создайте задачи в проекте, чтобы увидеть их на диаграмме Ганта</p>
             </div>
           </div>
         )}

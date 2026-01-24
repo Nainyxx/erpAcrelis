@@ -24,10 +24,8 @@ const MyTasks = ({ useMockData = true }) => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Получаем параметры из URL для фильтрации
-  const queryParams = new URLSearchParams(location.search);
-  const performerFromUrl = queryParams.get('performer');
-  const performerNameFromUrl = queryParams.get('performerName');
+  // Получаем текущего пользователя
+  const [currentUser, setCurrentUser] = useState(null);
   
   // Поиск с дебаунсом
   const [searchInput, setSearchInput] = useState('');
@@ -36,7 +34,7 @@ const MyTasks = ({ useMockData = true }) => {
   
   // Фильтры
   const [selectedStatus, setSelectedStatus] = useState('all');
-  const [selectedPerformer, setSelectedPerformer] = useState(performerFromUrl || 'all');
+  const [selectedPerformer, setSelectedPerformer] = useState('');
   
   // Данные
   const [tasks, setTasks] = useState([]);
@@ -81,14 +79,33 @@ const MyTasks = ({ useMockData = true }) => {
     ...Object.entries(TASK_STATUS_MAP).map(([id, label]) => ({ id, label }))
   ];
 
-  // Загрузка исполнителей
+  // Инициализация - получаем текущего пользователя
   useEffect(() => {
+    const user = getCurrentUser();
+    console.log('🔄 Текущий пользователь из localStorage:', user);
+    setCurrentUser(user);
+    
+    // Сразу устанавливаем фильтр по staff_id текущего пользователя
+    if (user && user.staff_id) {
+      console.log(`✅ Устанавливаем фильтр по staff_id: ${user.staff_id}`);
+      setSelectedPerformer(user.staff_id.toString());
+    } else if (user && user.user_id) {
+      console.log(`⚠️ Staff_id не найден, используем user_id: ${user.user_id}`);
+      setSelectedPerformer(user.user_id.toString());
+    } else {
+      console.warn('⚠️ Не удалось определить ID пользователя, показываем все задачи');
+      setSelectedPerformer('all');
+    }
+    
+    // Загружаем список сотрудников
     loadStaffList();
   }, [useMockData]);
 
   // Загрузка задач при изменении фильтров
   useEffect(() => {
-    loadTasks();
+    if (selectedPerformer !== '') {
+      loadTasks();
+    }
   }, [useMockData, selectedStatus, selectedPerformer, searchQuery]);
 
   // Очищаем таймер при размонтировании
@@ -107,7 +124,7 @@ const MyTasks = ({ useMockData = true }) => {
       const staffData = staffResult.employees || [];
       
       // Создаем список исполнителей
-      let performersList = [
+      const performersList = [
         { id: 'all', label: 'Все исполнители' },
         ...staffData.map(staff => ({
           id: staff.id.toString(),
@@ -115,23 +132,16 @@ const MyTasks = ({ useMockData = true }) => {
         }))
       ];
       
-      // Если есть фильтр из URL, добавляем его в список если нет
-      if (performerFromUrl && performerFromUrl !== 'all' && performerNameFromUrl) {
-        const exists = performersList.find(p => p.id === performerFromUrl);
-        if (!exists) {
-          performersList = [
-            { id: 'all', label: 'Все исполнители' },
-            { id: performerFromUrl, label: performerNameFromUrl },
-            ...staffData.map(staff => ({
-              id: staff.id.toString(),
-              label: staff.name
-            }))
-          ];
-        }
-      }
-      
       setPerformers(performersList);
       setAllStaff(staffData);
+      
+      // Проверяем, есть ли текущий пользователь в списке
+      if (currentUser && currentUser.staff_id) {
+        const userExists = performersList.find(p => p.id === currentUser.staff_id.toString());
+        if (!userExists) {
+          console.warn(`⚠️ Текущий пользователь (staff_id: ${currentUser.staff_id}) не найден в списке сотрудников`);
+        }
+      }
       
     } catch (error) {
       console.error('Ошибка загрузки сотрудников:', error);
@@ -182,8 +192,15 @@ const MyTasks = ({ useMockData = true }) => {
         filters.status = selectedStatus;
       }
       
-      if (selectedPerformer !== 'all') {
+      // Фильтр по исполнителю
+      if (selectedPerformer && selectedPerformer !== 'all') {
         filters.performer = selectedPerformer;
+        console.log(`🔍 Фильтр по исполнителю: ${selectedPerformer}`);
+        
+        // Добавляем информацию о текущем пользователе
+        if (currentUser && currentUser.staff_id && selectedPerformer === currentUser.staff_id.toString()) {
+          console.log('✅ Фильтр установлен на текущего пользователя');
+        }
       }
       
       if (searchQuery) {
@@ -192,6 +209,8 @@ const MyTasks = ({ useMockData = true }) => {
       
       // Всегда добавляем сортировку по дедлайну
       filters.ordering = '-deadline';
+      
+      console.log('📡 Фильтры для загрузки задач:', filters);
       
       // Отправляем запрос с фильтрами
       const apiTasks = await getTasks(useMockData, filters);
@@ -219,11 +238,12 @@ const MyTasks = ({ useMockData = true }) => {
         };
       });
       
+      console.log(`✅ Загружено ${formattedTasks.length} задач`);
       setTasks(formattedTasks);
       
     } catch (error) {
       console.error('❌ Ошибка загрузки задач:', error);
-      setError('Не удалось загрузить ваши задачи');
+      setError('Не удалось загрузить задачи. Проверьте подключение.');
       setTasks([]);
     } finally {
       setLoading(false);
@@ -511,22 +531,116 @@ const MyTasks = ({ useMockData = true }) => {
     }
   };
 
-  if (loading) {
+  // ЗАГРУЗКА - ТАК ЖЕ КАК В ГАНТЕ
+  if (loading || selectedPerformer === '') {
     return (
       <div className="mytasks-container">
-        <div className="loading">Загрузка задач...</div>
+        <div className="gantt-loading_gantt_class">
+          <div className="loading-spinner_gantt_class"></div>
+          <h3 style={{ color: 'black', margin: '1vh 0', fontSize: '2vh' }}>Загрузка ваших задач...</h3>
+          <p style={{ color: 'rgba(0, 0, 0, 0.8)', fontSize: '1.4vh' }}>
+            Подготавливаем список задач
+          </p>
+        </div>
       </div>
     );
   }
 
+  // ОШИБКА ЗАГРУЗКИ - ТАК ЖЕ КАК В ГАНТЕ
   if (error) {
     return (
       <div className="mytasks-container">
-        <div className="error-message">
-          {error}
-          <button onClick={handleRefresh} className="retry-btn">
-            Повторить попытку
+        <h1 className="mytasks-title">Мои задачи</h1>
+        <div className="no-tasks-message_gantt_class">
+          <div className="no-tasks-content_gantt_class">
+            <span className="no-tasks-icon_gantt_class">⚠️</span>
+            <h4>Ошибка загрузки</h4>
+            <p>{error}</p>
+            <button 
+              onClick={handleRefresh}
+              className="gantt-back-btn_gantt_class"
+              style={{ marginTop: '2vh' }}
+            >
+              Повторить попытку
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // НЕТ ЗАДАЧ - ТАК ЖЕ КАК В ГАНТЕ
+  if (tasks.length === 0 && !searchQuery && selectedStatus === 'all' && selectedPerformer === 'all') {
+    return (
+      <div className="mytasks-container">
+        <h1 className="mytasks-title">Мои задачи</h1>
+        
+        <div className="filters-container">
+          <div className="filters">
+            <div className="filter-group">
+              <select 
+                className="filter-select" 
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+              >
+                {statuses.map(status => (
+                  <option key={status.id} value={status.id}>
+                    {status.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="filter-group">
+              <select 
+                className="filter-select" 
+                value={selectedPerformer}
+                onChange={(e) => setSelectedPerformer(e.target.value)}
+              >
+                {performers.map(performer => {
+                  const isCurrentUser = currentUser && 
+                    ((currentUser.staff_id && performer.id === currentUser.staff_id.toString()) ||
+                     (currentUser.user_id && performer.id === currentUser.user_id.toString()));
+                  
+                  return (
+                    <option key={performer.id} value={performer.id}>
+                      {performer.label} {isCurrentUser && '(Вы)'}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+
+            <div className="filter-group search-group">
+              <input
+                type="text"
+                placeholder="Поиск задач..."
+                className="search-input"
+                value={searchInput}
+                onChange={handleSearchChange}
+                onBlur={handleSearchBlur}
+              />
+            </div>
+          </div>
+          
+          <button className="create-task-btn" onClick={openCreateModal}>
+            Создать задачу
           </button>
+        </div>
+
+        <div className="no-tasks-message_gantt_class">
+          <div className="no-tasks-content_gantt_class">
+            <span className="no-tasks-icon_gantt_class">📋</span>
+            <h4>Задач пока нет</h4>
+            <p>Создайте первую задачу или выберите другого исполнителя</p>
+            <button 
+              onClick={openCreateModal}
+              className="gantt-back-btn_gantt_class"
+              style={{ marginTop: '2vh' }}
+            >
+              Создать задачу
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -535,7 +649,7 @@ const MyTasks = ({ useMockData = true }) => {
   return (
     <div className="mytasks-container">
       <h1 className="mytasks-title">Мои задачи</h1>
-
+      
       <div className="filters-container">
         <div className="filters">
           <div className="filter-group">
@@ -558,11 +672,18 @@ const MyTasks = ({ useMockData = true }) => {
               value={selectedPerformer}
               onChange={(e) => setSelectedPerformer(e.target.value)}
             >
-              {performers.map(performer => (
-                <option key={performer.id} value={performer.id}>
-                  {performer.label}
-                </option>
-              ))}
+              {performers.map(performer => {
+                // Добавляем отметку для текущего пользователя
+                const isCurrentUser = currentUser && 
+                  ((currentUser.staff_id && performer.id === currentUser.staff_id.toString()) ||
+                   (currentUser.user_id && performer.id === currentUser.user_id.toString()));
+                
+                return (
+                  <option key={performer.id} value={performer.id}>
+                    {performer.label} {isCurrentUser && '(Вы)'}
+                  </option>
+                );
+              })}
             </select>
           </div>
 
@@ -593,7 +714,7 @@ const MyTasks = ({ useMockData = true }) => {
           <div className="no-tasks">
             {searchQuery || selectedStatus !== 'all' || selectedPerformer !== 'all'
               ? 'Задачи не найдены по заданным фильтрам' 
-              : 'У вас нет назначенных задач'}
+              : 'Задачи не найдены'}
           </div>
         ) : (
           tasks.map((task) => (

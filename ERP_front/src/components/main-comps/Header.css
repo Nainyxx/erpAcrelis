@@ -31,6 +31,7 @@
     align-items: center;
     justify-content: center;
     transition: all 0.3s ease;
+    position: relative;
 }
 
 .navButt:hover {
@@ -55,6 +56,7 @@
     align-items: center;
     justify-content: center;
     transition: all 0.3s ease;
+    position: relative;
 }
 
 .navButt1:hover {
@@ -68,8 +70,47 @@
     object-fit: contain;
 }
 
+/* Кнопка выхода - такая же круглая, самая правая */
+.logoutButt {
+    width: 4vh;
+    height: 4vh;
+    border-radius: 50%;
+    background: #FF6B6B;
+    border: 0px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    position: relative;
+    margin-left: 0; /* Убираем левый отступ */
+}
 
-.navButt svg {
-    width: 2vh; /* 20px */
-    height: 2vh; /* 20px */
+.logoutButt:hover {
+    background: #FF5252;
+    transform: scale(1.05);
+}
+
+.logoutButt svg {
+    width: 2vh;
+    height: 2vh;
+}
+
+/* Подсказки при наведении */
+.navButt:hover::after,
+.navButt1:hover::after,
+.logoutButt:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: -35px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+    pointer-events: none;
 }

@@ -232,30 +232,132 @@ const renderTeamAvatars = (team) => {
   );
 };
 
+  // Универсальный компонент загрузки
+  const LoadingSpinner = ({ message = "Загрузка проектов..." }) => (
+    <div className="loading-container">
+      <div className="loading-spinner"></div>
+      <h3 className="loading-title">{message}</h3>
+      <p className="loading-subtitle">
+        Подготавливаем список проектов...
+      </p>
+    </div>
+  );
+
+  // Универсальный компонент ошибки
+  const ErrorMessage = ({ message, onRetry }) => (
+    <div className="error-container">
+      <div className="error-icon">⚠️</div>
+      <h3 className="error-title">Ошибка загрузки</h3>
+      <p className="error-message">{message}</p>
+      <button 
+        onClick={onRetry}
+        className="error-retry-btn"
+      >
+        Повторить попытку
+      </button>
+    </div>
+  );
+
+  // Если идет загрузка
   if (loading) {
     return (
       <div className="projects-container">
-        <div className="loading">Загрузка проектов...</div>
+        <div className="projects-header">
+          <h1 className="projects-title">Проекты</h1>
+        </div>
+        <LoadingSpinner />
       </div>
     );
   }
 
+  // Если произошла ошибка
   if (error) {
     return (
       <div className="projects-container">
-        <div className="error-message">
-          {error}
-          <button onClick={loadProjects} className="retry-btn">
-            Повторить попытку
+        <div className="projects-header">
+          <h1 className="projects-title">Проекты</h1>
+        </div>
+        <ErrorMessage 
+          message={error}
+          onRetry={loadProjects}
+        />
+      </div>
+    );
+  }
+
+  // Если проектов нет
+  if (projects.length === 0 && !searchQuery && selectedType === 'all') {
+    return (
+      <div className="projects-container">
+        <div className="projects-header">
+          <h1 className="projects-title">Проекты</h1>
+        </div>
+        
+        <div className="filters-container">
+          <div className="filters">
+            <div className="filter-group">
+              <select 
+                className="filter-select" 
+                value={selectedType}
+                onChange={(e) => setSelectedType(e.target.value)}
+              >
+                {projectTypes.map(type => (
+                  <option key={type.id} value={type.id}>
+                    {type.label} ({type.count || 0})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="filter-group search-group">
+              <input
+                type="text"
+                placeholder="Поиск проектов..."
+                className="search-input"
+                value={searchInput}
+                onChange={handleSearchChange}
+                onBlur={handleSearchBlur}
+              />
+            </div>
+          </div>
+          
+          <button 
+            className="create-project-btn"
+            onClick={() => setShowCreateModal(true)}
+          >
+            Создать проект
           </button>
         </div>
+
+        <div className="no-data-container">
+          <div className="no-data-icon">📋</div>
+          <h4>Проектов пока нет</h4>
+          <p>Создайте первый проект, чтобы начать работу</p>
+          <button 
+            className="create-first-project-btn"
+            onClick={() => setShowCreateModal(true)}
+          >
+            Создать проект
+          </button>
+        </div>
+
+        {/* Модальное окно создания проекта */}
+        {showCreateModal && (
+          <div className="modal-overlay123">
+            <div className="modal-content123">
+              {/* ... существующий код модального окна ... */}
+            </div>
+          </div>
+        )}
       </div>
     );
   }
 
   return (
     <div className="projects-container">
-      <h1 className="projects-title">Проекты</h1>
+      <div className="projects-header">
+        <h1 className="projects-title">Проекты</h1>
+      </div>
 
       <div className="filters-container">
         <div className="filters">

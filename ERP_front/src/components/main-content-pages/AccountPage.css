@@ -1,0 +1,235 @@
+.account-page-container {
+    min-height: 100vh;
+    background-color: #F6F6FE;
+    padding: 4vh 8vh;
+}
+
+.account-card {
+    background: white;
+    border-radius: 2vh;
+    padding: 6vh 8vh;
+    box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.08);
+    position: relative;
+    max-width: 140vh;
+    margin: 0 auto;
+}
+
+/* Кнопка редактирования */
+.edit-button {
+    position: absolute;
+    top: 6vh;
+    right: 8vh;
+    display: flex;
+    align-items: center;
+    gap: 1vh;
+    background: transparent;
+    border: 0.2vh solid #0066CC;
+    border-radius: 1vh;
+    padding: 1.5vh 3vh;
+    font-size: 1.6vh;
+    color: #0066CC;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.edit-button:hover {
+    background: #0066CC;
+    color: white;
+}
+
+.edit-button svg {
+    transition: all 0.3s ease;
+}
+
+.edit-button:hover svg path {
+    stroke: white;
+}
+
+/* Профиль */
+.profile-section {
+    display: flex;
+    align-items: center;
+    gap: 8vh;
+    margin-bottom: 8vh;
+}
+
+.avatar-container {
+    flex-shrink: 0;
+}
+
+.avatar-container svg {
+    width: 20.9vh;
+    height: 20.9vh;
+}
+
+.name-section {
+    flex: 1;
+}
+
+.user-name {
+    font-size: 4.8vh;
+    font-weight: 600;
+    color: #26262C;
+    margin: 0 0 1vh 0;
+}
+
+.user-post {
+    font-size: 2.4vh;
+    color: #666;
+    margin: 0 0 0.5vh 0;
+}
+
+.user-department {
+    font-size: 2vh;
+    color: #999;
+    margin: 0;
+}
+
+/* Личная информация */
+.personal-info-section {
+    padding-top: 4vh;
+}
+
+.section-title {
+    font-size: 2.8vh;
+    font-weight: 600;
+    color: #26262C;
+    margin: 0 0 4vh 0;
+}
+
+.input-row {
+    display: flex;
+    gap: 4vh;
+    margin-bottom: 4vh;
+}
+
+.input-group {
+    flex: 1;
+}
+
+.input-label {
+    display: block;
+    font-size: 1.8vh;
+    color: #666;
+    margin-bottom: 1vh;
+    font-weight: 500;
+}
+
+.input-field {
+    position: relative;
+}
+
+.readonly-input {
+    width: 100%;
+    padding: 2vh 3vh;
+    background: #6EDCE133; /* #6EDCE1 с прозрачностью 20% */
+    border: 0.2vh solid #E5E5E5;
+    border-radius: 1vh;
+    font-size: 2vh;
+    color: #26262C;
+    transition: border-color 0.3s ease;
+    box-sizing: border-box;
+}
+
+.readonly-input:focus {
+    outline: none;
+    border-color: #0066CC;
+}
+
+/* Статистика */
+.stats-section {
+    margin-top: 6vh;
+    padding-top: 4vh;
+    border-top: 0.2vh solid #EAEAEA;
+}
+
+.stats-title {
+    font-size: 2.2vh;
+    font-weight: 600;
+    color: #26262C;
+    margin: 0 0 3vh 0;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 3vh;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 2vh;
+    background: #F8F9FA;
+    border-radius: 1vh;
+}
+
+.stat-value {
+    display: block;
+    font-size: 3.2vh;
+    font-weight: 700;
+    color: #0066CC;
+    margin-bottom: 0.5vh;
+}
+
+.stat-label {
+    display: block;
+    font-size: 1.6vh;
+    color: #666;
+}
+
+/* Состояния загрузки и ошибок */
+.loading-state,
+.error-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 40vh;
+    text-align: center;
+}
+
+.loading-spinner {
+    width: 6vh;
+    height: 6vh;
+    border: 0.5vh solid #E5E5E5;
+    border-top-color: #0066CC;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 3vh;
+}
+
+.loading-state p {
+    font-size: 2vh;
+    color: #666;
+}
+
+.error-state {
+    color: #D32F2F;
+}
+
+.error-message {
+    font-size: 2vh;
+    margin-bottom: 3vh;
+}
+
+.retry-button {
+    background: #0066CC;
+    color: white;
+    border: none;
+    border-radius: 1vh;
+    padding: 1.5vh 3vh;
+    font-size: 1.8vh;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.retry-button:hover {
+    background: #0052A3;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Адаптивность */
