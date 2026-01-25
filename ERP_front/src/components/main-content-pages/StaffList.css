@@ -75,7 +75,6 @@
     color: #888;
 }
 
-/* ЕДИНЫЙ ГРИД */
 .staff-table {
     background: #ffffff;
     border-radius: 2vh;
@@ -84,14 +83,11 @@
     max-width: 100%;
     box-sizing: border-box;
     min-width: 60vh;
-    
-    /* ОДИН ЕДИНЫЙ ГРИД - 3 колонки как требовалось */
     display: grid;
     grid-template-columns: 2fr 1fr 1fr;
     gap: 0;
 }
 
-/* ВСЕ ЯЧЕЙКИ В ГРИДЕ */
 .staff-table > * {
     padding: 2vh 3vh;
     display: flex;
@@ -100,7 +96,6 @@
     box-sizing: border-box;
 }
 
-/* ЗАГОЛОВКИ */
 .header-cell {
     font-weight: 750;
     color: #333;
@@ -109,7 +104,6 @@
     white-space: nowrap;
 }
 
-/* СТРОКИ СОТРУДНИКОВ */
 .employee-row {
     display: contents;
 }
@@ -133,7 +127,6 @@
     background-color: rgba(0,0,0,0.02);
 }
 
-/* СТИЛИ КОНТЕНТА */
 .employee-info {
     display: flex;
     align-items: center;
@@ -183,7 +176,6 @@
     white-space: nowrap;
 }
 
-/* ОСТАЛЬНОЕ */
 .loading {
     display: flex;
     justify-content: center;

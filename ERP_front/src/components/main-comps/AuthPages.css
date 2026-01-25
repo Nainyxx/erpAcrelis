@@ -1,6 +1,3 @@
-/* Основные конвертации: 1vh = 10px, увеличены в 1.1 раза */
-/* 10px = 1vh, 20px = 2vh, 30px = 3vh, 40px = 4vh, 50px = 5vh */
-/* 100px = 10vh, 200px = 20vh, 400px = 40vh */
 
 /* ============================================ */
 /* СТРАНИЦА ЛОГИНА */
@@ -43,12 +40,12 @@
 
 /* Поля ввода */
 .login_input_login_page {
-  background-color: rgba(110, 220, 225, 0.2); /* #6EDCE133 20% */
+  background-color: rgba(110, 220, 225, 0.2);
   color: #122E3A;
   border: none;
-  border-radius: 4vh; /* 8.8px (было 8px) */
-  padding: 1.76vh 2.2vh; /* 17.6px 22px (было 16px 20px) */
-  font-size: 1.76vh; /* 17.6px (было 16px) */
+  border-radius: 4vh;
+  padding: 1.76vh 2.2vh;
+  font-size: 1.76vh;
   outline: none;
   transition: all 0.3s ease;
   width: 100%;
@@ -70,7 +67,7 @@
 }
 
 .login_input_login_page:focus {
-  box-shadow: 0 0 0 0.22vh rgba(110, 220, 225, 0.3); /* 2.2px (было 2px) */
+  box-shadow: 0 0 0 0.22vh rgba(110, 220, 225, 0.3);
 }
 
 .login_input_login_page:disabled {
@@ -89,7 +86,7 @@
 }
 
 .password_input_login_page {
-  padding-right: 10.45vh; /* 104.5px (было 95px) */
+  padding-right: 10.45vh;
 }
 
 /* Кнопка показа/скрытия пароля с текстом */
@@ -122,7 +119,7 @@
 }
 
 .password_toggle_text_login_page {
-  font-size: 1.43vh; /* 14.3px (было 13px) */
+  font-size: 1.43vh;
   color: #122E3A;
   font-weight: 500;
   white-space: nowrap;
@@ -132,9 +129,9 @@
 .login_error_login_page {
   background-color: #FFEBEE;
   color: #D32F2F;
-  padding: 1.32vh 1.76vh; /* 13.2px 17.6px (было 12px 16px) */
-  border-radius: 0.66vh; /* 6.6px (было 6px) */
-  font-size: 1.54vh; /* 15.4px (было 14px) */
+  padding: 1.32vh 1.76vh;
+  border-radius: 0.66vh;
+  font-size: 1.54vh;
   text-align: center;
 }
 
@@ -143,14 +140,14 @@
   background-color: #5CB6BA;
   color: #D5FBFF;
   border: none;
-  border-radius: 4vh; /* 8.8px (было 8px) */
-  padding: 1.76vh 2.2vh; /* 17.6px 22px (было 16px 20px) */
-  font-size: 1.76vh; /* 17.6px (было 16px) */
+  border-radius: 4vh;
+  padding: 1.76vh 2.2vh;
+  font-size: 1.76vh; 
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
   width: 100%;
-  margin-top: 1.1vh; /* 11px (было 10px) */
+  margin-top: 1.1vh; 
 }
 
 .login_button_login_page:hover:not(:disabled) {
@@ -167,7 +164,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 1.54vh; /* 15.4px (было 14px) */
+  font-size: 1.54vh; 
 }
 
 .login_no_account_login_page {

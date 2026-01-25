@@ -14,7 +14,6 @@
     margin: 0 auto;
 }
 
-/* Кнопка редактирования */
 .edit-button {
     position: absolute;
     top: 6vh;
@@ -122,7 +121,7 @@
 .readonly-input {
     width: 100%;
     padding: 2vh 3vh;
-    background: #6EDCE133; /* #6EDCE1 с прозрачностью 20% */
+    background: #6EDCE133; 
     border: 0.2vh solid #E5E5E5;
     border-radius: 1vh;
     font-size: 2vh;
@@ -177,7 +176,6 @@
     color: #666;
 }
 
-/* Состояния загрузки и ошибок */
 .loading-state,
 .error-state {
     display: flex;
@@ -231,5 +229,3 @@
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
-
-/* Адаптивность */

@@ -1,28 +1,28 @@
 .HeaderCont {
-    height: 9vh; /* 90px */
+    height: 9vh;
     width: 100%;
     display: flex;
     align-items: center;
-    padding: 0 2vh; /* 20px */
+    padding: 0 2vh;
 }
 
 .logo {
     display: flex;
     align-items: center;
-    height: 60%; /* 175px */
+    height: 60%;
 }
 
 .navCont {
     margin-left: auto;
     display: flex;
     align-items: center;
-    gap: 1.5vh; /* 15px */
-    padding-right: 2vh; /* 20px */
+    gap: 1.5vh;
+    padding-right: 2vh;
 }
 
 .navButt {
-    width: 4vh; /* 40px */
-    height: 4vh; /* 40px */
+    width: 4vh;
+    height: 4vh;
     border-radius: 50%;
     border: 0px;
     background: #B2E9EF;
@@ -40,14 +40,14 @@
 }
 
 .navButt img {
-    width: 2vh; /* 20px */
-    height: 2vh; /* 20px */
+    width: 2vh;
+    height: 2vh;
     object-fit: contain;
 }
 
 .navButt1 {
-    width: 4vh; /* 40px */
-    height: 4vh; /* 40px */
+    width: 4vh;
+    height: 4vh;
     border-radius: 50%;
     background: #B2E9EF;
     border: 0px;
@@ -65,12 +65,12 @@
 }
 
 .navButt1 img {
-    width: 4vh; /* 20px */
-    height: 4vh; /* 20px */
+    width: 4vh;
+    height: 4vh;
     object-fit: contain;
 }
 
-/* Кнопка выхода - такая же круглая, самая правая */
+/* Кнопка выхода */
 .logoutButt {
     width: 4vh;
     height: 4vh;
@@ -83,7 +83,7 @@
     justify-content: center;
     transition: all 0.3s ease;
     position: relative;
-    margin-left: 0; /* Убираем левый отступ */
+    margin-left: 0;
 }
 
 .logoutButt:hover {

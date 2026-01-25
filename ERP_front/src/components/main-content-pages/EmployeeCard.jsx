@@ -105,7 +105,6 @@ const EmployeeCard = ({ useMockData = true }) => {
     }
   };
 
-  // ЗАГРУЗКА - ТАК ЖЕ КАК В ГАНТЕ
   if (loading) {
     return (
       <div className="employee-page_employee_card">
@@ -123,7 +122,6 @@ const EmployeeCard = ({ useMockData = true }) => {
     );
   }
 
-  // ОШИБКА ЗАГРУЗКИ - ТАК ЖЕ КАК В ГАНТЕ
   if (error) {
     return (
       <div className="employee-page_employee_card">
@@ -148,7 +146,6 @@ const EmployeeCard = ({ useMockData = true }) => {
     );
   }
 
-  // СОТРУДНИК НЕ НАЙДЕН - ТАК ЖЕ КАК В ГАНТЕ
   if (!employee) {
     return (
       <div className="employee-page_employee_card">
@@ -189,7 +186,7 @@ const EmployeeCard = ({ useMockData = true }) => {
             </div>
           </div>
           
-          {/* Руководитель - данные из API */}
+          {/* Руководитель - данные из апи */}
           {employee.director && employee.director.id ? (
             <div 
               className="manager-box_employee_card clickable-manager"

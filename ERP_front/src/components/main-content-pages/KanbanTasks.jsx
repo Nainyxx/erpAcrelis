@@ -74,8 +74,6 @@ const KanbanTasks = ({ useMockData = true }) => {
       
       // Фильтр по проекту
       const filters = { project: projectId };
-      
-      // Получаем задачи из API
       const apiTasks = await getTasks(useMockData, filters);
       
       console.log(`✅ Получено ${apiTasks.length} задач для проекта`);
@@ -108,7 +106,6 @@ const KanbanTasks = ({ useMockData = true }) => {
     }
   };
 
-  // Загрузка сотрудников для автодополнения
   const loadStaffList = async () => {
     try {
       const staffResult = await getStaffList(useMockData);
@@ -123,7 +120,6 @@ const KanbanTasks = ({ useMockData = true }) => {
     loadProjectTasks();
   }, [projectId, useMockData]);
 
-  // ОТКРЫТИЕ МОДАЛЬНОГО ОКНА СОЗДАНИЯ
   const openCreateModal = () => {
     setShowCreateModal(true);
     setCreateError('');
@@ -231,7 +227,6 @@ const KanbanTasks = ({ useMockData = true }) => {
       return;
     }
 
-    // Проверяем исполнителя
     if (newTask.performerName && !newTask.performer) {
       const foundPerformer = allStaff.find(staff => 
         staff.name.toLowerCase() === newTask.performerName.toLowerCase() ||
@@ -268,8 +263,8 @@ const KanbanTasks = ({ useMockData = true }) => {
       const taskData = {
         name: newTask.name,
         description: newTask.description || newTask.name,
-        status: 'new', // ВСЕГДА СОЗДАЕМ СО СТАТУСОМ "НОВАЯ"
-        project: projectId, // ВАЖНО: автоматически привязываем к текущему проекту
+        status: 'new',
+        project: projectId,
         deadline: newTask.deadline + 'T00:00:00+03:00',
         performer: newTask.performer || null,
         director: newTask.director || null,
@@ -318,7 +313,7 @@ const KanbanTasks = ({ useMockData = true }) => {
               userFriendlyError = `Дата дедлайна: ${errorJson.deadline[0]}`;
             }
           } catch {
-            // Оставляем общее сообщение
+
           }
         }
       } else if (error.message.includes('Network Error') || error.message.includes('Failed to fetch')) {
@@ -358,7 +353,6 @@ const KanbanTasks = ({ useMockData = true }) => {
     return colors[colorIndex];
   };
 
-  // КЛИК ПО ЗАДАЧЕ - ПЕРЕХОД В КАРТОЧКУ ЗАДАЧИ
   const handleTaskClick = (task) => {
     navigate(`/tasks/${task.id}`);
   };
@@ -371,7 +365,6 @@ const KanbanTasks = ({ useMockData = true }) => {
     }
   };
 
-  // ЗАГРУЗКА - ТАК ЖЕ КАК В ГАНТЕ
   if (isLoading) {
     return (
       <div className="kanban-container">
@@ -386,7 +379,6 @@ const KanbanTasks = ({ useMockData = true }) => {
     );
   }
 
-  // ОШИБКА ЗАГРУЗКИ - ТАК ЖЕ КАК В ГАНТЕ
   if (error) {
     return (
       <div className="kanban-container">
@@ -427,7 +419,6 @@ const KanbanTasks = ({ useMockData = true }) => {
     );
   }
 
-  // НЕТ ЗАДАЧ - ТАК ЖЕ КАК В ГАНТЕ
   if (tasks.length === 0) {
     return (
       <div className="kanban-container">

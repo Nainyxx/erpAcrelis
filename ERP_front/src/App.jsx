@@ -25,7 +25,7 @@ import AccountPage from './components/main-content-pages/AccountPage'; // Доб
 // Мок данные
 import { projectsData } from './MockData/projects.js';
 
-// Импортируем функции аутентификации
+// Импорт функции аутентификации
 import { isAuthenticated, getCurrentUser } from './services/api/api';
 
 // Конфигурация
@@ -34,13 +34,12 @@ const CONFIG = {
   API_BASE_URL: 'https://api.acrelis.ru/'
 };
 
-// Компонент-обёртка для защищённых роутов
+// Компонент для защищённых роутов
 function PrivateRoute({ children }) {
   const [authChecked, setAuthChecked] = useState(false);
   const [isAuth, setIsAuth] = useState(false);
 
   useEffect(() => {
-    // Проверяем аутентификацию
     const checkAuth = async () => {
       const authenticated = isAuthenticated();
       setIsAuth(authenticated);

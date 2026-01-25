@@ -28,20 +28,16 @@ function AccountPage() {
         setError(null);
         
         try {
-            // Получаем текущего пользователя из localStorage/токена
             const currentUser = getCurrentUser();
             
             if (!currentUser || !currentUser.staff_id) {
                 throw new Error('Не удалось определить сотрудника');
             }
 
-            // Используем USE_MOCK_DATA = false для реальных данных
             const USE_MOCK_DATA = false;
             
-            // Получаем данные сотрудника через API
             const employeeData = await getEmployeeById(currentUser.staff_id, USE_MOCK_DATA);
             
-            // Форматируем данные для отображения
             const formattedData = {
                 name: employeeData.name || currentUser.name || '',
                 post: employeeData.position || employeeData.post || currentUser.post || '',
@@ -58,7 +54,6 @@ function AccountPage() {
             console.error('Ошибка загрузки данных аккаунта:', error);
             setError(error.message);
             
-            // Fallback: используем данные из localStorage
             const name = localStorage.getItem('name') || '';
             const post = localStorage.getItem('post') || '';
             const email = localStorage.getItem('email') || '';

@@ -18,7 +18,7 @@ const StaffList = ({ useMockData = true }) => {
       setError(null);
       
       try {
-        // 1. Загружаем сотрудников (реальный API при USE_MOCK_DATA=false)
+        // 1. Загружаем сотрудников
         const { employees: loadedEmployees } = await getStaffList(useMockData);
         
         // 2. Загружаем отделы отдельным запросом
@@ -32,10 +32,8 @@ const StaffList = ({ useMockData = true }) => {
           { id: 'all', label: 'Все отделы', count: loadedEmployees.length }
         ];
         
-        // Добавляем отделы из API
         if (departmentsData.length > 0) {
           departmentsData.forEach(dept => {
-            // Считаем сотрудников в отделе
             const count = loadedEmployees.filter(emp => 
               emp.department === dept.id.toString() || 
               emp.departmentLabel === dept.name
@@ -48,7 +46,6 @@ const StaffList = ({ useMockData = true }) => {
             });
           });
         } else {
-          // Если отделов нет, создаем из уникальных отделов сотрудников
           const uniqueDepartments = [...new Set(loadedEmployees.map(emp => emp.departmentLabel))];
           uniqueDepartments.forEach((deptLabel, index) => {
             if (deptLabel && deptLabel !== 'Не указан') {
@@ -98,7 +95,6 @@ const StaffList = ({ useMockData = true }) => {
     );
   };
 
-  // ЗАГРУЗКА - ТАК ЖЕ КАК В ГАНТЕ
   if (loading) {
     return (
       <div className="staff-container">
@@ -113,7 +109,6 @@ const StaffList = ({ useMockData = true }) => {
     );
   }
 
-  // ОШИБКА ЗАГРУЗКИ - ТАК ЖЕ КАК В ГАНТЕ
   if (error) {
     return (
       <div className="staff-container">

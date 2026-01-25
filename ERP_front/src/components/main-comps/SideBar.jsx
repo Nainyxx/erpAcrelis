@@ -16,19 +16,15 @@ function SideBar({ currentPath }) {
     { id: "staff", name: "Сотрудники", icon: StaffIcon, path: "/staff" }
   ];
 
-  // Получаем активную страницу из URL
   const getActivePage = () => {
     const path = currentPath || window.location.pathname;
     
-    // Проверяем пути для "Мои задачи"
     if (path === '/my-tasks' || path.startsWith('/tasks/')) {
       return 'mytasks';
     }
-    // Проверяем пути для "Проекты"
     else if (path === '/projects' || path.startsWith('/projects/')) {
       return 'projects';
     }
-    // Проверяем пути для "Сотрудники" (включая карточку сотрудника)
     else if (path === '/staff' || path.startsWith('/staff/')) {
       return 'staff';
     }
@@ -36,7 +32,7 @@ function SideBar({ currentPath }) {
       return 'accounting';
     }
     
-    return 'projects'; // По умолчанию
+    return 'projects'; 
   };
 
   const handleItemClick = (path) => {

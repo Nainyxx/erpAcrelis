@@ -20,7 +20,6 @@
     padding: 0;
 }
 
-/* Универсальные стили загрузки */
 .loading-container {
     position: absolute;
     top: 50%;
@@ -59,7 +58,6 @@
     100% { transform: rotate(360deg); }
 }
 
-/* Универсальные стили ошибки */
 .error-container {
     position: absolute;
     top: 50%;
@@ -105,7 +103,6 @@
     background: #3dbdb4;
 }
 
-/* Стиль для отсутствия данных */
 .no-data-container {
     position: absolute;
     top: 50%;
@@ -152,7 +149,6 @@
     background: #3dbdb4;
 }
 
-/* Остальные стили без изменений */
 .filters-container {
     background: #ffffff;
     border-radius: 2vh;
@@ -443,7 +439,6 @@
     font-size: 1.6vh;
 }
 
-/* ProjectsList.css - добавьте эти стили */
 
 .modal-overlay123 {
   position: fixed;
@@ -580,7 +575,6 @@
   margin-bottom: 15px;
 }
 
-/* Стили для автодополнения в ProjectCard.css */
 
 .suggestions-dropdown {
   position: absolute;
@@ -624,7 +618,6 @@
   margin-top: 2px;
 }
 
-/* Стили для поля ввода с автодополнением в модальном окне */
 .modal-body_projects_performers_create input[type="text"] {
   width: 100%;
   padding: 8px;

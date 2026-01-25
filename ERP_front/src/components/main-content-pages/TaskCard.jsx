@@ -498,12 +498,7 @@ const TaskCard = ({ useMockData = false }) => {
                             </div>
                           )}
                           
-                          <button 
-                            className={`reply-btn ${replyToCommentId === comment.id ? 'active' : ''}`}
-                            onClick={() => setReplyToCommentId(replyToCommentId === comment.id ? null : comment.id)}
-                          >
-                            {replyToCommentId === comment.id ? 'Отменить ответ' : 'Ответить'}
-                          </button>
+                          
                         </div>
                       ))}
                     </React.Fragment>

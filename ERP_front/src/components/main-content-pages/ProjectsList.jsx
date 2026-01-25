@@ -34,20 +34,16 @@ const ProjectsList = ({ useMockData = true, onProjectSelect }) => {
     try {
       console.log(`🔄 Загружаю проекты: useMockData = ${useMockData}, тип = ${selectedType}, поиск = ${searchQuery}`);
       
-      // Создаем объект фильтров для API
       const filters = {};
       
-      // Если выбран не "все проекты", добавляем фильтр по типу
       if (selectedType !== 'all') {
         filters.type = selectedType;
       }
       
-      // Если есть поисковый запрос, добавляем фильтр поиска
       if (searchQuery.trim()) {
         filters.search = searchQuery.trim();
       }
       
-      // Теперь getProjects получает фильтры, API само отфильтрует данные на сервере
       const { projects: loadedProjects, projectTypes: loadedTypes } = await getProjects(useMockData, filters);
       
       console.log(`✅ Получено ${loadedProjects.length} проектов с фильтрами`);
@@ -70,12 +66,10 @@ const ProjectsList = ({ useMockData = true, onProjectSelect }) => {
     const value = e.target.value;
     setSearchInput(value);
     
-    // Очищаем предыдущий таймер
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
     
-    // Устанавливаем новый таймер на 1.5 секунды
     searchTimeoutRef.current = setTimeout(() => {
       if (value !== searchQuery) {
         setSearchQuery(value);
@@ -85,12 +79,10 @@ const ProjectsList = ({ useMockData = true, onProjectSelect }) => {
 
   // При потере фокуса - сразу делаем поиск (если текст изменился)
   const handleSearchBlur = () => {
-    // Очищаем таймер дебаунса
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
     
-    // Если текст изменился - делаем поиск сразу
     if (searchInput !== searchQuery) {
       setSearchQuery(searchInput);
     }
@@ -148,12 +140,10 @@ const ProjectsList = ({ useMockData = true, onProjectSelect }) => {
     }
   };
 
-  // Загружаем проекты при изменении фильтров
   useEffect(() => {
     loadProjects();
   }, [useMockData, selectedType, searchQuery]);
 
-  // Очищаем таймер при размонтировании
   useEffect(() => {
     return () => {
       if (searchTimeoutRef.current) {
@@ -345,7 +335,7 @@ const renderTeamAvatars = (team) => {
         {showCreateModal && (
           <div className="modal-overlay123">
             <div className="modal-content123">
-              {/* ... существующий код модального окна ... */}
+              
             </div>
           </div>
         )}

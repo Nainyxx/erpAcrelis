@@ -13,13 +13,13 @@ const GanttChart = ({ useMockData = false }) => {
   const [tasks, setTasks] = useState([]);
   const [dateRange, setDateRange] = useState({ start: null, end: null });
 
-  // Константы для отображения (в vh, где 1vh = 10px)
-  const DAY_WIDTH_VH = 3; // 3vh = 30px (уменьшили для больших проектов)
-  const TASK_MIN_WIDTH_VH = DAY_WIDTH_VH; // Минимальная ширина задачи
-  const MEMBER_ROW_HEIGHT_VH = 7; // Высота строки участника
-  const TASK_ROW_HEIGHT_VH = 5; // Высота задачи
-  const TASK_MARGIN_TOP_VH = 1; // Отступ сверху для задачи
-  const TASK_BORDER_WIDTH_VH = 0.2; // Толщина бордера задачи (кружка)
+
+  const DAY_WIDTH_VH = 3; 
+  const TASK_MIN_WIDTH_VH = DAY_WIDTH_VH;
+  const MEMBER_ROW_HEIGHT_VH = 7;
+  const TASK_ROW_HEIGHT_VH = 5;
+  const TASK_MARGIN_TOP_VH = 1;
+  const TASK_BORDER_WIDTH_VH = 0.2;
   
   // Цвета для задач
   const taskColors = [
@@ -103,7 +103,6 @@ const GanttChart = ({ useMockData = false }) => {
         setTasks(ganttTasks);
         setTeamMembers(team);
         
-        // ВСЕГДА используем сроки проекта для отображения диаграммы
         let minDate, maxDate;
         
         if (projectData.created && projectData.deadline) {

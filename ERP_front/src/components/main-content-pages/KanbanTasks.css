@@ -6,7 +6,6 @@
   box-sizing: border-box;
 }
 
-/* Хлебные крошки */
 .kanban-header {
   margin-bottom: 2vh;
 }
@@ -53,14 +52,12 @@
   box-shadow: 0 0.2vh 0.5vh rgba(0,0,0,0.1);
 }
 
-/* Канбан доска - ОТДЕЛЬНЫЕ столбцы */
 .kanban-board {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 1vh;
 }
 
-/* Колонка - ОТДЕЛЬНАЯ */
 .kanban-column {
   background: #FFFFFF;
   border-radius: 1vh;
@@ -87,7 +84,6 @@
   
 }
 
-/* Список задач - БЕЗ СКРОЛЛА */
 .tasks-list {
   flex: 1;
   padding: 1vh;
@@ -149,7 +145,6 @@
   margin-bottom: 0.5vh;
 }
 
-/* Даты - ОДНА СТРОКА ОБА ЭЛЕМЕНТА */
 .task-dates {
   display: flex;
   flex-direction: column;

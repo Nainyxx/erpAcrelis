@@ -85,7 +85,6 @@
   flex-shrink: 0;
 }
 
-/* Хедер в колонке с именами - высота как месяцы и дни */
 .members-header_gantt_class {
   height: 10vh; /* 4vh месяцы + 6vh дни */
   background: #ffffff;
@@ -93,9 +92,7 @@
   flex-shrink: 0;
 }
 
-.member-name123 {
-  color:black;
-}
+
 
 .members-list_gantt_class {
   flex: 1;
@@ -118,7 +115,6 @@
   flex-shrink: 0;
 }
 
-/* Колонка с диаграммой - ФИКСИРОВАНА для скролла */
 .diagram-column_gantt_class {
   flex: 1;
   display: block;
@@ -130,7 +126,6 @@
   contain: content;
 }
 
-/* Заголовки месяцев - высота 4vh */
 .month-headers_gantt_class {
   display: flex;
   position: sticky;
@@ -157,7 +152,6 @@
   flex-shrink: 0;
 }
 
-/* Заголовки дней - высота 6vh */
 .day-headers_gantt_class {
   display: flex;
   position: sticky;
@@ -245,7 +239,6 @@
   will-change: transform;
 }
 
-/* Строка участника - высота 7vh */
 .member-row_gantt_class {
   position: absolute;
   height: 7vh;
