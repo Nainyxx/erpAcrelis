@@ -619,3 +619,213 @@
   width: 100%;
   box-sizing: border-box;
 }
+
+
+/* ============================================ */
+/* ЗАГЛУШКА НА ДОСТУП - ACCESS DENIED OVERLAY */
+/* ============================================ */
+
+/* Контейнер заглушки */
+.access_denied_container_123net_prav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #F6F6FE;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  padding: 4.4vh 2.2vh;
+  font-family: 'Arial', sans-serif;
+}
+
+/* Логотип заглушки */
+.access_denied_logo_123net_prav {
+  width: 22vh;
+  height: auto;
+  margin-bottom: 4.4vh;
+}
+
+/* Карточка с сообщением */
+.access_denied_card_123net_prav {
+  background: white;
+  border-radius: 1.1vh;
+  padding: 4.4vh;
+  box-shadow: 0 0.44vh 2.2vh rgba(0, 0, 0, 0.1);
+  max-width: 55vh;
+  width: 100%;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+/* Заголовок заглушки */
+.access_denied_title_123net_prav {
+  color: #5B5B5B;
+  font-size: 3.08vh;
+  font-weight: 600;
+  margin-bottom: 2.2vh;
+  line-height: 1.3;
+}
+
+/* Контейнер сообщения об ошибке */
+.access_denied_message_123net_prav {
+  background-color: #FFEBEE;
+  border: 0.11vh solid #FFCDD2;
+  border-radius: 0.88vh;
+  padding: 2.2vh;
+  margin-bottom: 3.3vh;
+  text-align: left;
+}
+
+/* Основной текст ошибки */
+.access_denied_error_123net_prav {
+  color: #D32F2F;
+  font-size: 1.76vh;
+  line-height: 1.5;
+  margin: 0 0 1vh 0;
+  font-weight: 500;
+}
+
+/* Подсказка под ошибкой */
+.access_denied_hint_123net_prav {
+  color: #666;
+  font-size: 1.54vh;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Кнопка возврата */
+.access_denied_button_123net_prav {
+  padding: 1.32vh 3.3vh;
+  background-color: #5ac5d8;
+  color: white;
+  border: none;
+  border-radius: 0.66vh;
+  font-size: 1.76vh;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+  width: 100%;
+  max-width: 22vh;
+  margin-bottom: 2.2vh;
+  display: inline-block;
+}
+
+.access_denied_button_123net_prav:hover {
+  background-color: #5ac5d8;
+  transform: translateY(-0.1vh);
+}
+
+.access_denied_button_123net_prav:active {
+  transform: translateY(0);
+}
+
+/* Контактная информация */
+.access_denied_contact_123net_prav {
+  margin-top: 2.2vh;
+  padding-top: 2.2vh;
+  border-top: 0.11vh solid #e1e1e1;
+  font-size: 1.2vh;
+  color: #999;
+  line-height: 1.5;
+}
+
+.access_denied_contact_123net_prav p {
+  margin: 0.5vh 0;
+}
+
+.access_denied_contact_title_123net_prav {
+  font-weight: 600;
+  color: #666;
+  margin-bottom: 0.8vh;
+}
+
+/* Адаптивность для заглушки */
+@media (max-width: 76.8vh) {
+  .access_denied_container_123net_prav {
+    padding: 3vh 1.5vh;
+  }
+  
+  .access_denied_logo_123net_prav {
+    width: 18vh;
+    margin-bottom: 3vh;
+  }
+  
+  .access_denied_card_123net_prav {
+    padding: 3vh 2vh;
+    max-width: 40vh;
+  }
+  
+  .access_denied_title_123net_prav {
+    font-size: 2.6vh;
+    margin-bottom: 2vh;
+  }
+  
+  .access_denied_message_123net_prav {
+    padding: 2vh;
+    margin-bottom: 2.5vh;
+  }
+  
+  .access_denied_error_123net_prav {
+    font-size: 1.6vh;
+  }
+  
+  .access_denied_hint_123net_prav {
+    font-size: 1.4vh;
+  }
+  
+  .access_denied_button_123net_prav {
+    padding: 1vh 2.5vh;
+    font-size: 1.6vh;
+    max-width: 20vh;
+  }
+  
+  .access_denied_contact_123net_prav {
+    font-size: 1.1vh;
+  }
+}
+
+@media (max-width: 48vh) {
+  .access_denied_container_123net_prav {
+    padding: 2vh 1.5vh;
+    justify-content: flex-start;
+    padding-top: 6vh;
+  }
+  
+  .access_denied_logo_123net_prav {
+    width: 14vh;
+    margin-bottom: 2.5vh;
+  }
+  
+  .access_denied_card_123net_prav {
+    padding: 2.5vh 1.5vh;
+    max-width: 32vh;
+  }
+  
+  .access_denied_title_123net_prav {
+    font-size: 2.2vh;
+    margin-bottom: 1.5vh;
+  }
+  
+  .access_denied_message_123net_prav {
+    padding: 1.5vh;
+    margin-bottom: 2vh;
+  }
+  
+  .access_denied_error_123net_prav {
+    font-size: 1.5vh;
+  }
+  
+  .access_denied_hint_123net_prav {
+    font-size: 1.3vh;
+  }
+  
+  .access_denied_button_123net_prav {
+    padding: 1vh 2vh;
+    font-size: 1.5vh;
+    max-width: 18vh;
+  }
+}

@@ -26,6 +26,9 @@ const PROJECT_TYPE_MAP = {
 };
 
 // Аутентификация пользователя
+// В ERP_front/src/services/api/api.js обновим функцию login()
+
+// Аутентификация пользователя
 export async function login(username, password) {
   try {
     const response = await fetch(`${API_CONFIG.BASE_URL}auth/login/`, {
@@ -39,6 +42,15 @@ export async function login(username, password) {
         password: password
       })
     });
+
+    console.log('🔐 Ответ от API при логине:', {
+      status: response.status,
+      statusText: response.statusText
+    });
+
+    if (response.status === 403) {
+      throw new Error('ACCESS_DENIED: Недостаточно прав для доступа к системе');
+    }
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -1453,4 +1465,151 @@ function getFallbackProject() {
     files: [],
     changes: []
   };
+}
+
+// В ERP_front/src/services/api/api.js
+// Регистрация по инвайт-ссылке
+// ERP_front/src/services/api/api.js - обновленная функция registerByInvite
+
+// Регистрация по инвайт-ссылке
+// ERP_front/src/services/api/api.js - исправленная функция registerByInvite
+
+// Регистрация по инвайт-ссылке
+// ERP_front/src/services/api/api.js - полностью исправленная функция registerByInvite
+
+// Регистрация по инвайт-ссылке
+export async function registerByInvite(token, userData) {
+  try {
+    console.log('📤 Отправка данных регистрации по инвайту:', {
+      token,
+      username: userData.username,
+      email: userData.email,
+      staff_data: userData.staff_data
+    });
+
+    const response = await fetch(`${API_CONFIG.BASE_URL}staff/register/invite/${token}/`, {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(userData)
+    });
+
+    console.log('📥 Ответ от API:', {
+      status: response.status,
+      statusText: response.statusText
+    });
+
+    const responseText = await response.text();
+    console.log('📄 Текст ответа:', responseText);
+
+    if (!response.ok) {
+      let errorMessage = 'Ошибка регистрации';
+      
+      // Пытаемся распарсить JSON ошибки
+      if (responseText) {
+        try {
+          const errorData = JSON.parse(responseText);
+          console.error('❌ Парсированные данные ошибки:', errorData);
+          
+          // Извлекаем сообщение об ошибке
+          if (errorData.error) {
+            errorMessage = errorData.error;
+          } else if (errorData.detail) {
+            errorMessage = errorData.detail;
+          } else if (errorData.non_field_errors) {
+            errorMessage = Array.isArray(errorData.non_field_errors) 
+              ? errorData.non_field_errors.join(', ')
+              : errorData.non_field_errors;
+          } else if (typeof errorData === 'object') {
+            // Собираем все ошибки полей
+            const fieldErrors = [];
+            for (const [field, errors] of Object.entries(errorData)) {
+              if (Array.isArray(errors)) {
+                fieldErrors.push(`${field}: ${errors.join(', ')}`);
+              } else if (typeof errors === 'string') {
+                fieldErrors.push(`${field}: ${errors}`);
+              }
+            }
+            if (fieldErrors.length > 0) {
+              errorMessage = fieldErrors.join('; ');
+            }
+          }
+        } catch (parseError) {
+          console.error('❌ Ошибка парсинга JSON:', parseError);
+          // Если не удалось распарсить, но есть текст
+          if (responseText.includes('Приглашение истекло') || 
+              responseText.includes('Неверное или несуществующее приглашение')) {
+            errorMessage = responseText;
+          }
+        }
+      }
+      
+      // Дополнительные проверки на основе статуса
+      if (response.status === 404) {
+        errorMessage = 'Ссылка приглашения не найдена';
+      }
+      
+      console.error('❌ Выбрасываем ошибку:', errorMessage);
+      throw new Error(errorMessage);
+    }
+
+    // Если ответ успешный
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('❌ Ошибка парсинга успешного ответа:', parseError);
+      throw new Error('Ошибка обработки ответа от сервера');
+    }
+    
+    console.log('✅ Успешный ответ от API:', result);
+    
+    // Если в ответе есть токены - сохраняем их
+    if (result.access && result.refresh) {
+      saveTokens(result);
+      
+      // Сохраняем данные пользователя если они есть
+      if (result.user_id || result.username) {
+        saveUserData(result);
+      }
+    }
+    
+    return {
+      success: true,
+      message: 'Регистрация по приглашению прошла успешно!',
+      data: result
+    };
+    
+  } catch (error) {
+    console.error('❌ Ошибка регистрации по инвайту:', error);
+    throw error;
+  }
+}
+export async function validateInviteToken(token) {
+  try {
+    const response = await fetch(`${API_CONFIG.BASE_URL}staff/register/invite/${token}/validate/`, {
+      method: 'GET',
+      headers: {
+        'accept': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Невалидный или просроченный инвайт');
+    }
+
+    const data = await response.json();
+    return {
+      valid: true,
+      data: data
+    };
+    
+  } catch (error) {
+    return {
+      valid: false,
+      error: error.message
+    };
+  }
 }

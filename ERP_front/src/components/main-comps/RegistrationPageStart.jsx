@@ -160,12 +160,7 @@ function RegistrationPageStart() {
         </button>
         
         {/* Ссылка на вход */}
-        <div className="login_links_login_page">
-          <span className="login_no_account_login_page">Уже есть аккаунт?</span>
-          <Link to="/login" className="login_register_link_login_page">
-            Войти
-          </Link>
-        </div>
+        
       </form>
     </div>
   );

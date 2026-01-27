@@ -1,3 +1,4 @@
+// ERP_front/src/App.js
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import './App.css';
@@ -6,6 +7,8 @@ import './App.css';
 import LoginPage from './components/main-comps/LoginPage';
 import RegistrationPageStart from './components/main-comps/RegistrationPageStart';
 import RegistrationPageEnd from './components/main-comps/RegistrationPageEnd';
+import InviteRegistrationStart from './components/main-comps/InviteRegistrationStart';
+import InviteRegistrationEnd from './components/main-comps/InviteRegistrationEnd';
 
 // Основные компоненты
 import Header from './components/main-comps/Header';
@@ -20,7 +23,7 @@ import MyTasks from './components/main-content-pages/MyTasks';
 import TaskCard from './components/main-content-pages/TaskCard';
 import StaffList from './components/main-content-pages/StaffList';
 import EmployeeCard from './components/main-content-pages/EmployeeCard';
-import AccountPage from './components/main-content-pages/AccountPage'; // Добавили импорт
+import AccountPage from './components/main-content-pages/AccountPage';
 
 // Мок данные
 import { projectsData } from './MockData/projects.js';
@@ -92,6 +95,8 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegistrationPageStart />} />
           <Route path="/register/step2" element={<RegistrationPageEnd />} />
+          <Route path="/staff/register/invite/:token" element={<InviteRegistrationStart />} />
+          <Route path="/staff/register/invite/:token/step2" element={<InviteRegistrationEnd />} />
           
           {/* Защищённые маршруты */}
           <Route path="/*" element={
