@@ -73,8 +73,8 @@ function AccountPage() {
             // Форматируем телефон для отображения
             const formattedPhone = formatPhoneForDisplay(employeeData.phone);
             
-            // Форматируем дату рождения для отображения
-            const formattedBirthDate = formatBirthDate(employeeData.birthday);
+            // Автоматически форматируем дату рождения
+            const formattedBirthDate = formatBirthDateForDisplay(employeeData.birthday);
             
             const formattedData = {
                 id: employeeData.id,
@@ -133,26 +133,74 @@ function AccountPage() {
         }
     };
 
-    const formatBirthDate = (dateString) => {
+    const formatBirthDateForDisplay = (dateString) => {
         if (!dateString) return '';
         
-        if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
-            const [year, month, day] = dateString.split('-');
-            return `${day.padStart(2, '0')}.${month.padStart(2, '0')}.${year}`;
+        try {
+            // Если это уже отформатированная дата DD.MM.YYYY, возвращаем как есть
+            if (dateString.match(/^\d{2}\.\d{2}\.\d{4}$/)) {
+                return dateString;
+            }
+            
+            // Пытаемся разобрать дату в формате YYYY-MM-DD
+            if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                const date = new Date(dateString);
+                if (!isNaN(date.getTime())) {
+                    const day = String(date.getDate()).padStart(2, '0');
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const year = date.getFullYear();
+                    return `${day}.${month}.${year}`;
+                }
+            }
+            
+            // Если это ISO строка
+            const date = new Date(dateString);
+            if (!isNaN(date.getTime())) {
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = date.getFullYear();
+                return `${day}.${month}.${year}`;
+            }
+            
+            return dateString;
+        } catch (error) {
+            console.error('Ошибка форматирования даты:', error);
+            return dateString;
         }
-        
-        return dateString;
     };
 
     const formatDateForAPI = (dateString) => {
         if (!dateString) return '';
         
-        if (dateString.match(/^\d{2}\.\d{2}\.\d{4}$/)) {
-            const [day, month, year] = dateString.split('.');
-            return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        try {
+            // Если дата в формате DD.MM.YYYY
+            if (dateString.match(/^\d{2}\.\d{2}\.\d{4}$/)) {
+                const [day, month, year] = dateString.split('.');
+                const date = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
+                if (!isNaN(date.getTime())) {
+                    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                }
+            }
+            
+            // Если это уже YYYY-MM-DD формат
+            if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                return dateString;
+            }
+            
+            // Пытаемся разобрать любую дату
+            const date = new Date(dateString);
+            if (!isNaN(date.getTime())) {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
+            
+            return '';
+        } catch (error) {
+            console.error('Ошибка конвертации даты для API:', error);
+            return '';
         }
-        
-        return dateString;
     };
 
     const formatPhoneForDisplay = (phone) => {
@@ -328,7 +376,7 @@ function AccountPage() {
                 phone: formatPhoneForDisplay(updatedData.phone),
                 originalPhone: updatedData.phone || '',
                 birthday: updatedData.birthday || '',
-                birthDate: formatBirthDate(updatedData.birthday),
+                birthDate: formatBirthDateForDisplay(updatedData.birthday), // Автоматическое форматирование
                 image: updatedData.image || updatedData.image_url || null,
                 image_url: updatedData.image_url || updatedData.image || null,
                 director: updatedData.director || userData.director,
@@ -389,27 +437,29 @@ function AccountPage() {
         if (imagePreview) {
             return (
                 <div 
-                    className="avatar-container editable"
+                    className={`avatar-container ${isEditing ? 'editable' : ''}`}
                     onClick={handleAvatarClick}
-                    title="Нажмите для изменения фото"
+                    title={isEditing ? "Нажмите для изменения фото" : ""}
                 >
                     <img 
                         src={imagePreview} 
                         alt="Предпросмотр" 
                         className="avatar-image"
                     />
-                    <div className="avatar-overlay">
-                        <span>Изменить фото</span>
-                    </div>
+                    {isEditing && (
+                        <div className="avatar-overlay">
+                            <span>Изменить фото</span>
+                        </div>
+                    )}
                 </div>
             );
         } else if (userData.image || userData.image_url) {
             const imageSrc = userData.image || userData.image_url;
             return (
                 <div 
-                    className="avatar-container editable"
+                    className={`avatar-container ${isEditing ? 'editable' : ''}`}
                     onClick={handleAvatarClick}
-                    title="Нажмите для изменения фото"
+                    title={isEditing ? "Нажмите для изменения фото" : ""}
                 >
                     <img 
                         src={imageSrc} 
@@ -418,7 +468,8 @@ function AccountPage() {
                         onError={(e) => {
                             // Если изображение не загружается, показываем SVG
                             e.target.style.display = 'none';
-                            e.target.parentNode.querySelector('svg').style.display = 'block';
+                            const svg = e.target.parentNode.querySelector('svg');
+                            if (svg) svg.style.display = 'block';
                         }}
                     />
                     <svg 
@@ -433,26 +484,30 @@ function AccountPage() {
                         <path d="M104.5 42.5C119.35 42.5 131.5 56.3132 131.5 73.5C131.5 90.6868 119.35 104.5 104.5 104.5C89.6499 104.5 77.5 90.6868 77.5 73.5C77.5 56.3132 89.6499 42.5 104.5 42.5Z" stroke="#26262C"/>
                         <path d="M56 151.5C56 145.919 57.2674 140.392 59.7299 135.236C62.1924 130.08 65.8017 125.394 70.3518 121.448C74.9018 117.501 80.3036 114.371 86.2485 112.235C92.1935 110.099 98.5652 109 105 109C111.435 109 117.807 110.099 123.751 112.235C129.696 114.371 135.098 117.501 139.648 121.448C144.198 125.394 147.808 130.08 150.27 135.236C152.733 140.392 154 145.919 154 151.5L153.917 151.5C153.917 145.928 152.651 140.411 150.193 135.264C147.735 130.116 144.132 125.439 139.589 121.499C135.047 117.559 129.654 114.434 123.72 112.302C117.785 110.17 111.424 109.072 105 109.072C98.5762 109.072 92.2153 110.17 86.2805 112.302C80.3456 114.434 74.9531 117.559 70.4108 121.499C65.8685 125.439 62.2653 130.116 59.807 135.264C57.3487 140.411 56.0835 145.928 56.0835 151.5L56 151.5Z" stroke="#26262C"/>
                     </svg>
-                    <div className="avatar-overlay">
-                        <span>Изменить фото</span>
-                    </div>
+                    {isEditing && (
+                        <div className="avatar-overlay">
+                            <span>Изменить фото</span>
+                        </div>
+                    )}
                 </div>
             );
         } else {
             return (
                 <div 
-                    className="avatar-container editable"
+                    className={`avatar-container ${isEditing ? 'editable' : ''}`}
                     onClick={handleAvatarClick}
-                    title="Нажмите для изменения фото"
+                    title={isEditing ? "Нажмите для добавления фото" : ""}
                 >
                     <svg width="20.9vh" height="20.9vh" viewBox="0 0 209 209" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <circle cx="104.5" cy="104.5" r="104.5" fill="#E5E5E5"/>
                         <path d="M104.5 42.5C119.35 42.5 131.5 56.3132 131.5 73.5C131.5 90.6868 119.35 104.5 104.5 104.5C89.6499 104.5 77.5 90.6868 77.5 73.5C77.5 56.3132 89.6499 42.5 104.5 42.5Z" stroke="#26262C"/>
                         <path d="M56 151.5C56 145.919 57.2674 140.392 59.7299 135.236C62.1924 130.08 65.8017 125.394 70.3518 121.448C74.9018 117.501 80.3036 114.371 86.2485 112.235C92.1935 110.099 98.5652 109 105 109C111.435 109 117.807 110.099 123.751 112.235C129.696 114.371 135.098 117.501 139.648 121.448C144.198 125.394 147.808 130.08 150.27 135.236C152.733 140.392 154 145.919 154 151.5L153.917 151.5C153.917 145.928 152.651 140.411 150.193 135.264C147.735 130.116 144.132 125.439 139.589 121.499C135.047 117.559 129.654 114.434 123.72 112.302C117.785 110.17 111.424 109.072 105 109.072C98.5762 109.072 92.2153 110.17 86.2805 112.302C80.3456 114.434 74.9531 117.559 70.4108 121.499C65.8685 125.439 62.2653 130.116 59.807 135.264C57.3487 140.411 56.0835 145.928 56.0835 151.5L56 151.5Z" stroke="#26262C"/>
                     </svg>
-                    <div className="avatar-overlay">
-                        <span>Добавить фото</span>
-                    </div>
+                    {isEditing && (
+                        <div className="avatar-overlay">
+                            <span>Добавить фото</span>
+                        </div>
+                    )}
                 </div>
             );
         }
@@ -666,9 +721,6 @@ function AccountPage() {
                         </div>
                     </div>
                 </div>
-
-                {/* Дополнительная информация */}
-                
             </div>
         </div>
     );

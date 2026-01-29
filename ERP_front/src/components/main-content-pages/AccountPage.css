@@ -438,3 +438,51 @@
     color: #26262C;
     font-weight: 500;
 }
+
+/* ... предыдущие стили остаются без изменений до этого момента ... */
+
+/* Аватарка с оверлеем для редактирования */
+.avatar-container.editable {
+    position: relative;
+    cursor: pointer;
+    border-radius: 50%;
+    overflow: hidden;
+}
+
+.avatar-container.editable:hover .avatar-overlay {
+    opacity: 1;
+}
+
+.avatar-container:not(.editable) {
+    cursor: default;
+}
+
+.avatar-image {
+    width: 20.9vh;
+    height: 20.9vh;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.avatar-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    border-radius: 50%;
+}
+
+.avatar-overlay span {
+    color: white;
+    font-size: 1.8vh;
+    font-weight: 500;
+    text-align: center;
+    padding: 0 2vh;
+}

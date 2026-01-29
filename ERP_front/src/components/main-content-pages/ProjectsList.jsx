@@ -192,7 +192,6 @@ const ProjectsList = ({ useMockData = true, onProjectSelect }) => {
       setCurrentPage(1);
       await loadProjects();
       
-      alert(`Проект "${createdProject.name}" успешно создан!`);
       
     } catch (error) {
       console.error('❌ Ошибка создания проекта:', error);

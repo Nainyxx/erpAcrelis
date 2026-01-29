@@ -735,22 +735,3 @@
   padding: 0 1vh;
 }
 
-/* Адаптивность для пагинации */
-@media (max-width: 768px) {
-  .pagination-controls {
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-  
-  .pagination-btn {
-    min-width: 8vh;
-    padding: 1vh 1.5vh;
-    font-size: 1.3vh;
-  }
-  
-  .pagination-page {
-    width: 4vh;
-    height: 4vh;
-    font-size: 1.3vh;
-  }
-}
