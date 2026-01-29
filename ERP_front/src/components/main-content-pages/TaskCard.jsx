@@ -167,11 +167,10 @@ const TaskCard = ({ useMockData = false }) => {
       
       setFiles(prev => [...prev, formattedFile]);
       
-      alert(`Файл "${file.name}" успешно загружен!`);
       
     } catch (error) {
       console.error('❌ Ошибка загрузки файла:', error);
-      alert(`Ошибка: ${error.message}`);
+
     }
   };
 

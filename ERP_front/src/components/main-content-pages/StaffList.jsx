@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getStaffList, getStaffDepartments } from '../../services/api/api';
+import { getStaffList, getStaffDepartments, authFetch } from '../../services/api/api';
 import './StaffList.css';
 
-const StaffList = ({ useMockData = true }) => {
+const StaffList = ({ useMockData = false }) => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('all');
@@ -11,11 +11,13 @@ const StaffList = ({ useMockData = true }) => {
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [avatarErrors, setAvatarErrors] = useState({});
 
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
       setError(null);
+      setAvatarErrors({});
       
       try {
         // 1. Загружаем сотрудников
@@ -83,11 +85,60 @@ const StaffList = ({ useMockData = true }) => {
     return matchesSearch && matchesDepartment;
   });
 
-  const generateAvatar = (name) => {
+  const handleAvatarError = (employeeId) => {
+    setAvatarErrors(prev => ({
+      ...prev,
+      [employeeId]: true
+    }));
+  };
+
+const generateAvatar = (employee) => {
     const colors = ['#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0', '#118AB2', '#EF476F'];
-    const initials = name.split(' ').map(n => n[0]).join('');
-    const colorIndex = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length;
     
+    // Получаем инициалы
+    let initials = 'НН';
+    if (employee.name && employee.name.trim()) {
+      const parts = employee.name.split(' ').filter(part => part.length > 0);
+      if (parts.length >= 2) {
+        initials = (parts[0][0] + parts[1][0]).toUpperCase();
+      } else if (parts.length === 1) {
+        initials = parts[0][0].toUpperCase();
+      }
+    }
+    
+    const colorIndex = (employee.name || '').split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length;
+    
+    // Пробуем получить аватарку из данных сотрудника
+    const imageUrl = employee.image || employee.image_url;
+    
+    // Проверяем, есть ли аватарка в данных
+    if (imageUrl) {
+      return (
+        <div className="avatar">
+          <img 
+            src={imageUrl} 
+            alt={employee.name}
+            onError={(e) => {
+              // Если изображение не загружается, показываем инициалы
+              e.target.style.display = 'none';
+              const fallback = e.target.parentNode.querySelector('.avatar-fallback');
+              if (fallback) fallback.style.display = 'flex';
+            }}
+          />
+          <div 
+            className="avatar-fallback" 
+            style={{ 
+              backgroundColor: colors[colorIndex],
+              display: 'none' // Скрыто по умолчанию
+            }}
+          >
+            {initials}
+          </div>
+        </div>
+      );
+    }
+    
+    // Если аватарки нет в данных, показываем только инициалы
     return (
       <div className="avatar" style={{ backgroundColor: colors[colorIndex] }}>
         {initials}
@@ -223,7 +274,7 @@ const StaffList = ({ useMockData = true }) => {
             <div className="employee-row" key={employee.id}>
               <div onClick={() => navigate(`/staff/${employee.id}`)}>
                 <div className="employee-info">
-                  {generateAvatar(employee.name)}
+                  {generateAvatar(employee)}
                   <div className="employee-name-text">{employee.name}</div>
                 </div>
               </div>

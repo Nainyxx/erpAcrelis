@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getEmployeeById } from '../../services/api/api';
+import { getEmployeeById, authFetch } from '../../services/api/api';
 import './EmployeeCard.css';
 
-const EmployeeCard = ({ useMockData = true }) => {
+const EmployeeCard = ({ useMockData = false }) => {
   const { employeeId } = useParams();
   const navigate = useNavigate();
   const [employee, setEmployee] = useState(null);
@@ -21,19 +21,64 @@ const EmployeeCard = ({ useMockData = true }) => {
         throw new Error('Не указан ID сотрудника');
       }
       
-      const employeeData = await getEmployeeById(employeeId, useMockData);
-      console.log('✅ Данные сотрудника получены:', employeeData);
+      // Используем прямую аутентифицированную загрузку для получения полных данных
+      const response = await authFetch(`https://api.acrelis.ru/staff/staff/${employeeId}/`, {
+        method: 'GET'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Ошибка загрузки: ${response.status}`);
+      }
+      
+      const employeeData = await response.json();
+      console.log('✅ Данные сотрудника получены из API:', employeeData);
       
       if (!employeeData || !employeeData.id) {
         throw new Error('Сотрудник не найден');
       }
       
-      setEmployee(employeeData);
+      // Форматируем телефон для отображения
+      const formattedPhone = formatPhoneForDisplay(employeeData.phone);
+      
+      const formattedEmployeeData = {
+        id: employeeData.id,
+        name: employeeData.name || '',
+        position: employeeData.post || '',
+        post: employeeData.post || '',
+        email: employeeData.email || '',
+        phone: formattedPhone,
+        telegram: employeeData.telegram || '',
+        birthday: employeeData.birthday || '',
+        image_url: employeeData.image || employeeData.image_url || null,
+        director: employeeData.director || null,
+        department: employeeData.department || '',
+        department_name: employeeData.department_name || '',
+        is_active: employeeData.is_active !== undefined ? employeeData.is_active : true,
+        created: employeeData.created || '',
+        current_tasks: employeeData.current_tasks || 0,
+        closed_late_tasks: employeeData.closed_late_tasks || 0,
+        closed_on_time_tasks: employeeData.closed_on_time_tasks || 0,
+        failed_tasks: employeeData.failed_tasks || 0
+      };
+      
+      setEmployee(formattedEmployeeData);
       
     } catch (error) {
       console.error('❌ Ошибка загрузки данных сотрудника:', error);
       setError('Не удалось загрузить данные сотрудника. Проверьте подключение.');
-      setEmployee(null);
+      
+      // Fallback на getEmployeeById если API запрос не удался
+      try {
+        const fallbackData = await getEmployeeById(employeeId, useMockData);
+        if (fallbackData && fallbackData.id) {
+          console.log('✅ Используем fallback данные:', fallbackData);
+          setEmployee(fallbackData);
+          setError(null);
+        }
+      } catch (fallbackError) {
+        console.error('❌ Fallback тоже не сработал:', fallbackError);
+        setEmployee(null);
+      }
     } finally {
       setLoading(false);
     }
@@ -42,6 +87,24 @@ const EmployeeCard = ({ useMockData = true }) => {
   useEffect(() => {
     loadEmployeeData();
   }, [employeeId, useMockData]);
+
+  const formatPhoneForDisplay = (phone) => {
+    if (!phone) return '';
+    
+    if (phone.includes('(') || phone.includes(')')) {
+      return phone;
+    }
+    
+    const cleaned = phone.replace(/\D/g, '');
+    
+    if (cleaned.length === 11) {
+      return `+7 (${cleaned.substring(1, 4)}) ${cleaned.substring(4, 7)}-${cleaned.substring(7, 9)}-${cleaned.substring(9)}`;
+    } else if (cleaned.length === 10) {
+      return `+7 (${cleaned.substring(0, 3)}) ${cleaned.substring(3, 6)}-${cleaned.substring(6, 8)}-${cleaned.substring(8)}`;
+    }
+    
+    return phone;
+  };
 
   const generateAvatar = (name, imageUrl) => {
     const colors = ['#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0', '#118AB2', '#EF476F'];
@@ -64,7 +127,11 @@ const EmployeeCard = ({ useMockData = true }) => {
           <img 
             src={imageUrl} 
             alt={name || 'Сотрудник'}
-            onError={() => setAvatarError(true)}
+            onError={() => {
+              console.log('❌ Ошибка загрузки аватарки:', imageUrl);
+              setAvatarError(true);
+            }}
+            onLoad={() => console.log('✅ Аватарка загружена:', imageUrl)}
           />
         </div>
       );
@@ -181,8 +248,13 @@ const EmployeeCard = ({ useMockData = true }) => {
           <div className="employee-info_employee_card">
             {generateAvatar(employee.name, employee.image_url)}
             <div className="name-section_employee_card">
-              <h2>{employee.name}</h2>
+              <h2>{employee.name || 'Имя не указано'}</h2>
               <p>{employee.position || employee.post || 'Должность не указана'}</p>
+              {employee.department_name && (
+                <p className="department-text_employee_card">
+                  Отдел: {employee.department_name}
+                </p>
+              )}
             </div>
           </div>
           
@@ -231,6 +303,14 @@ const EmployeeCard = ({ useMockData = true }) => {
             <div className="contact-item_employee_card">
               <span className="contact-label_employee_card">Telegram</span>
               <span className="contact-value_employee_card">{employee.telegram || '@acrelis'}</span>
+            </div>
+            <div className="contact-item_employee_card">
+              <span className="contact-label_employee_card">Дата рождения</span>
+              <span className="contact-value_employee_card">
+                {employee.birthday ? 
+                  new Date(employee.birthday).toLocaleDateString('ru-RU') : 
+                  'Не указана'}
+              </span>
             </div>
           </div>
           

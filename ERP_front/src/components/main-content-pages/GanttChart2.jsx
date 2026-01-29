@@ -83,6 +83,48 @@ const GanttChart = ({ useMockData = false }) => {
     return weekdayMap[lowerWeekday] || fullWeekdayName.slice(0, 3);
   };
 
+  // Функция для загрузки всех задач проекта (с обработкой пагинации)
+  const loadAllProjectTasks = async (useMockData, projectId) => {
+    let allTasks = [];
+    let currentPage = 1;
+    let hasMorePages = true;
+    
+    while (hasMorePages) {
+      try {
+        // Используем фильтр по проекту и текущую страницу
+        const filters = {
+          project: projectId,
+          page: currentPage
+        };
+        
+        const response = await getTasks(useMockData, filters);
+        
+        if (response.results && Array.isArray(response.results)) {
+          allTasks = [...allTasks, ...response.results];
+        }
+        
+        // Проверяем, есть ли следующая страница
+        if (response.next && currentPage < (response.total_pages || 100)) {
+          currentPage++;
+        } else {
+          hasMorePages = false;
+        }
+        
+        // Для мок данных ограничиваем количество страниц
+        if (useMockData && currentPage > 5) {
+          hasMorePages = false;
+        }
+        
+      } catch (error) {
+        console.error('❌ Ошибка загрузки страницы задач:', error);
+        hasMorePages = false;
+      }
+    }
+    
+    console.log(`✅ Загружено ${allTasks.length} задач для проекта ${projectId}`);
+    return allTasks;
+  };
+
   // Загрузка проекта и его задач
   useEffect(() => {
     const loadProjectData = async () => {
@@ -97,9 +139,10 @@ const GanttChart = ({ useMockData = false }) => {
         const projectData = await getProjectById(parseInt(projectId), useMockData);
         setProject(projectData);
 
-        const tasksData = await getTasks(useMockData, { project: projectId });
+        // Загружаем все задачи проекта с обработкой пагинации
+        const allTasksData = await loadAllProjectTasks(useMockData, projectId);
         
-        const { ganttTasks, team } = transformTasksToGantt(tasksData, projectData);
+        const { ganttTasks, team } = transformTasksToGantt(allTasksData, projectData);
         setTasks(ganttTasks);
         setTeamMembers(team);
         
@@ -136,6 +179,7 @@ const GanttChart = ({ useMockData = false }) => {
         console.log('📅 Диапазон проекта:');
         console.log('Начало:', minDate.toLocaleDateString());
         console.log('Конец:', maxDate.toLocaleDateString());
+        console.log(`📊 Всего задач: ${ganttTasks.length}`);
 
       } catch (error) {
         console.error('❌ Ошибка загрузки данных:', error);

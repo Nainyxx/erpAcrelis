@@ -336,24 +336,57 @@ export async function authFetch(url, options = {}) {
 // Получение списка проектов
 export async function getProjects(USE_MOCK_DATA, filters = {}) {
   if (USE_MOCK_DATA) {
-    const mockModule = await import('../../MockData/projects.js');
-    return formatMockProjects(mockModule.projectsData || []);
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    const mockProjects = [
+      {
+        id: 1,
+        name: 'Тестовый проект',
+        type: 'website',
+        status: 'active',
+        price: '12312.22',
+        hours: 0,
+        performers: [
+          { id: 1, staff: 5, staff_name: 'Шакиев Азат' },
+          { id: 2, staff: 4, staff_name: 'Лутфуллин Амир' }
+        ]
+      },
+      // ... другие проекты
+    ];
+    
+    // Эмуляция пагинации для mock данных
+    const page = parseInt(filters.page) || 1;
+    const pageSize = 20;
+    const startIndex = (page - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const paginatedProjects = mockProjects.slice(startIndex, endIndex);
+    
+    return {
+      results: paginatedProjects,
+      count: mockProjects.length,
+      next: page * pageSize < mockProjects.length ? page + 1 : null,
+      previous: page > 1 ? page - 1 : null,
+      current_page: page,
+      total_pages: Math.ceil(mockProjects.length / pageSize)
+    };
   }
   
   try {
     const url = new URL(`${API_CONFIG.BASE_URL}projects/`);
     
-    if (filters.type && filters.type !== 'all') {
-      url.searchParams.append('type', filters.type);
+    // Добавляем все фильтры, включая page
+    Object.keys(filters).forEach(key => {
+      if (filters[key] !== undefined && filters[key] !== null && filters[key] !== '') {
+        url.searchParams.append(key, filters[key]);
+      }
+    });
+    
+    // Если ordering не указан, добавляем сортировку по умолчанию
+    if (!filters.ordering && !url.searchParams.has('ordering')) {
+      url.searchParams.append('ordering', '-id');
     }
     
-    if (filters.status && filters.status !== 'all') {
-      url.searchParams.append('status', filters.status);
-    }
-    
-    if (filters.search) {
-      url.searchParams.append('search', filters.search);
-    }
+    console.log('📡 Запрос проектов к API:', url.toString());
     
     const response = await authFetch(url.toString(), {
       method: 'GET'
@@ -363,10 +396,14 @@ export async function getProjects(USE_MOCK_DATA, filters = {}) {
       const errorText = await response.text();
       throw new Error(`API Error: ${response.status} - ${errorText}`);
     }
+
+    const projectsData = await response.json();
     
-    const apiProjects = await response.json();
+    // Получаем текущую страницу из фильтров
+    const currentPage = parseInt(filters.page) || 1;
     
-    const projects = apiProjects.map(project => ({
+    // Форматируем проекты
+    const formattedProjects = (projectsData.results || projectsData).map(project => ({
       id: project.id,
       name: project.name,
       type: project.type || 'other',
@@ -380,8 +417,24 @@ export async function getProjects(USE_MOCK_DATA, filters = {}) {
       team: project.performers || []
     }));
     
-    const projectTypes = generateProjectTypes(projects);
-    return { projects, projectTypes };
+    // Генерируем типы проектов
+    const projectTypes = generateProjectTypes(formattedProjects);
+    
+    // Извлекаем данные пагинации из ответа API
+    const totalCount = projectsData.count || formattedProjects.length;
+    const totalPages = Math.ceil(totalCount / 20);
+    
+    return {
+      projects: formattedProjects,
+      projectTypes,
+      pagination: {
+        count: totalCount,
+        next: projectsData.next,
+        previous: projectsData.previous,
+        current_page: currentPage,
+        total_pages: totalPages
+      }
+    };
     
   } catch (error) {
     console.error('❌ Ошибка API:', error);
@@ -419,28 +472,42 @@ export async function getProjectById(projectId, USE_MOCK_DATA) {
 // Обновление проекта
 export async function updateProject(projectId, updateData, USE_MOCK_DATA) {
   if (USE_MOCK_DATA) {
+    await new Promise(resolve => setTimeout(resolve, 300));
     const project = await getProjectById(projectId, true);
     const updated = { ...project, ...updateData };
+    
+    // Обновляем отображаемый статус
+    if (updateData.status) {
+      const statusMap = {
+        'draft': 'Черновик',
+        'active': 'Активный',
+        'paused': 'Приостановлен',
+        'tests': 'Тестирование',
+        'completed': 'Завершен',
+        'cancelled': 'Отменен'
+      };
+      updated.status_display = statusMap[updateData.status] || 'Черновик';
+    }
+    
     return formatProjectData(updated);
   }
   
   const formData = new FormData();
   
-  if (updateData.start_date) {
-    const apiDate = convertToAPIDate(updateData.start_date);
-    if (apiDate) {
-      formData.append('start_date', apiDate);
-    }
+  // Добавляем все поля для обновления
+  if (updateData.status !== undefined) {
+    formData.append('status', updateData.status);
   }
   
-  if (updateData.deadline) {
-    const apiDate = convertToAPIDate(updateData.deadline);
-    if (apiDate) {
-      formData.append('deadline', apiDate);
-    }
+  if (updateData.start_date !== undefined) {
+    formData.append('start_date', updateData.start_date);
   }
   
-  if (updateData.type) {
+  if (updateData.deadline !== undefined) {
+    formData.append('deadline', updateData.deadline);
+  }
+  
+  if (updateData.type !== undefined) {
     const inputType = updateData.type.toLowerCase().trim();
     const apiType = PROJECT_TYPE_MAP[inputType] || inputType;
     formData.append('type', apiType);
@@ -455,6 +522,8 @@ export async function updateProject(projectId, updateData, USE_MOCK_DATA) {
     formData.append('customer', updateData.customer);
   }
   
+  console.log('📤 PATCH запрос для проекта', projectId, 'с данными:', Object.fromEntries(formData));
+  
   try {
     const response = await authFetch(`${API_CONFIG.BASE_URL}projects/${projectId}/`, {
       method: 'PATCH',
@@ -463,10 +532,12 @@ export async function updateProject(projectId, updateData, USE_MOCK_DATA) {
 
     if (!response.ok) {
       const errorText = await response.text();
+      console.error('❌ Ошибка PATCH запроса:', errorText);
       throw new Error(`API Error: ${response.status} - ${errorText}`);
     }
 
     const responseData = await response.json();
+    console.log('✅ PATCH запрос успешен:', responseData);
     return formatProjectData(responseData);
   } catch (error) {
     console.error(`❌ Ошибка обновления проекта:`, error);
@@ -704,36 +775,59 @@ export async function getTasks(USE_MOCK_DATA, filters = {}) {
         is_overdue: false,
         created: '2025-12-22T14:30:00+03:00',
         hours: 16
-      }
+      },
+      // Добавляем больше задач для пагинации
+      ...Array.from({ length: 50 }, (_, i) => ({
+        id: i + 3,
+        name: `Задача ${i + 3}`,
+        status: i % 3 === 0 ? 'new' : i % 3 === 1 ? 'active' : 'completed',
+        status_display: i % 3 === 0 ? 'Новое' : i % 3 === 1 ? 'В работе' : 'Завершено',
+        project: i % 2 + 1,
+        project_name: i % 2 === 0 ? 'Веб-сайт компании' : 'Мобильное приложение',
+        director: 1,
+        director_name: 'Иван Иванов',
+        performer: 4,
+        performer_name: 'Лутфуллин Амир',
+        deadline: `2025-12-${25 + i % 5}T10:00:00+03:00`,
+        is_overdue: false,
+        created: `2025-12-${20 + i % 3}T10:00:00+03:00`,
+        hours: 8
+      }))
     ];
     
-    return mockTasks;
+    // Эмуляция пагинации для mock данных
+    const page = parseInt(filters.page) || 1;
+    const pageSize = 20; // 20 задач на страницу как в API
+    const startIndex = (page - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const paginatedTasks = mockTasks.slice(startIndex, endIndex);
+    
+    return {
+      results: paginatedTasks,
+      count: mockTasks.length,
+      next: page * pageSize < mockTasks.length ? page + 1 : null,
+      previous: page > 1 ? page - 1 : null,
+      current_page: page,
+      total_pages: Math.ceil(mockTasks.length / pageSize)
+    };
   }
   
   try {
     const url = new URL(`${API_CONFIG.BASE_URL}tasks/`);
     
-    if (filters.status && filters.status !== 'all') {
-      url.searchParams.append('status', filters.status);
-    }
+    // Добавляем все фильтры, включая page
+    Object.keys(filters).forEach(key => {
+      if (filters[key] !== undefined && filters[key] !== null && filters[key] !== '') {
+        url.searchParams.append(key, filters[key]);
+      }
+    });
     
-    if (filters.performer && filters.performer !== 'all') {
-      url.searchParams.append('performer', filters.performer);
-    }
-    
-    if (filters.project && filters.project !== 'all') {
-      url.searchParams.append('project', filters.project);
-    }
-    
-    if (filters.search) {
-      url.searchParams.append('search', filters.search);
-    }
-    
-    if (filters.ordering) {
-      url.searchParams.append('ordering', filters.ordering);
-    } else {
+    // Если ordering не указан, добавляем сортировку по deadline по умолчанию
+    if (!filters.ordering && !url.searchParams.has('ordering')) {
       url.searchParams.append('ordering', '-deadline');
     }
+    
+    console.log('📡 Запрос задач к API:', url.toString());
     
     const response = await authFetch(url.toString(), {
       method: 'GET'
@@ -745,13 +839,22 @@ export async function getTasks(USE_MOCK_DATA, filters = {}) {
     }
 
     const tasksData = await response.json();
+    
+    // API возвращает пагинированный ответ с count
     return tasksData;
+    
   } catch (error) {
     console.error('❌ Ошибка загрузки задач:', error);
-    return [];
+    return {
+      results: [],
+      count: 0,
+      next: null,
+      previous: null,
+      current_page: parseInt(filters.page) || 1,
+      total_pages: 0
+    };
   }
 }
-
 // Получение задач по исполнителю
 export async function getTasksByPerformer(performerId, USE_MOCK_DATA) {
   if (USE_MOCK_DATA) {
@@ -1107,6 +1210,9 @@ export async function getStaffDepartments(USE_MOCK_DATA) {
 }
 
 // Получение списка сотрудников
+// В файле ERP_front/src/services/api/api.js
+// Находим функцию getStaffList и исправляем ее:
+
 export async function getStaffList(USE_MOCK_DATA, filters = {}) {
   if (USE_MOCK_DATA) {
     await new Promise(resolve => setTimeout(resolve, 300));
@@ -1121,24 +1227,7 @@ export async function getStaffList(USE_MOCK_DATA, filters = {}) {
         email: 'ivan@company.com',
         phone: '+7 (999) 123-45-67'
       },
-      {
-        id: 2,
-        name: 'Мария Петрова',
-        position: 'Дизайнер',
-        department: 'design',
-        departmentLabel: 'Отдел дизайна',
-        email: 'maria@company.com',
-        phone: '+7 (999) 234-56-78'
-      },
-      {
-        id: 3,
-        name: 'Алексей Сидоров',
-        position: 'Маркетолог',
-        department: 'marketing',
-        departmentLabel: 'Отдел маркетинга',
-        email: 'alexey@company.com',
-        phone: '+7 (999) 345-67-89'
-      }
+      // ... остальные мок данные
     ];
     
     const mockDepartments = [
@@ -1177,16 +1266,22 @@ export async function getStaffList(USE_MOCK_DATA, filters = {}) {
 
     const responseData = await response.json();
     
+    // ИСПРАВЛЕННАЯ ЧАСТЬ: правильно форматируем данные
     const employees = responseData.map(staff => ({
       id: staff.id,
       name: staff.name,
-      position: staff.post || staff.department_name || 'Сотрудник',
+      position: staff.post || staff.position || 'Сотрудник',
+      post: staff.post || 'Сотрудник',
       department: staff.department?.toString() || '0',
       departmentLabel: staff.department_name || 'Не указан',
       email: staff.email,
       phone: staff.phone,
       birthday: staff.birthday,
-      is_active: staff.is_active
+      telegram: staff.telegram,
+      is_active: staff.is_active,
+      // ВАЖНО: добавляем поля image и image_url
+      image: staff.image || null,
+      image_url: staff.image_url || staff.image || null
     }));
     
     const departments = await getStaffDepartments(USE_MOCK_DATA);

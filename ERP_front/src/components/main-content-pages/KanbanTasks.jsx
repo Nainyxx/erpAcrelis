@@ -60,51 +60,60 @@ const KanbanTasks = ({ useMockData = true }) => {
   const directorInputRef = useRef(null);
 
   // Загрузка задач проекта
-  const loadProjectTasks = async () => {
-    if (!projectId) {
-      navigate('/projects');
-      return;
-    }
+// Загрузка задач проекта
+const loadProjectTasks = async () => {
+  if (!projectId) {
+    navigate('/projects');
+    return;
+  }
 
-    setIsLoading(true);
-    setError(null);
+  setIsLoading(true);
+  setError(null);
+  
+  try {
+    console.log(`🔄 Загружаю задачи для проекта ${projectId}`);
     
-    try {
-      console.log(`🔄 Загружаю задачи для проекта ${projectId}`);
+    // Фильтр по проекту
+    const filters = { 
+      project: projectId,
+      page: 1
+    };
+    
+    // Запрашиваем задачи для конкретного проекта
+    const response = await getTasks(useMockData, filters);
+    
+    // API возвращает {results: [], count: X}
+    const apiTasks = response.results || [];
+    
+    console.log(`✅ Получено ${apiTasks.length} задач для проекта`);
+    
+    // Конвертируем задачи API в формат канбана
+    const kanbanTasks = apiTasks.map(task => {
+      const kanbanStatus = apiToKanbanStatus[task.status] || 'new';
       
-      // Фильтр по проекту
-      const filters = { project: projectId };
-      const apiTasks = await getTasks(useMockData, filters);
-      
-      console.log(`✅ Получено ${apiTasks.length} задач для проекта`);
-      
-      // Конвертируем задачи API в формат канбана
-      const kanbanTasks = apiTasks.map(task => {
-        const kanbanStatus = apiToKanbanStatus[task.status] || 'new';
-        
-        return {
-          id: task.id,
-          title: task.name || 'Без названия',
-          startDate: formatDateForDisplay(task.created) || 'Не указано',
-          deadline: formatDateForDisplay(task.deadline) || 'Не указано',
-          assignee: task.performer_name || 'Не назначен',
-          assigneeId: task.performer, // сохраняем ID исполнителя
-          status: kanbanStatus,
-          comment: task.description || '',
-          originalTask: task
-        };
-      });
-      
-      setTasks(kanbanTasks);
-      
-    } catch (error) {
-      console.error('❌ Ошибка загрузки задач:', error);
-      setError('Не удалось загрузить задачи. Проверьте подключение.');
-      setTasks([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      return {
+        id: task.id,
+        title: task.name || 'Без названия',
+        startDate: formatDateForDisplay(task.created) || 'Не указано',
+        deadline: formatDateForDisplay(task.deadline) || 'Не указано',
+        assignee: task.performer_name || 'Не назначен',
+        assigneeId: task.performer,
+        status: kanbanStatus,
+        comment: task.description || '',
+        originalTask: task
+      };
+    });
+    
+    setTasks(kanbanTasks);
+    
+  } catch (error) {
+    console.error('❌ Ошибка загрузки задач:', error);
+    setError('Не удалось загрузить задачи. Проверьте подключение.');
+    setTasks([]);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const loadStaffList = async () => {
     try {
@@ -290,7 +299,6 @@ const KanbanTasks = ({ useMockData = true }) => {
       // Обновляем список задач
       await loadProjectTasks();
       
-      alert('Задача успешно создана!');
       
     } catch (error) {
       console.error('❌ Ошибка создания задачи:', error);

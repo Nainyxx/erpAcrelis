@@ -1,13 +1,42 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AcrelisLogo from "../../assets/acrelis-logo.svg";
 import NotificationIcon from "../../assets/nav-logo-notification.svg";
 import AccountIcon from "../../assets/nav-logo-acc.svg";
-import { clearTokens } from "../../services/api/api";
+import { clearTokens, authFetch } from "../../services/api/api";
 import './Header.css';
 
 function Header({ currentUser }) {
     const navigate = useNavigate();
+    const [userAvatar, setUserAvatar] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        fetchUserAvatar();
+    }, []);
+
+    const fetchUserAvatar = async () => {
+        const staffId = localStorage.getItem('staff_id');
+        if (!staffId) return;
+
+        setIsLoading(true);
+        try {
+            const response = await authFetch(`https://api.acrelis.ru/staff/staff/${staffId}/`, {
+                method: 'GET'
+            });
+
+            if (response.ok) {
+                const userData = await response.json();
+                if (userData.image || userData.image_url) {
+                    setUserAvatar(userData.image || userData.image_url);
+                }
+            }
+        } catch (error) {
+            console.error('Ошибка загрузки аватарки:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const handleLogout = () => {
         clearTokens();
@@ -31,9 +60,34 @@ function Header({ currentUser }) {
                     title="Аккаунт"
                     onClick={handleAccountClick}
                 >
+                    {isLoading ? (
+                        <div className="avatar-loading">
+                            <div className="loading-spinner-small"></div>
+                        </div>
+                    ) : userAvatar ? (
+                        <img 
+                            src={userAvatar} 
+                            alt={currentUser ? currentUser.name : "Гость"}
+                            className="user-avatar"
+                            onError={(e) => {
+                                // Если аватарка не загружается, показываем стандартную иконку
+                                e.target.style.display = 'none';
+                                e.target.parentNode.querySelector('.default-avatar').style.display = 'block';
+                            }}
+                        />
+                    ) : (
+                        <img 
+                            src={AccountIcon} 
+                            alt={currentUser ? currentUser.name : "Гость"}
+                            className="default-avatar"
+                        />
+                    )}
+                    {/* Скрытая иконка для fallback */}
                     <img 
                         src={AccountIcon} 
-                        alt={currentUser ? currentUser.name : "Гость"}
+                        alt="Гость"
+                        className="default-avatar"
+                        style={{ display: 'none' }}
                     />
                 </button>
                 

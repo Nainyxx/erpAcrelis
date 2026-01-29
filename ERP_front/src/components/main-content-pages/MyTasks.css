@@ -430,3 +430,126 @@
     margin-bottom: 1.5vh;
     font-size: 1.3vh;
 }
+
+/* Стили для пагинации задач */
+.tasks-pagination {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2vh;
+  margin-top: 3vh;
+  padding: 2vh 0;
+  border-top: 0.1vh solid #E7F6F6;
+  width: 100%;
+}
+
+.pagination-info {
+  color: #666;
+  font-size: clamp(1.4vh, 1.1vw, 1.7vh);
+  text-align: center;
+}
+
+.pagination-highlight {
+  font-weight: 600;
+  color: #333;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 1.5vh;
+}
+
+.pagination-btn {
+  background: #FFFFFF;
+  color: #333;
+  border: 0.1vh solid #ddd;
+  border-radius: 1vh;
+  padding: 1vh 2.5vh;
+  font-size: clamp(1.3vh, 1vw, 1.6vh);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 10vh;
+  height: 4.5vh;
+}
+
+.pagination-btn:hover:not(.disabled) {
+  background: #f5f5f5;
+  border-color: #4ECDC4;
+}
+
+.pagination-btn.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.prev-btn {
+  order: 1;
+}
+
+.next-btn {
+  order: 3;
+}
+
+.pagination-pages {
+  order: 2;
+  display: flex;
+  gap: 0.8vh;
+  align-items: center;
+}
+
+.pagination-page {
+  background: #E7F6F6;
+  color: #333;
+  border: 0.1vh solid #D1ECEC;
+  border-radius: 1vh;
+  width: 4.5vh;
+  height: 4.5vh;
+  font-size: clamp(1.3vh, 1vw, 1.6vh);
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pagination-page:hover {
+  background: #D1ECEC;
+}
+
+.pagination-page.active {
+  background: #4ECDC4;
+  color: white;
+  border-color: #4ECDC4;
+  font-weight: 600;
+}
+
+.pagination-ellipsis {
+  color: #999;
+  font-size: clamp(1.4vh, 1.1vw, 1.7vh);
+  padding: 0 1vh;
+}
+
+/* Адаптивность для пагинации */
+@media (max-width: 768px) {
+  .pagination-controls {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .pagination-btn {
+    min-width: 8vh;
+    padding: 1vh 1.5vh;
+    font-size: 1.3vh;
+  }
+  
+  .pagination-page {
+    width: 4vh;
+    height: 4vh;
+    font-size: 1.3vh;
+  }
+}

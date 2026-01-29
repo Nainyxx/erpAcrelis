@@ -2,6 +2,18 @@ import React, { useState, useEffect, useRef } from 'react';
 import { getProjects, createProject } from '../../services/api/api';
 import './ProjectsList.css';
 
+const PROJECTS_PER_PAGE = 20;
+
+// Функции для работы с localStorage
+const getStoredPage = () => {
+  const stored = localStorage.getItem('projects-page');
+  return stored ? parseInt(stored) : 1;
+};
+
+const savePageToStorage = (page) => {
+  localStorage.setItem('projects-page', page.toString());
+};
+
 const ProjectsList = ({ useMockData = true, onProjectSelect }) => {
   const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -11,6 +23,12 @@ const ProjectsList = ({ useMockData = true, onProjectSelect }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
+  // Пагинация через localStorage
+  const [currentPage, setCurrentPage] = useState(getStoredPage());
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalProjects, setTotalProjects] = useState(0);
+  
+  // Создание проекта
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newProject, setNewProject] = useState({
     name: '',
@@ -27,12 +45,13 @@ const ProjectsList = ({ useMockData = true, onProjectSelect }) => {
 
   const searchTimeoutRef = useRef(null);
 
+  // Загрузка проектов с пагинацией
   const loadProjects = async () => {
     setLoading(true);
     setError(null);
     
     try {
-      console.log(`🔄 Загружаю проекты: useMockData = ${useMockData}, тип = ${selectedType}, поиск = ${searchQuery}`);
+      console.log(`🔄 Загружаю проекты: страница ${currentPage}, тип = ${selectedType}, поиск = ${searchQuery}`);
       
       const filters = {};
       
@@ -44,18 +63,35 @@ const ProjectsList = ({ useMockData = true, onProjectSelect }) => {
         filters.search = searchQuery.trim();
       }
       
-      const { projects: loadedProjects, projectTypes: loadedTypes } = await getProjects(useMockData, filters);
+      // Добавляем пагинацию
+      if (currentPage > 1) {
+        filters.page = currentPage;
+      }
       
-      console.log(`✅ Получено ${loadedProjects.length} проектов с фильтрами`);
+      const result = await getProjects(useMockData, filters);
       
-      setProjects(loadedProjects);
-      setProjectTypes(loadedTypes);
+      console.log(`✅ Получено ${result.projects?.length || 0} проектов на странице ${currentPage}`);
+      console.log(`📊 Всего проектов: ${result.pagination?.count || 0}`);
+      
+      setProjects(result.projects || []);
+      setProjectTypes(result.projectTypes || []);
+      
+      // Устанавливаем пагинацию
+      if (result.pagination) {
+        setTotalProjects(result.pagination.count);
+        setTotalPages(result.pagination.total_pages || 1);
+      } else {
+        setTotalProjects(result.projects?.length || 0);
+        setTotalPages(1);
+      }
       
     } catch (error) {
       console.error('❌ Ошибка загрузки проектов:', error);
       setError('Не удалось загрузить проекты. Проверьте подключение.');
       setProjects([]);
       setProjectTypes([]);
+      setTotalProjects(0);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
@@ -77,7 +113,7 @@ const ProjectsList = ({ useMockData = true, onProjectSelect }) => {
     }, 1500);
   };
 
-  // При потере фокуса - сразу делаем поиск (если текст изменился)
+  // При потере фокуса - сразу делаем поиск
   const handleSearchBlur = () => {
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
@@ -87,6 +123,30 @@ const ProjectsList = ({ useMockData = true, onProjectSelect }) => {
       setSearchQuery(searchInput);
     }
   };
+
+  // Сохраняем страницу в localStorage при изменении
+  useEffect(() => {
+    savePageToStorage(currentPage);
+  }, [currentPage]);
+
+  // Сброс страницы при изменении фильтров
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedType, searchQuery]);
+
+  // Загрузка проектов при изменении фильтров или страницы
+  useEffect(() => {
+    loadProjects();
+  }, [useMockData, selectedType, searchQuery, currentPage]);
+
+  // Очищаем таймер при размонтировании
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const getTypeLabel = (type) => {
     const typeMap = {
@@ -128,6 +188,8 @@ const ProjectsList = ({ useMockData = true, onProjectSelect }) => {
         available: false
       });
       
+      // Сбрасываем на первую страницу при создании нового проекта
+      setCurrentPage(1);
       await loadProjects();
       
       alert(`Проект "${createdProject.name}" успешно создан!`);
@@ -140,20 +202,46 @@ const ProjectsList = ({ useMockData = true, onProjectSelect }) => {
     }
   };
 
-  useEffect(() => {
-    loadProjects();
-  }, [useMockData, selectedType, searchQuery]);
+  // Пагинация - обработчик смены страницы
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
 
-  useEffect(() => {
-    return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
+  // Генерация номеров страниц для отображения
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+    
+    if (totalPages <= maxVisiblePages) {
+      // Если страниц мало, показываем все
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
       }
-    };
-  }, []);
+    } else {
+      // Если страниц много, показываем с многоточиями
+      if (currentPage <= 3) {
+        // В начале
+        pages.push(1, 2, 3, 4, '...', totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        // В конце
+        pages.push(1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+      } else {
+        // В середине
+        pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
+      }
+    }
+    
+    return pages;
+  };
+
+  // Рассчитываем отображаемый диапазон проектов
+  const startProject = (currentPage - 1) * PROJECTS_PER_PAGE + 1;
+  const endProject = Math.min(currentPage * PROJECTS_PER_PAGE, totalProjects);
 
 const generateAvatar = (name) => {
-  // Обработка для поля staff_name
   let safeName = '';
   
   if (!name) {
@@ -167,15 +255,12 @@ const generateAvatar = (name) => {
   
   const colors = ['#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0', '#118AB2', '#EF476F'];
   
-  // Получаем инициалы из staff_name
   const words = safeName.split(' ').filter(word => word.length > 0);
   let initials = '';
   
   if (words.length >= 2) {
-    // Для "Лутфуллин Амир Айратович" берем "ЛА" (Лутфуллин Амир)
     initials = words[0][0] + words[1][0];
   } else if (words.length === 1) {
-    // Для "Азат" берем "А"
     initials = words[0][0];
   } else {
     initials = 'И';
@@ -202,7 +287,6 @@ const renderTeamAvatars = (team) => {
   return (
     <div className="team-avatars">
       {visibleTeam.map((member, index) => {
-        // Используем staff_name из данных API
         const memberName = member?.staff_name || 
                           member?.name || 
                           `Исполнитель ${index + 1}`;
@@ -429,6 +513,52 @@ const renderTeamAvatars = (team) => {
         )}
       </div>
 
+      {/* Пагинация */}
+      {totalPages > 1 && (
+        <div className="projects-pagination">
+          <div className="pagination-info">
+            <span className="pagination-highlight">
+              {startProject}-{endProject}
+            </span> из <span className="pagination-highlight">{totalProjects}</span> проектов
+          </div>
+          
+          <div className="pagination-controls">
+            <button 
+              className={`pagination-btn prev-btn ${currentPage === 1 ? 'disabled' : ''}`}
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              ← Назад
+            </button>
+            
+            <div className="pagination-pages">
+              {getPageNumbers().map((page, index) => (
+                page === '...' ? (
+                  <span key={`ellipsis-${index}`} className="pagination-ellipsis">...</span>
+                ) : (
+                  <button
+                    key={page}
+                    className={`pagination-page ${currentPage === page ? 'active' : ''}`}
+                    onClick={() => handlePageChange(page)}
+                  >
+                    {page}
+                  </button>
+                )
+              ))}
+            </div>
+            
+            <button 
+              className={`pagination-btn next-btn ${currentPage === totalPages ? 'disabled' : ''}`}
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            >
+              Вперед →
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Модальное окно создания проекта */}
       {showCreateModal && (
         <div className="modal-overlay123">
           <div className="modal-content123">

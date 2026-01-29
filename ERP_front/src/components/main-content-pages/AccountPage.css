@@ -229,3 +229,212 @@
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+
+/* Дополнительные стили для редактирования */
+
+/* Контейнер для кнопок редактирования в режиме редактирования */
+.edit-controls {
+    position: absolute;
+    top: 6vh;
+    right: 8vh;
+    display: flex;
+    align-items: center;
+    gap: 1vh;
+}
+
+/* Кнопки сохранения/отмены */
+.cancel-button {
+    padding: 1.5vh 3vh;
+    background: transparent;
+    border: 0.2vh solid #dc3545;
+    border-radius: 1vh;
+    font-size: 1.6vh;
+    color: #dc3545;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.cancel-button:hover:not(:disabled) {
+    background: #dc3545;
+    color: white;
+}
+
+.cancel-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.save-button {
+    padding: 1.5vh 3vh;
+    background: #0066CC;
+    color: white;
+    border: none;
+    border-radius: 1vh;
+    font-size: 1.6vh;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    font-weight: 500;
+}
+
+.save-button:hover:not(:disabled) {
+    background: #0052A3;
+}
+
+.save-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #ccc;
+}
+
+/* Сообщение об ошибке */
+.error-message-banner {
+    margin: -4vh 0 4vh 0;
+    padding: 2vh 3vh;
+    background: #f8d7da;
+    color: #721c24;
+    border: 0.2vh solid #f5c6cb;
+    border-radius: 1vh;
+    text-align: center;
+    font-size: 1.8vh;
+    font-weight: 500;
+}
+
+/* Аватарка с оверлеем для редактирования */
+.avatar-container.editable {
+    position: relative;
+    cursor: pointer;
+    border-radius: 50%;
+    overflow: hidden;
+}
+
+.avatar-container.editable:hover .avatar-overlay {
+    opacity: 1;
+}
+
+.avatar-image {
+    width: 20.9vh;
+    height: 20.9vh;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.avatar-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    border-radius: 50%;
+}
+
+.avatar-overlay span {
+    color: white;
+    font-size: 1.8vh;
+    font-weight: 500;
+    text-align: center;
+    padding: 0 2vh;
+}
+
+/* Контейнер для кнопок редактирования в режиме редактирования */
+.edit-controls {
+    position: absolute;
+    top: 6vh;
+    right: 8vh;
+    display: flex;
+    align-items: center;
+    gap: 1vh;
+}
+
+/* Кнопки сохранения/отмены */
+.cancel-button {
+    padding: 1.5vh 3vh;
+    background: transparent;
+    border: 0.2vh solid #dc3545;
+    border-radius: 1vh;
+    font-size: 1.6vh;
+    color: #dc3545;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.cancel-button:hover:not(:disabled) {
+    background: #dc3545;
+    color: white;
+}
+
+.cancel-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.save-button {
+    padding: 1.5vh 3vh;
+    background: #0066CC;
+    color: white;
+    border: none;
+    border-radius: 1vh;
+    font-size: 1.6vh;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    font-weight: 500;
+}
+
+.save-button:hover:not(:disabled) {
+    background: #0052A3;
+}
+
+.save-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #ccc;
+}
+
+/* Сообщение об ошибке */
+.error-message-banner {
+    margin: -4vh 0 4vh 0;
+    padding: 2vh 3vh;
+    background: #f8d7da;
+    color: #721c24;
+    border: 0.2vh solid #f5c6cb;
+    border-radius: 1vh;
+    text-align: center;
+    font-size: 1.8vh;
+    font-weight: 500;
+}
+
+/* Editable элементы - ТОЧНО как в ProjectCard */
+
+
+.editable:hover {
+    text-decoration: underline;
+    text-decoration-color: black;
+    text-underline-offset: 0.3vh;
+}
+
+.editable:focus {
+    text-decoration: underline;
+    text-decoration-color: black;
+}
+
+.user-director {
+    font-size: 2vh;
+    color: #666;
+    margin: 0;
+}
+
+.director-label {
+    color: #888;
+}
+
+.director-name {
+    color: #26262C;
+    font-weight: 500;
+}

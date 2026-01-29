@@ -222,3 +222,129 @@
     font-weight: 500;
     line-height: 1.3;
 }
+
+/* EmployeeCard.css - дополнительные стили */
+
+.department-text_employee_card {
+    color: #666;
+    font-size: 1.4vh;
+    margin: 0.5vh 0 0 0;
+    font-weight: 500;
+}
+
+/* Улучшенный вид аватарки */
+.avatar-large_employee_card {
+    position: relative;
+}
+
+.avatar-large_employee_card img {
+    transition: transform 0.3s ease;
+}
+
+.avatar-large_employee_card:hover img {
+    transform: scale(1.05);
+}
+
+/* Адаптивность для контактов */
+@media (max-width: 1024px) {
+    .contacts-row_employee_card {
+        flex-wrap: wrap;
+        gap: 2vh;
+    }
+    
+    .contact-item_employee_card {
+        min-width: 20vh;
+    }
+    
+    .bottom-cards_employee_card {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .top-section_employee_card {
+        flex-direction: column;
+        gap: 2vh;
+    }
+    
+    .middle-section_employee_card {
+        flex-direction: column;
+        gap: 2vh;
+        align-items: flex-start;
+    }
+    
+    .contacts-row_employee_card {
+        flex-direction: column;
+        gap: 1.5vh;
+        width: 100%;
+    }
+    
+    .bottom-cards_employee_card {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Стили из Gantt для загрузки и ошибок (если их нет в файле) */
+.gantt-loading_gantt_class {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 5vh;
+    background: white;
+    border-radius: 2vh;
+    margin-top: 2vh;
+}
+
+.loading-spinner_gantt_class {
+    border: 4px solid rgba(78, 205, 196, 0.2);
+    border-top: 4px solid #4ECDC4;
+    border-radius: 50%;
+    width: 6vh;
+    height: 6vh;
+    animation: spin 1s linear infinite;
+    margin-bottom: 2vh;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.no-tasks-message_gantt_class {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 5vh;
+    background: white;
+    border-radius: 2vh;
+    margin-top: 2vh;
+}
+
+.no-tasks-content_gantt_class {
+    text-align: center;
+    max-width: 40vh;
+}
+
+.no-tasks-icon_gantt_class {
+    font-size: 4vh;
+    display: block;
+    margin-bottom: 2vh;
+    color: #6c757d;
+}
+
+.gantt-back-btn_gantt_class {
+    background: #4ECDC4;
+    color: white;
+    border: none;
+    padding: 1vh 2vh;
+    border-radius: 0.8vh;
+    font-size: 1.4vh;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.gantt-back-btn_gantt_class:hover {
+    background: #3dbdb4;
+}

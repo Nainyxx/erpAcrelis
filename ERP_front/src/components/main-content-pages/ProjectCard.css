@@ -96,7 +96,7 @@
   height: 100%;
 }
 
-/* Правая часть - файлы (33%) */
+/* Правая часть - файлы с статусом (33%) */
 .files-panel {
   width: 33%;
   background: #FFFFFF;
@@ -106,7 +106,8 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  height: 90%;
+  height: 103.5%;
+  gap: 2.4vh;
 }
 
 .projects-link:hover {
@@ -168,7 +169,7 @@
   border-radius: 0.8vh;
   font-size: 1.4vh;
   font-weight: 500;
-  width: vh;
+  width: auto;
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.2s;
@@ -348,6 +349,110 @@
   box-shadow: 0 0.4vh 0.8vh rgba(0, 0, 0, 0.1);
 }
 
+/* Стили для статуса проекта */
+.status-rectangle {
+  border-radius: 1.6vh;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s, box-shadow 0.2s;
+  height: 4vh;
+}
+
+
+.status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.6vh;
+}
+
+.status-title {
+  font-size: 1.5vh;
+  color: #6C757D;
+  margin: 0;
+}
+
+.status-dropdown-wrapper {
+  position: relative;
+}
+
+.change-status-btn123 {
+  background: none;
+  border: 0.2vh solid #DEE2E6;
+  color: #6C757D;
+  padding: 0.6vh 1.2vh;
+  border-radius: 0.8vh;
+  font-size: 1.4vh;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  width: auto;
+}
+
+.change-status-btn:hover {
+  background-color: #F8F9FA;
+  border-color: #ADB5BD;
+}
+
+.status-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.4vh;
+  background: white;
+  border: 0.1vh solid #E9ECEF;
+  border-radius: 0.6vh;
+  box-shadow: 0 0.4vh 1.2vh rgba(0,0,0,0.1);
+  z-index: 100;
+  min-width: 15vh;
+}
+
+.status-option {
+  padding: 0.8vh 1.2vh;
+  font-size: 1.2vh;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.status-option:hover {
+  background: #F8F9FA;
+}
+
+.status-option:first-child {
+  border-radius: 0.5vh 0.5vh 0 0;
+}
+
+.status-option:last-child {
+  border-radius: 0 0 0.5vh 0.5vh;
+}
+
+.current-status-display {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.8vh;
+  height: 4vh;
+}
+
+.current-status-text {
+  font-size: 1.8vh;
+  font-weight: 600;
+  color: #333;
+  text-align: center;
+}
+
+/* Стили для файлов внутри files-panel */
+.files-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .files-header {
   display: flex;
   justify-content: space-between;
@@ -386,11 +491,6 @@
   transform: translateY(-0.2vh);
 }
 
-.file-icon {
-  font-size: 2.4vh;
-  flex-shrink: 0;
-}
-
 .file-details {
   flex: 1;
   display: flex;
@@ -408,7 +508,7 @@
   text-overflow: ellipsis;
 }
 
-.file-size {
+.file-date {
   font-size: 1.3vh;
   color: #6C757D;
 }
@@ -465,25 +565,7 @@
 }
 
 /* Адаптивность */
-@media (max-width: 1440px) {
-  .projectcard-layout {
-    flex-direction: column;
-  }
-  
-  .main-cards-section,
-  .files-panel {
-    width: 100%;
-  }
-  
-  .files-panel {
-    height: 40vh;
-    margin-top: 2.4vh;
-  }
-  
-  .projectcard-main-content {
-    height: auto;
-  }
-}
+
 
 /* Контейнер для изменений */
 .changes-container {
@@ -744,3 +826,279 @@
 .gantt-back-btn_gantt_class:hover {
   background: #3dbdb4;
 }
+
+/* Стили для выпадающего списка статуса */
+.status-section {
+  margin-bottom: 2.4vh;
+}
+
+.status-dropdown-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.status-current-btn {
+  background: none;
+  border: 0.2vh solid #DEE2E6;
+  color: #333;
+  padding: 1vh 1.6vh;
+  border-radius: 0.8vh;
+  font-size: 1.6vh;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #FFFFFF;
+}
+
+.status-current-btn:hover {
+  background-color: #F8F9FA;
+  border-color: #ADB5BD;
+}
+
+/* Дополнительные стили для выпадающего списка */
+.status-option {
+  padding: 0.8vh 1.2vh;
+  font-size: 1.4vh;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.status-option:hover {
+  background-color: #F8F9FA;
+}
+
+.status-option:last-child {
+  border-bottom: none;
+}
+
+/* ... существующие стили ... */
+
+/* Правая часть - теперь это вертикальный контейнер для двух плиток */
+.right-panel {
+  width: 33%;
+  display: flex;
+  flex-direction: column;
+  gap: 2.4vh;
+  min-width: 0;
+  height: 103.5%;
+}
+
+/* Карточка статуса */
+.status-tile {
+  background: #FFFFFF;
+  border-radius: 1.6vh;
+  padding: 2.8vh;
+  box-shadow: 0 0.4vh 1.2vh rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s, box-shadow 0.2s;
+  height: auto;
+  min-height: 0;
+}
+
+/* Карточка файлов */
+.files-tile {
+  background: #FFFFFF;
+  border-radius: 1.6vh;
+  padding: 2.8vh;
+  box-shadow: 0 0.4vh 1.2vh rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s, box-shadow 0.2s;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.status-tile:hover,
+.files-tile:hover {
+  transform: translateY(-0.2vh);
+  box-shadow: 0 0.6vh 1.6vh rgba(0, 0, 0, 0.12);
+}
+
+/* Содержимое статуса */
+.status-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.6vh;
+}
+
+.status-title {
+  font-size: 1.5vh;
+  color: #6C757D;
+  margin: 0;
+}
+
+.status-dropdown-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.status-current-btn {
+  background: none;
+  border: 0.2vh solid #DEE2E6;
+  color: #333;
+  padding: 1vh 1.6vh;
+  border-radius: 0.8vh;
+  font-size: 1.6vh;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #FFFFFF;
+}
+
+.status-current-btn:hover {
+  background-color: #F8F9FA;
+  border-color: #ADB5BD;
+}
+
+.status-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 0.2vh solid #DEE2E6;
+  border-radius: 0.8vh;
+  box-shadow: 0 0.4vh 1.2vh rgba(0,0,0,0.1);
+  z-index: 100;
+  margin-top: 0.4vh;
+}
+
+.status-option {
+  padding: 1vh 1.6vh;
+  font-size: 1.4vh;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-bottom: 0.1vh solid #f0f0f0;
+}
+
+.status-option:hover {
+  background-color: #F8F9FA;
+}
+
+.status-option:last-child {
+  border-bottom: none;
+}
+
+/* Содержимое файлов */
+.files-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.files-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2vh;
+}
+
+.files-header h3 {
+  font-size: 1.5vh;
+  font-weight: 600;
+  color: #6C757D;
+  margin: 0;
+}
+
+.files-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2vh;
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 0.8vh;
+}
+
+.file-item {
+  display: flex;
+  align-items: center;
+  gap: 1.2vh;
+  padding: 1.2vh;
+  border-radius: 1vh;
+  transition: all 0.2s;
+}
+
+.file-item:hover {
+  border-color: #4ECDC4;
+  background-color: #F8F9FA;
+  transform: translateY(-0.2vh);
+}
+
+.file-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4vh;
+  min-width: 0;
+}
+
+.file-name {
+  font-size: 1.8vh;
+  font-weight: 600;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-date {
+  font-size: 1.3vh;
+  color: #6C757D;
+}
+
+.file-download {
+  background: none;
+  border: 0.2vh solid #DEE2E6;
+  color: #6C757D;
+  width: 3.6vh;
+  height: 3.6vh;
+  border-radius: 0.8vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.8vh;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.file-download:hover {
+  background-color: #F8F9FA;
+  border-color: #868686;
+}
+
+.files-count {
+  font-size: 1.4vh;
+  color: #6C757D;
+  font-weight: 500;
+  text-align: center;
+  margin-top: 1.6vh;
+  padding-top: 1.6vh;
+  border-top: 0.2vh solid #E9ECEF;
+}
+
+/* ... остальные стили ... */

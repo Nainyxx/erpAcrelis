@@ -114,3 +114,44 @@
     z-index: 1000;
     pointer-events: none;
 }
+
+/* Header.css - стили для аватарки пользователя */
+
+.user-avatar {
+    width: 4vh;
+    height: 4vh;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 0.2vh solid #B2E9EF;
+    background: #FFFFFF;
+}
+
+.default-avatar {
+    width: 4vh;
+    height: 4vh;
+    object-fit: contain;
+}
+
+.avatar-loading {
+    width: 4vh;
+    height: 4vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #B2E9EF;
+    border-radius: 50%;
+}
+
+.loading-spinner-small {
+    width: 2vh;
+    height: 2vh;
+    border: 0.2vh solid #E5E5E5;
+    border-top: 0.2vh solid #0066CC;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

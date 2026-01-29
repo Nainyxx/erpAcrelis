@@ -20,6 +20,18 @@ const TASK_STATUS_MAP = {
   'failed': 'Провалено'
 };
 
+const TASKS_PER_PAGE = 20;
+
+// Функции для работы с localStorage
+const getStoredPage = () => {
+  const stored = localStorage.getItem('my-tasks-page');
+  return stored ? parseInt(stored) : 1;
+};
+
+const savePageToStorage = (page) => {
+  localStorage.setItem('my-tasks-page', page.toString());
+};
+
 const MyTasks = ({ useMockData = true }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -35,6 +47,11 @@ const MyTasks = ({ useMockData = true }) => {
   // Фильтры
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedPerformer, setSelectedPerformer] = useState('');
+  
+  // Пагинация через localStorage
+  const [currentPage, setCurrentPage] = useState(getStoredPage());
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalTasks, setTotalTasks] = useState(0);
   
   // Данные
   const [tasks, setTasks] = useState([]);
@@ -101,12 +118,22 @@ const MyTasks = ({ useMockData = true }) => {
     loadStaffList();
   }, [useMockData]);
 
-  // Загрузка задач при изменении фильтров
+  // Загрузка задач при изменении фильтров или страницы
   useEffect(() => {
     if (selectedPerformer !== '') {
       loadTasks();
     }
-  }, [useMockData, selectedStatus, selectedPerformer, searchQuery]);
+  }, [useMockData, selectedStatus, selectedPerformer, searchQuery, currentPage]);
+
+  // Сохраняем страницу в localStorage при изменении
+  useEffect(() => {
+    savePageToStorage(currentPage);
+  }, [currentPage]);
+
+  // Сброс страницы при изменении фильтров
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedStatus, selectedPerformer, searchQuery]);
 
   // Очищаем таймер при размонтировании
   useEffect(() => {
@@ -207,13 +234,25 @@ const MyTasks = ({ useMockData = true }) => {
         filters.search = searchQuery;
       }
       
+      // Добавляем пагинацию в фильтры
+      if (currentPage > 1) {
+        filters.page = currentPage;
+      }
+      
       // Всегда добавляем сортировку по дедлайну
       filters.ordering = '-deadline';
       
       console.log('📡 Фильтры для загрузки задач:', filters);
       
       // Отправляем запрос с фильтрами
-      const apiTasks = await getTasks(useMockData, filters);
+      const apiResponse = await getTasks(useMockData, filters);
+      
+      // Извлекаем данные из ответа
+      const apiTasks = apiResponse.results || apiResponse || [];
+      const totalCount = apiResponse.count || 0;
+      
+      // Рассчитываем общее количество страниц
+      const calculatedTotalPages = Math.ceil(totalCount / TASKS_PER_PAGE);
       
       // Форматируем задачи
       const formattedTasks = apiTasks.map(task => {
@@ -238,13 +277,18 @@ const MyTasks = ({ useMockData = true }) => {
         };
       });
       
-      console.log(`✅ Загружено ${formattedTasks.length} задач`);
+      console.log(`✅ Загружено ${formattedTasks.length} задач из ${totalCount}, страница: ${currentPage}/${calculatedTotalPages}`);
+      
       setTasks(formattedTasks);
+      setTotalTasks(totalCount);
+      setTotalPages(calculatedTotalPages);
       
     } catch (error) {
       console.error('❌ Ошибка загрузки задач:', error);
       setError('Не удалось загрузить задачи. Проверьте подключение.');
       setTasks([]);
+      setTotalTasks(0);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
@@ -272,6 +316,41 @@ const MyTasks = ({ useMockData = true }) => {
 
   const handleTaskClick = (task) => {
     navigate(`/tasks/${task.id}`);
+  };
+
+  // Пагинация - простой вариант через localStorage
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  // Генерация номеров страниц для отображения
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+    
+    if (totalPages <= maxVisiblePages) {
+      // Если страниц мало, показываем все
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Если страниц много, показываем с многоточиями
+      if (currentPage <= 3) {
+        // В начале
+        pages.push(1, 2, 3, 4, '...', totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        // В конце
+        pages.push(1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+      } else {
+        // В середине
+        pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
+      }
+    }
+    
+    return pages;
   };
 
   // Функции для работы с модальным окном
@@ -487,9 +566,10 @@ const MyTasks = ({ useMockData = true }) => {
         hours: 0
       });
       
+      // Сбрасываем на первую страницу при создании новой задачи
+      setCurrentPage(1);
       await loadTasks();
       
-      alert('Задача успешно создана!');
       
     } catch (error) {
       console.error('❌ Ошибка создания задачи:', error);
@@ -531,7 +611,7 @@ const MyTasks = ({ useMockData = true }) => {
     }
   };
 
-  // ЗАГРУЗКА - ТАК ЖЕ КАК В ГАНТЕ
+  // ЗАГРУЗКА
   if (loading || selectedPerformer === '') {
     return (
       <div className="mytasks-container">
@@ -546,7 +626,7 @@ const MyTasks = ({ useMockData = true }) => {
     );
   }
 
-  // ОШИБКА ЗАГРУЗКИ - ТАК ЖЕ КАК В ГАНТЕ
+  // ОШИБКА ЗАГРУЗКИ
   if (error) {
     return (
       <div className="mytasks-container">
@@ -569,7 +649,7 @@ const MyTasks = ({ useMockData = true }) => {
     );
   }
 
-  // НЕТ ЗАДАЧ - ТАК ЖЕ КАК В ГАНТЕ
+  // НЕТ ЗАДАЧ
   if (tasks.length === 0 && !searchQuery && selectedStatus === 'all' && selectedPerformer === 'all') {
     return (
       <div className="mytasks-container">
@@ -645,6 +725,10 @@ const MyTasks = ({ useMockData = true }) => {
       </div>
     );
   }
+
+  // Рассчитываем отображаемый диапазон задач
+  const startTask = (currentPage - 1) * TASKS_PER_PAGE + 1;
+  const endTask = Math.min(currentPage * TASKS_PER_PAGE, totalTasks);
 
   return (
     <div className="mytasks-container">
@@ -756,6 +840,50 @@ const MyTasks = ({ useMockData = true }) => {
           ))
         )}
       </div>
+
+      {/* Пагинация - расположена снизу */}
+      {totalPages > 1 && (
+        <div className="tasks-pagination">
+          <div className="pagination-info">
+            <span style={{ marginLeft: '10px', color: '#666', fontSize: '14px' }}>
+            </span>
+          </div>
+          
+          <div className="pagination-controls">
+            <button 
+              className={`pagination-btn prev-btn ${currentPage === 1 ? 'disabled' : ''}`}
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              ← Назад
+            </button>
+            
+            <div className="pagination-pages">
+              {getPageNumbers().map((page, index) => (
+                page === '...' ? (
+                  <span key={`ellipsis-${index}`} className="pagination-ellipsis">...</span>
+                ) : (
+                  <button
+                    key={page}
+                    className={`pagination-page ${currentPage === page ? 'active' : ''}`}
+                    onClick={() => handlePageChange(page)}
+                  >
+                    {page}
+                  </button>
+                )
+              ))}
+            </div>
+            
+            <button 
+              className={`pagination-btn next-btn ${currentPage === totalPages ? 'disabled' : ''}`}
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            >
+              Вперед →
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Модальное окно создания задачи */}
       {showCreateModal && (
