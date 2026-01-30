@@ -1,89 +1,168 @@
 // services/taskWebSocketService.js
+
 class TaskWebSocketService {
-    constructor(taskId) {
+    constructor(taskId, options = {}) {
         this.taskId = taskId;
         this.ws = null;
-        this.messageCallbacks = [];
-        this.errorCallbacks = [];
-        this.connectCallbacks = [];
-        this.disconnectCallbacks = [];
-        this.isManualDisconnect = false;
         
-        // Конфигурация
-        this.reconnectAttempts = 0;
-        this.maxReconnectAttempts = 5;
-        this.reconnectDelay = 1000;
+        // Настройки
+        this.maxConnectionAttempts = options.maxConnectionAttempts || 10;
+        this.reconnectBaseDelay = options.reconnectBaseDelay || 2000;
+        this.maxReconnectDelay = options.maxReconnectDelay || 30000;
+        this.heartbeatInterval = options.heartbeatInterval || 30000; // 30 секунд
+        this.heartbeatTimeout = options.heartbeatTimeout || 10000; // 10 секунд
         
+        // Состояние
+        this.connectionAttempts = 0;
+        this.isConnecting = false;
+        this.isAuthenticated = false; // Флаг аутентификации
+        this.shouldReconnect = true;
+        this.lastHeartbeat = null;
+        this.heartbeatTimer = null;
+        this.reconnectTimer = null;
+        this.authTimeout = null;
+        
+        // Колбэки
+        this.callbacks = {
+            comment: [],
+            connect: [],
+            disconnect: [],
+            error: [],
+            auth: [],
+            reconnecting: []
+        };
+        
+        // Очередь сообщений, ожидающих отправки после аутентификации
+        this.messageQueue = [];
+        
+        // Автоматически начинаем подключение
         this.connect();
     }
 
+    // ==================== ПОЛУЧЕНИЕ ТОКЕНА ====================
+
+    getAuthToken() {
+        try {
+            // Получаем токен из localStorage
+            const token = localStorage.getItem('access_token');
+            
+            if (!token) {
+                console.warn('⚠️ Токен не найден в localStorage');
+                return null;
+            }
+            
+            console.log('✅ Токен получен');
+            return token;
+            
+        } catch (error) {
+            console.error('❌ Ошибка получения токена:', error);
+            return null;
+        }
+    }
+
+    // ==================== ПОДКЛЮЧЕНИЕ ====================
+
     connect() {
-        if (this.isManualDisconnect) return;
+        if (this.isConnecting || this.isConnected()) {
+            return;
+        }
         
-        const wsUrl = `wss://api.acrelis.ru/ws/task/${this.taskId}/comments/`;
-        console.log(`🔌 Подключаюсь к WebSocket: ${wsUrl}`);
+        if (this.connectionAttempts >= this.maxConnectionAttempts) {
+            this.triggerError(new Error(`Превышено максимальное количество попыток подключения (${this.maxConnectionAttempts})`));
+            return;
+        }
+        
+        this.isConnecting = true;
+        this.connectionAttempts++;
+        this.isAuthenticated = false; // Сбрасываем флаг аутентификации
+        
+        console.log(`🔄 Попытка подключения ${this.connectionAttempts}/${this.maxConnectionAttempts} для задачи ${this.taskId}`);
+        
+        // Уведомляем о начале переподключения
+        this.callbacks.reconnecting.forEach(callback => 
+            callback(this.connectionAttempts, this.getReconnectDelay())
+        );
+        
+        const token = this.getAuthToken();
+        
+        if (!token) {
+            console.error('❌ Не могу подключиться: нет токена авторизации');
+            this.isConnecting = false;
+            this.scheduleReconnect();
+            return;
+        }
+        
+        // Формируем правильный URL
+        const wsUrl = `wss://api.acrelis.ru/ws/task/${this.taskId}/comments/?token=${encodeURIComponent(token)}`;
+        
+        console.log(`🔌 Подключение к WebSocket для задачи ${this.taskId}`);
         
         try {
             this.ws = new WebSocket(wsUrl);
             
-            this.ws.onopen = () => {
-                console.log('✅ WebSocket подключен для задачи:', this.taskId);
-                this.reconnectAttempts = 0;
-                
-                this.connectCallbacks.forEach(callback => callback());
-            };
-            
-            this.ws.onmessage = (event) => {
-                try {
-                    const data = JSON.parse(event.data);
-                    console.log('📨 Получено сообщение WebSocket:', data);
-                    this.handleMessage(data);
-                } catch (error) {
-                    console.error('❌ Ошибка парсинга WebSocket сообщения:', error);
-                }
-            };
-            
-            this.ws.onclose = (event) => {
-                console.log('🔌 WebSocket отключен:', event.code, event.reason);
-                
-                this.disconnectCallbacks.forEach(callback => 
-                    callback(event.code, event.reason)
-                );
-                
-                // Автоматическое переподключение если не ручное отключение
-                if (!this.isManualDisconnect && 
-                    event.code !== 1000 && 
-                    this.reconnectAttempts < this.maxReconnectAttempts) {
-                    this.scheduleReconnect();
-                }
-            };
-            
-            this.ws.onerror = (error) => {
-                console.error('❌ WebSocket ошибка:', error);
-                this.errorCallbacks.forEach(callback => 
-                    callback(error)
-                );
-            };
+            this.ws.onopen = this.handleOpen.bind(this);
+            this.ws.onmessage = this.handleMessage.bind(this);
+            this.ws.onclose = this.handleClose.bind(this);
+            this.ws.onerror = this.handleError.bind(this);
             
         } catch (error) {
             console.error('❌ Ошибка создания WebSocket:', error);
+            this.handleError(error);
         }
     }
 
-    handleMessage(data) {
+    handleOpen() {
+        console.log('✅ WebSocket подключен');
+        
+        this.isConnecting = false;
+        this.connectionAttempts = 0;
+        
+        // Устанавливаем таймаут на ожидание аутентификации
+        this.setAuthTimeout();
+        
+        // Триггерим событие подключения
+        this.callbacks.connect.forEach(callback => callback());
+    }
+
+    handleMessage(event) {
+        try {
+            const data = JSON.parse(event.data);
+            console.log('📨 WebSocket сообщение:', data.type);
+            
+            this.processMessage(data);
+            
+        } catch (error) {
+            console.error('❌ Ошибка обработки сообщения:', error, event.data);
+        }
+    }
+
+    processMessage(data) {
         switch(data.type) {
             case 'comment_added':
-                console.log('💬 Новый комментарий через WebSocket:', data.comment);
-                this.messageCallbacks.forEach(callback => 
-                    callback(data.comment)
-                );
+                console.log('💬 Новый комментарий:', data.comment);
+                this.callbacks.comment.forEach(callback => callback(data.comment));
+                break;
+                
+            case 'auth_success':
+                this.isAuthenticated = true;
+                clearTimeout(this.authTimeout); // Очищаем таймаут аутентификации
+                console.log('🔐 Аутентификация успешна');
+                this.callbacks.auth.forEach(callback => callback());
+                
+                // Отправляем сообщения из очереди после аутентификации
+                this.processMessageQueue();
+                break;
+                
+            case 'auth_error':
+                this.isAuthenticated = false;
+                clearTimeout(this.authTimeout);
+                console.error('🔐 Ошибка аутентификации:', data.message);
+                this.triggerError(new Error(`Аутентификация: ${data.message}`));
                 break;
                 
             case 'error':
-                console.error('⚠️ WebSocket ошибка:', data.message);
-                this.errorCallbacks.forEach(callback => 
-                    callback(new Error(data.message))
-                );
+                console.error('⚠️ Серверная ошибка:', data.message);
+                this.triggerError(new Error(data.message));
                 break;
                 
             default:
@@ -91,80 +170,278 @@ class TaskWebSocketService {
         }
     }
 
-    sendComment(content) {
-        if (!this.isConnected()) {
-            throw new Error('WebSocket не подключен');
-        }
-        
-        if (!content || !content.trim()) {
-            throw new Error('Комментарий не может быть пустым');
-        }
-        
-        const message = {
-            type: 'new_comment',
-            content: content.trim()
-        };
-        
-        console.log('📤 Отправляю комментарий через WebSocket:', message);
-        this.ws.send(JSON.stringify(message));
+    setAuthTimeout() {
+        // Устанавливаем таймаут ожидания аутентификации (5 секунд)
+        clearTimeout(this.authTimeout);
+        this.authTimeout = setTimeout(() => {
+            if (!this.isAuthenticated && this.isConnected()) {
+                console.warn('⏰ Таймаут аутентификации, переподключаемся...');
+                this.reconnect();
+            }
+        }, 5000);
     }
 
-    isConnected() {
-        return this.ws && this.ws.readyState === WebSocket.OPEN;
+    handleClose(event) {
+        console.log(`🔌 WebSocket отключен: код=${event.code}, причина=${event.reason || 'нет'}`);
+        
+        this.isConnecting = false;
+        this.isAuthenticated = false;
+        clearTimeout(this.authTimeout);
+        this.stopHeartbeat();
+        
+        this.callbacks.disconnect.forEach(callback => 
+            callback(event.code, event.reason)
+        );
+        
+        if (this.shouldReconnect) {
+            this.scheduleReconnect();
+        }
+    }
+
+    handleError(error) {
+        console.error('❌ WebSocket ошибка:', error);
+        
+        this.isConnecting = false;
+        this.isAuthenticated = false;
+        clearTimeout(this.authTimeout);
+        this.stopHeartbeat();
+        
+        this.triggerError(error);
+        
+        if (this.shouldReconnect) {
+            this.scheduleReconnect();
+        }
+    }
+
+    // ==================== ОЧЕРЕДЬ СООБЩЕНИЙ ====================
+
+    addToMessageQueue(message) {
+        this.messageQueue.push(message);
+    }
+
+    processMessageQueue() {
+        if (!this.isAuthenticated) {
+            return;
+        }
+        
+        console.log(`📤 Обработка очереди сообщений: ${this.messageQueue.length} сообщений`);
+        
+        while (this.messageQueue.length > 0) {
+            const message = this.messageQueue.shift();
+            try {
+                this.sendMessage(message);
+            } catch (error) {
+                console.error('❌ Ошибка отправки сообщения из очереди:', error);
+                // Можно добавить сообщение обратно в очередь или обработать ошибку
+            }
+        }
+    }
+
+    // ==================== ПЕРЕПОДКЛЮЧЕНИЕ ====================
+
+    getReconnectDelay() {
+        // Экспоненциальная задержка с ограничением
+        const delay = Math.min(
+            this.reconnectBaseDelay * Math.pow(1.5, this.connectionAttempts - 1),
+            this.maxReconnectDelay
+        );
+        
+        return delay;
     }
 
     scheduleReconnect() {
-        this.reconnectAttempts++;
-        const delay = Math.min(
-            this.reconnectDelay * Math.pow(1.5, this.reconnectAttempts - 1),
-            30000 // Максимум 30 секунд
-        );
+        clearTimeout(this.reconnectTimer);
         
-        console.log(`🔄 Переподключение через ${delay}мс (попытка ${this.reconnectAttempts})`);
+        if (!this.shouldReconnect || this.isConnecting) {
+            return;
+        }
         
-        setTimeout(() => {
-            if (!this.isConnected() && !this.isManualDisconnect) {
+        const delay = this.getReconnectDelay();
+        
+        console.log(`🔄 Переподключение через ${Math.round(delay/1000)}с...`);
+        
+        this.reconnectTimer = setTimeout(() => {
+            if (this.shouldReconnect && !this.isConnected()) {
                 this.connect();
             }
         }, delay);
     }
 
-    disconnect() {
-        console.log('👋 Ручное отключение WebSocket');
-        this.isManualDisconnect = true;
-        if (this.ws) {
-            this.ws.close(1000, 'Пользователь отключился');
+    reconnect() {
+        console.log('🔄 Принудительное переподключение');
+        this.disconnect();
+        setTimeout(() => this.connect(), 1000);
+    }
+
+    // ==================== ОТПРАВКА СООБЩЕНИЙ ====================
+
+    sendMessage(data) {
+        if (!this.isConnected()) {
+            throw new Error('WebSocket не подключен');
+        }
+        
+        try {
+            const message = typeof data === 'string' ? data : JSON.stringify(data);
+            this.ws.send(message);
+            console.log('📤 Отправлено:', data.type);
+            return true;
+        } catch (error) {
+            console.error('❌ Ошибка отправки:', error);
+            throw error;
         }
     }
 
-    // Методы подписки на события
-    onComment(callback) {
-        this.messageCallbacks.push(callback);
-        // Возвращаем функцию для отписки
-        return () => {
-            this.messageCallbacks = this.messageCallbacks.filter(cb => cb !== callback);
-        };
+    sendComment(content) {
+        // Проверяем аутентификацию
+        if (!this.isAuthenticated) {
+            console.log('⏳ Комментарий добавлен в очередь, ожидание аутентификации...');
+            
+            // Добавляем в очередь и ждем аутентификации
+            this.addToMessageQueue({
+                type: 'new_comment',
+                content: content.trim(),
+                timestamp: new Date().toISOString()
+            });
+            
+            // Бросаем специальную ошибку, чтобы фронтенд знал, что сообщение в очереди
+            throw new Error('Ожидание аутентификации. Комментарий будет отправлен автоматически.');
+        }
+        
+        const comment = content.trim();
+        
+        if (!comment) {
+            throw new Error('Комментарий не может быть пустым');
+        }
+        
+        if (comment.length > 1000) {
+            throw new Error('Комментарий слишком длинный (макс. 1000 символов)');
+        }
+        
+        return this.sendMessage({
+            type: 'new_comment',
+            content: comment,
+            timestamp: new Date().toISOString()
+        });
     }
 
-    onError(callback) {
-        this.errorCallbacks.push(callback);
+    // ==================== СТАТУС И УТИЛИТЫ ====================
+
+    isConnected() {
+        return this.ws && this.ws.readyState === WebSocket.OPEN;
+    }
+
+    getStatus() {
+        if (!this.ws) return 'disconnected';
+        
+        switch(this.ws.readyState) {
+            case WebSocket.CONNECTING: return 'connecting';
+            case WebSocket.OPEN: return this.isAuthenticated ? 'authenticated' : 'connected';
+            case WebSocket.CLOSING: return 'closing';
+            case WebSocket.CLOSED: return 'disconnected';
+            default: return 'unknown';
+        }
+    }
+
+    triggerError(error) {
+        console.error('🔥 Ошибка:', error.message);
+        this.callbacks.error.forEach(callback => callback(error));
+    }
+
+    // ==================== HEARTBEAT (если нужно) ====================
+
+    startHeartbeat() {
+        this.stopHeartbeat();
+        this.lastHeartbeat = Date.now();
+        
+        this.heartbeatTimer = setInterval(() => {
+            if (!this.isConnected()) {
+                return;
+            }
+            
+            // Проверяем, не потеряли ли мы соединение
+            if (this.lastHeartbeat && Date.now() - this.lastHeartbeat > this.heartbeatTimeout) {
+                console.warn('⚠️ Нет ответа от сервера, переподключаемся...');
+                this.reconnect();
+                return;
+            }
+            
+            // Отправляем ping только если аутентифицированы
+            if (this.isAuthenticated) {
+                this.sendMessage({ type: 'ping' });
+                console.debug('🏓 Отправлен ping');
+            }
+        }, this.heartbeatInterval);
+    }
+
+    stopHeartbeat() {
+        if (this.heartbeatTimer) {
+            clearInterval(this.heartbeatTimer);
+            this.heartbeatTimer = null;
+        }
+    }
+
+    // ==================== ПОДПИСКА НА СОБЫТИЯ ====================
+
+    onComment(callback) {
+        this.callbacks.comment.push(callback);
         return () => {
-            this.errorCallbacks = this.errorCallbacks.filter(cb => cb !== callback);
+            this.callbacks.comment = this.callbacks.comment.filter(cb => cb !== callback);
         };
     }
 
     onConnect(callback) {
-        this.connectCallbacks.push(callback);
+        this.callbacks.connect.push(callback);
         return () => {
-            this.connectCallbacks = this.connectCallbacks.filter(cb => cb !== callback);
+            this.callbacks.connect = this.callbacks.connect.filter(cb => cb !== callback);
         };
     }
 
     onDisconnect(callback) {
-        this.disconnectCallbacks.push(callback);
+        this.callbacks.disconnect.push(callback);
         return () => {
-            this.disconnectCallbacks = this.disconnectCallbacks.filter(cb => cb !== callback);
+            this.callbacks.disconnect = this.callbacks.disconnect.filter(cb => cb !== callback);
         };
+    }
+
+    onError(callback) {
+        this.callbacks.error.push(callback);
+        return () => {
+            this.callbacks.error = this.callbacks.error.filter(cb => cb !== callback);
+        };
+    }
+
+    onAuth(callback) {
+        this.callbacks.auth.push(callback);
+        return () => {
+            this.callbacks.auth = this.callbacks.auth.filter(cb => cb !== callback);
+        };
+    }
+
+    onReconnecting(callback) {
+        this.callbacks.reconnecting.push(callback);
+        return () => {
+            this.callbacks.reconnecting = this.callbacks.reconnecting.filter(cb => cb !== callback);
+        };
+    }
+
+    // ==================== ОЧИСТКА ====================
+
+    disconnect() {
+        console.log('👋 Отключение WebSocket сервиса');
+        
+        this.shouldReconnect = false;
+        this.isAuthenticated = false;
+        clearTimeout(this.authTimeout);
+        this.stopHeartbeat();
+        clearTimeout(this.reconnectTimer);
+        
+        // Очищаем очередь сообщений
+        this.messageQueue = [];
+        
+        if (this.ws) {
+            this.ws.close(1000, 'Пользователь закрыл соединение');
+            this.ws = null;
+        }
     }
 }
 

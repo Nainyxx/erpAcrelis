@@ -1011,7 +1011,7 @@ export async function getTaskById(taskId, USE_MOCK_DATA) {
     }
 
     const taskData = await response.json();
-    console.log(taskData)
+    
     return taskData;
   } catch (error) {
     console.error(`❌ Ошибка загрузки задачи ${taskId}:`, error);
@@ -1131,42 +1131,43 @@ export async function uploadFileToTask(taskId, file, USE_MOCK_DATA) {
 }
 
 // Добавление комментария к задаче
+// В api.js - убедитесь, что этот метод использует правильный endpoint
 export async function addCommentToTask(taskId, commentData, USE_MOCK_DATA) {
-  if (USE_MOCK_DATA) {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    const mockComment = {
-      id: Math.floor(Math.random() * 1000),
-      author_name: 'Текущий пользователь',
-      content: commentData.content,
-      created: new Date().toISOString()
-    };
-    
-    return mockComment;
-  }
-  
-  try {
-    const response = await authFetch(`${API_CONFIG.BASE_URL}tasks/${taskId}/comments/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        content: commentData.content
-      })
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Ошибка: ${response.status} - ${errorText}`);
+    if (USE_MOCK_DATA) {
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        const mockComment = {
+            id: Math.floor(Math.random() * 1000),
+            author_name: 'Текущий пользователь',
+            content: commentData.content,
+            created: new Date().toISOString()
+        };
+        
+        return mockComment;
     }
+    
+    try {
+        const response = await authFetch(`${API_CONFIG.BASE_URL}tasks/${taskId}/comments/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                content: commentData.content
+            })
+        });
 
-    const responseData = await response.json();
-    return responseData;
-  } catch (error) {
-    console.error('❌ Ошибка добавления комментария:', error);
-    throw error;
-  }
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Ошибка: ${response.status} - ${errorText}`);
+        }
+
+        const responseData = await response.json();
+        return responseData;
+    } catch (error) {
+        console.error('❌ Ошибка добавления комментария:', error);
+        throw error;
+    }
 }
 
 // Получение отделов сотрудников
