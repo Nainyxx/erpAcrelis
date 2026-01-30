@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import './ProjectCard.css';
 import { getProjectById, updateProject, uploadFileToProject, addPerformerToProject, getProjectLogs, getStaffList } from '../../services/api/api';
 
-const ProjectCard = ({ useMockData }) => {
+const ProjectCard = ({ useMockData = false }) => {
   const navigate = useNavigate();
   const { projectId } = useParams();
   
@@ -16,8 +16,6 @@ const ProjectCard = ({ useMockData }) => {
   const [customer, setCustomer] = useState('');
   const [projectStatus, setProjectStatus] = useState('');
   const [changes, setChanges] = useState([]);
-  const [isUserInProject, setIsUserInProject] = useState(false);
-  const [currentUser] = useState('Иван Петров');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
@@ -70,13 +68,99 @@ const ProjectCard = ({ useMockData }) => {
     return dateString;
   };
 
-  const generateAvatar = (name) => {
+  const generateAvatar = (member) => {
+    // Получаем данные из API формата
+    const name = member?.staff_name || member?.name || 'Исполнитель';
+    
+    // Получаем изображение из staff_image (поле из API)
+    let imageUrl = null;
+    if (member?.staff_image) {
+      // staff_image содержит относительный путь, добавляем base URL
+      imageUrl = `https://api.acrelis.ru/media/${member.staff_image}`;
+    }
+    
     const colors = ['#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0', '#118AB2', '#EF476F'];
-    const initials = name.split(' ').map(n => n[0]).join('');
-    const colorIndex = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length;
+    
+    // Безопасное получение инициалов
+    let initials = '';
+    try {
+      const words = name.split(' ').filter(word => word && word.length > 0);
+      if (words.length >= 2) {
+        initials = words[0][0] + words[words.length - 1][0];
+      } else if (words.length === 1) {
+        initials = words[0][0];
+      } else {
+        initials = 'И';
+      }
+    } catch (error) {
+      console.error('Ошибка при получении инициалов:', error);
+      initials = 'И';
+    }
+    
+    const colorIndex = name.split('').reduce((acc, char) => acc + (char.charCodeAt(0) || 0), 0) % colors.length;
+    
+    if (imageUrl) {
+      return (
+        <div className="projectcard-avatar" style={{ 
+          backgroundColor: colors[colorIndex], 
+          position: 'relative',
+          width: '4vh',
+          height: '4vh',
+          borderRadius: '50%',
+          overflow: 'hidden'
+        }}>
+          <img 
+            src={imageUrl} 
+            alt={name}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              position: 'absolute',
+              top: 0,
+              left: 0
+            }}
+            onError={(e) => {
+              console.log('Ошибка загрузки аватарки для', name, 'URL:', imageUrl);
+              e.target.style.display = 'none';
+              e.target.nextSibling.style.display = 'flex';
+            }}
+          />
+          <div 
+            className="avatar-initials"
+            style={{
+              display: 'none',
+              width: '100%',
+              height: '100%',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              fontWeight: 600,
+              fontSize: '1.4vh',
+              position: 'absolute',
+              top: 0,
+              left: 0
+            }}
+          >
+            {initials}
+          </div>
+        </div>
+      );
+    }
     
     return (
-      <div className="projectcard-avatar" style={{ backgroundColor: colors[colorIndex] }}>
+      <div className="projectcard-avatar" style={{ 
+        backgroundColor: colors[colorIndex],
+        width: '4vh',
+        height: '4vh',
+        borderRadius: '50%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: 'white',
+        fontWeight: 600,
+        fontSize: '1.4vh'
+      }}>
         {initials}
       </div>
     );
@@ -103,11 +187,8 @@ const ProjectCard = ({ useMockData }) => {
       
       console.log('✅ PATCH запрос успешен:', updatedProject);
       
-      setProject(updatedProject);
-      setProjectStatus(updatedProject.status_display || statusLabel);
-      
-      const updatedLogs = await getProjectLogs(project.id, useMockData);
-      setChanges(updatedLogs);
+      // После обновления статуса делаем новый GET запрос
+      await loadProjectAndLogs();
       
       setShowStatusDropdown(false);
       
@@ -186,7 +267,6 @@ const ProjectCard = ({ useMockData }) => {
     try {
       const updateData = {};
       
-      // Сохраняем название проекта если оно изменилось
       if (projectName !== project.name && projectName.trim() !== '') {
         updateData.name = projectName;
       }
@@ -235,46 +315,10 @@ const ProjectCard = ({ useMockData }) => {
       console.log('Отправляемые данные для PATCH:', updateData);
       
       if (Object.keys(updateData).length > 0) {
-        const updatedProject = await updateProject(project.id, updateData, useMockData);
-        console.log('Обновленный проект:', updatedProject);
+        await updateProject(project.id, updateData, useMockData);
         
-        setProject(updatedProject);
-        
-        // Обновляем название если оно было изменено
-        if (updatedProject.name) {
-          setProjectName(updatedProject.name);
-        }
-        
-        if (updatedProject.startDateFormatted) {
-          setStartDate(updatedProject.startDateFormatted);
-        } else if (updatedProject.startDate) {
-          setStartDate(formatDateForDisplay(updatedProject.startDate));
-        }
-        
-        if (updatedProject.deadlineFormatted) {
-          setDeadline(updatedProject.deadlineFormatted);
-        } else if (updatedProject.deadline) {
-          setDeadline(formatDateForDisplay(updatedProject.deadline));
-        }
-        
-        if (updatedProject.typeLabel) {
-          setProjectType(updatedProject.typeLabel);
-        } else if (updatedProject.type_display) {
-          setProjectType(updatedProject.type_display);
-        } else if (updatedProject.type) {
-          setProjectType(updatedProject.type);
-        }
-        
-        if (updatedProject.price) {
-          setPrice(updatedProject.price);
-        }
-        
-        if (updatedProject.customer) {
-          setCustomer(updatedProject.customer);
-        }
-        
-        const updatedLogs = await getProjectLogs(project.id, useMockData);
-        setChanges(updatedLogs);
+        // После сохранения делаем новый GET запрос для обновления данных
+        await loadProjectAndLogs();
         
         console.log('✅ Изменения успешно сохранены!');
       } else {
@@ -323,26 +367,14 @@ const ProjectCard = ({ useMockData }) => {
       
       console.log(`Найден сотрудник: ${foundStaff.name}, ID: ${foundStaff.id}`);
       
-      const newPerformer = await addPerformerToProject(project.id, parseInt(foundStaff.id), useMockData);
+      await addPerformerToProject(project.id, parseInt(foundStaff.id), useMockData);
       
-      console.log('Исполнитель добавлен:', newPerformer);
-      
-      setProject(prev => ({
-        ...prev,
-        team: [...(prev.team || []), {
-          id: newPerformer.id,
-          name: newPerformer.staff_name || foundStaff.name,
-          role: newPerformer.staff_post || foundStaff.position || 'Исполнитель'
-        }]
-      }));
-      
-      const updatedLogs = await getProjectLogs(project.id, useMockData);
-      setChanges(updatedLogs);
+      // После добавления исполнителя делаем новый GET запрос
+      await loadProjectAndLogs();
       
       setStaffNameInput('');
       setShowSuggestions(false);
       setShowAddPerformerModal(false);
-      alert(`Исполнитель "${foundStaff.name}" успешно добавлен!`);
       
     } catch (error) {
       console.error('Ошибка добавления исполнителя:', error);
@@ -366,19 +398,11 @@ const ProjectCard = ({ useMockData }) => {
     setUploadingFile(true);
 
     try {
-      const uploadedFile = await uploadFileToProject(project.id, file, useMockData);
+      await uploadFileToProject(project.id, file, useMockData);
       
-      console.log('Файл загружен:', uploadedFile);
+      // После загрузки файла делаем новый GET запрос
+      await loadProjectAndLogs();
       
-      setProject(prev => ({
-        ...prev,
-        files: [...(prev.files || []), uploadedFile]
-      }));
-      
-      const updatedLogs = await getProjectLogs(project.id, useMockData);
-      setChanges(updatedLogs);
-      
-      alert(`Файл "${file.name}" успешно загружен!`);
       
       event.target.value = null;
       
@@ -400,7 +424,7 @@ const ProjectCard = ({ useMockData }) => {
     const fileName = file.originalName || file.name || fileUrl.split('/').pop() || 'file.txt';
     
     try {
-      const token = localStorage.getItem('access_token') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY2NjU0NjU3LCJpYXQiOjE3NjY1NjgyNTcsImp0aSI6IjhkZmI1MmI2ZjhlNDRmMzAhZDJlOTdmMTA3N2RkYmY1IiwidXNlcl9pDCI6IjMifQ.FBGdiqMY1jzb7UTkV-urikB5pHbwu6an4zYJ-GQLzAw';
+      const token = localStorage.getItem('access_token');
       
       const response = await fetch(fileUrl, {
         method: 'GET',
@@ -421,7 +445,6 @@ const ProjectCard = ({ useMockData }) => {
       a.href = blobUrl;
       a.download = fileName;
       a.style.display = 'none';
-      a.setAttribute('download', fileName);
       
       document.body.appendChild(a);
       a.click();
@@ -431,8 +454,6 @@ const ProjectCard = ({ useMockData }) => {
         document.body.removeChild(a);
       }, 100);
       
-      console.log(`Файл скачан: ${fileName}`);
-      
     } catch (error) {
       console.error('Ошибка скачивания файла через fetch:', error);
       
@@ -441,7 +462,6 @@ const ProjectCard = ({ useMockData }) => {
         a.href = fileUrl;
         a.download = fileName;
         a.style.display = 'none';
-        a.setAttribute('download', fileName);
         
         document.body.appendChild(a);
         a.click();
@@ -449,8 +469,6 @@ const ProjectCard = ({ useMockData }) => {
         setTimeout(() => {
           document.body.removeChild(a);
         }, 100);
-        
-        console.log(`Попытка скачивания через прямую ссылку: ${fileName}`);
       } catch (fallbackError) {
         console.error('Fallback метод тоже не сработал:', fallbackError);
         alert('Не удалось скачать файл. Попробуйте позже или обратитесь к администратору.');
@@ -471,7 +489,7 @@ const ProjectCard = ({ useMockData }) => {
       <div className="team-avatars">
         {visibleTeam.map((member, index) => (
           <div key={member.id || index} className="avatar-wrapper" style={{ zIndex: maxVisible - index }}>
-            {generateAvatar(member.name)}
+            {generateAvatar(member)}
           </div>
         ))}
         {extraCount > 0 && (
@@ -486,11 +504,13 @@ const ProjectCard = ({ useMockData }) => {
   const groupChangesByDate = () => {
     const grouped = {};
     changes.forEach(change => {
-      const date = change.date.split(' ')[0];
-      if (!grouped[date]) {
-        grouped[date] = [];
+      const date = change.date?.split(' ')[0] || '';
+      if (date) {
+        if (!grouped[date]) {
+          grouped[date] = [];
+        }
+        grouped[date].push(change);
       }
-      grouped[date].push(change);
     });
     return grouped;
   };
@@ -500,10 +520,31 @@ const ProjectCard = ({ useMockData }) => {
     
     setIsLoading(true);
     try {
-      const projectData = await getProjectById(parseInt(projectId), useMockData);
-      console.log('Загружен проект:', projectData);
+      console.log('🔄 Загружаем проект ID:', projectId);
       
-      setProject(projectData);
+      // Делаем GET запрос к API
+      const projectData = await getProjectById(parseInt(projectId), useMockData);
+      console.log('✅ Загружен проект:', projectData);
+      
+      // Используем performers из API
+      const performers = projectData.performers || [];
+      console.log('Исполнители проекта (performers):', performers);
+      
+      // Преобразуем performers в team для совместимости
+      const team = performers.map(performer => ({
+        id: performer.id,
+        name: performer.staff_name || 'Исполнитель',
+        staff_name: performer.staff_name || 'Исполнитель',
+        staff_image: performer.staff_image
+      }));
+      
+      console.log('Преобразованный team:', team);
+      
+      setProject({
+        ...projectData,
+        team: team
+      });
+      
       setProjectName(projectData.name || 'Проект без названия');
       setStartDate(projectData.startDateFormatted || projectData.startDate || '');
       setDeadline(projectData.deadlineFormatted || projectData.deadline || '');
@@ -518,14 +559,8 @@ const ProjectCard = ({ useMockData }) => {
       console.log('Загружены логи:', projectLogs);
       setChanges(projectLogs);
       
-      if (projectData.team) {
-        const userInTeam = projectData.team.some(member => 
-          member.name === currentUser
-        );
-        setIsUserInProject(userInTeam);
-      }
     } catch (error) {
-      console.error('Ошибка загрузки проекта:', error);
+      console.error('❌ Ошибка загрузки проекта:', error);
     } finally {
       setIsLoading(false);
     }
@@ -545,7 +580,7 @@ const ProjectCard = ({ useMockData }) => {
   
   useEffect(() => {
     loadProjectAndLogs();
-  }, [projectId, useMockData, currentUser]);
+  }, [projectId, useMockData]);
 
   if (isLoading) {
     return (
@@ -609,8 +644,7 @@ const ProjectCard = ({ useMockData }) => {
             Проекты
           </span>
           {' — '}
-          <span
-          >
+          <span>
             {projectName}
           </span>
         </h1>
@@ -660,7 +694,7 @@ const ProjectCard = ({ useMockData }) => {
                   </button>
                 </div>
                 <div className="team-container">
-                  {renderTeamAvatars(project.team)}
+                  {renderTeamAvatars(project.performers || [])}
                 </div>
                 <div className="team-count">
                   Всего исполнителей: {project.team?.length || 0}
@@ -726,7 +760,7 @@ const ProjectCard = ({ useMockData }) => {
                         <React.Fragment key={date}>
                           <div className="change-date-header">{date}</div>
                           {groupedChanges[date].map(change => {
-                            const time = change.date.split(' ')[1];
+                            const time = change.date?.split(' ')[1] || '';
                             return (
                               <div key={change.id} className="change-message">
                                 <div className="change-content">{change.action}</div>
@@ -758,9 +792,7 @@ const ProjectCard = ({ useMockData }) => {
             </div>
           </div>
 
-          {/* ПРАВАЯ ПАНЕЛЬ - ДВЕ ОТДЕЛЬНЫЕ КАРТОЧКИ */}
           <div className="right-panel">
-            {/* КАРТОЧКА СТАТУСА */}
             <div className="status-tile" ref={statusDropdownRef}>
               <div className="status-header">
                 <h3 className="status-title">Статус проекта</h3>
@@ -791,7 +823,6 @@ const ProjectCard = ({ useMockData }) => {
               </div>
             </div>
 
-            {/* КАРТОЧКА ФАЙЛОВ */}
             <div className="files-tile">
               <div className="files-content">
                 <div className="files-header">

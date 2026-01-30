@@ -66,7 +66,7 @@
 }
 
 .user-name {
-    font-size: 4.8vh;
+    font-size: 2.8vh;
     font-weight: 600;
     color: #26262C;
     margin: 0 0 1vh 0;
@@ -485,4 +485,80 @@
     font-weight: 500;
     text-align: center;
     padding: 0 2vh;
+}
+
+/* Стили для Telegram поля */
+.telegram-field {
+    width: 100%;
+}
+
+/* Стиль для поля с Telegram (когда есть значение) */
+.telegram-field .readonly-input {
+    width: 100%;
+    padding: 2vh 3vh;
+    background: #6EDCE133;
+    border: 0.2vh solid #E5E5E5;
+    border-radius: 1vh;
+    font-size: 2vh;
+    color: #26262C;
+    box-sizing: border-box;
+}
+
+/* Стиль для кнопки привязки (когда Telegram пустой) */
+.telegram-link-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    background: #0088cc;
+    color: white;
+    border: none;
+    border-radius: 1vh;
+    padding: 2vh 3vh;
+    font-size: 2vh;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    min-height: 6.5vh;
+}
+
+.telegram-link-button:hover {
+    background: #006699;
+    transform: translateY(-0.2vh);
+    box-shadow: 0 0.4vh 0.8vh rgba(0, 136, 204, 0.2);
+}
+
+.telegram-link-button:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+/* Иконка Telegram */
+.telegram-link-button::before {
+    content: '';
+    display: inline-block;
+    width: 2.5vh;
+    height: 2.5vh;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.06-.2-.07-.06-.17-.04-.24-.02-.1.02-1.69 1.09-4.78 3.2-.45.31-.86.46-1.23.45-.41-.01-1.2-.23-1.79-.42-.72-.23-1.29-.36-1.24-.76.03-.23.27-.46.74-.7 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .3z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    margin-right: 1vh;
+    vertical-align: middle;
+}
+
+/* Стиль для поля с Telegram в режиме редактирования (тоже readonly) */
+.telegram-field.readonly-editing .readonly-input {
+    background: #f5f5f5;
+    color: #666;
+    cursor: not-allowed;
+}
+
+/* Информационный текст в режиме редактирования */
+.telegram-edit-info {
+    margin-top: 0.5vh;
+    font-size: 1.4vh;
+    color: #666;
+    font-style: italic;
 }

@@ -348,3 +348,20 @@
 .gantt-back-btn_gantt_class:hover {
     background: #3dbdb4;
 }
+/* Стили для кликабельного Telegram */
+.telegram-link_employee_card {
+  color: #333;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 0.5vh;
+  display: inline-block;
+}
+
+.telegram-link_employee_card:hover {
+  text-decoration: underline;
+}
+
+.telegram-link_employee_card:active {
+  transform: translateY(0.1vh);
+}

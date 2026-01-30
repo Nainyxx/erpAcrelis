@@ -11,6 +11,59 @@ const EmployeeCard = ({ useMockData = false }) => {
   const [error, setError] = useState(null);
   const [avatarError, setAvatarError] = useState(false);
 
+  // Функция для форматирования Telegram для отображения
+  const formatTelegramForDisplay = (telegram) => {
+    if (!telegram) return '';
+    
+    if (telegram.startsWith('@')) {
+      return telegram;
+    }
+    
+    if (telegram.includes('t.me/')) {
+      const match = telegram.match(/t\.me\/([a-zA-Z0-9_]+)/);
+      if (match && match[1]) {
+        return `@${match[1]}`;
+      }
+    }
+    
+    if (telegram.match(/^[a-zA-Z0-9_]+$/)) {
+      return `@${telegram}`;
+    }
+    
+    return telegram;
+  };
+
+  // Функция для получения чистого username без @ и ссылки
+  const getTelegramUsername = (telegram) => {
+    if (!telegram) return null;
+    
+    if (telegram.startsWith('@')) {
+      return telegram.substring(1);
+    }
+    
+    if (telegram.includes('t.me/')) {
+      const match = telegram.match(/t\.me\/([a-zA-Z0-9_]+)/);
+      if (match && match[1]) {
+        return match[1];
+      }
+    }
+    
+    if (telegram.match(/^[a-zA-Z0-9_]+$/)) {
+      return telegram;
+    }
+    
+    return null;
+  };
+
+  // Функция для создания ссылки на Telegram
+  const getTelegramLink = (telegram) => {
+    const username = getTelegramUsername(telegram);
+    if (username) {
+      return `https://t.me/${username}`;
+    }
+    return null;
+  };
+
   const loadEmployeeData = async () => {
     setLoading(true);
     setError(null);
@@ -40,6 +93,9 @@ const EmployeeCard = ({ useMockData = false }) => {
       // Форматируем телефон для отображения
       const formattedPhone = formatPhoneForDisplay(employeeData.phone);
       
+      // Форматируем Telegram для отображения
+      const formattedTelegram = formatTelegramForDisplay(employeeData.telegram);
+      
       const formattedEmployeeData = {
         id: employeeData.id,
         name: employeeData.name || '',
@@ -47,7 +103,8 @@ const EmployeeCard = ({ useMockData = false }) => {
         post: employeeData.post || '',
         email: employeeData.email || '',
         phone: formattedPhone,
-        telegram: employeeData.telegram || '',
+        telegram: formattedTelegram, // Используем отформатированный Telegram
+        telegram_original: employeeData.telegram || '', // Сохраняем оригинал для ссылки
         birthday: employeeData.birthday || '',
         image_url: employeeData.image || employeeData.image_url || null,
         director: employeeData.director || null,
@@ -72,7 +129,13 @@ const EmployeeCard = ({ useMockData = false }) => {
         const fallbackData = await getEmployeeById(employeeId, useMockData);
         if (fallbackData && fallbackData.id) {
           console.log('✅ Используем fallback данные:', fallbackData);
-          setEmployee(fallbackData);
+          // Форматируем Telegram и в fallback данных
+          const formattedFallbackData = {
+            ...fallbackData,
+            telegram: formatTelegramForDisplay(fallbackData.telegram || ''),
+            telegram_original: fallbackData.telegram || ''
+          };
+          setEmployee(formattedFallbackData);
           setError(null);
         }
       } catch (fallbackError) {
@@ -165,6 +228,15 @@ const EmployeeCard = ({ useMockData = false }) => {
     }
   };
 
+  // Обработчик клика по Telegram
+  const handleTelegramClick = (e, telegram) => {
+    e.preventDefault();
+    const link = getTelegramLink(telegram);
+    if (link) {
+      window.open(link, '_blank', 'noopener,noreferrer');
+    }
+  };
+
   // Обработчик клика по кнопке задач - переход в MyTasks с фильтром
   const handleTasksButtonClick = () => {
     if (employeeId) {
@@ -237,6 +309,10 @@ const EmployeeCard = ({ useMockData = false }) => {
     );
   }
 
+  // Получаем ссылку на Telegram для текущего сотрудника
+  const telegramLink = getTelegramLink(employee.telegram_original || employee.telegram);
+  const telegramDisplay = formatTelegramForDisplay(employee.telegram) || '@acrelis';
+
   return (
     <div className="employee-page_employee_card">
       <h1 className="page-title_employee_card">
@@ -302,7 +378,21 @@ const EmployeeCard = ({ useMockData = false }) => {
             </div>
             <div className="contact-item_employee_card">
               <span className="contact-label_employee_card">Telegram</span>
-              <span className="contact-value_employee_card">{employee.telegram || '@acrelis'}</span>
+              <span className="contact-value_employee_card">
+                {telegramLink ? (
+                  <a 
+                    href={telegramLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="telegram-link_employee_card"
+                    onClick={(e) => handleTelegramClick(e, employee.telegram_original || employee.telegram)}
+                  >
+                    {telegramDisplay}
+                  </a>
+                ) : (
+                  telegramDisplay
+                )}
+              </span>
             </div>
             <div className="contact-item_employee_card">
               <span className="contact-label_employee_card">Дата рождения</span>

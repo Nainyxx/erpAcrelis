@@ -59,61 +59,202 @@ const KanbanTasks = ({ useMockData = true }) => {
   const performerInputRef = useRef(null);
   const directorInputRef = useRef(null);
 
-  // Загрузка задач проекта
-// Загрузка задач проекта
-const loadProjectTasks = async () => {
-  if (!projectId) {
-    navigate('/projects');
-    return;
-  }
-
-  setIsLoading(true);
-  setError(null);
-  
-  try {
-    console.log(`🔄 Загружаю задачи для проекта ${projectId}`);
+  // Функция для генерации аватарки как в ProjectCard
+  const generateAvatar = (name, imageUrl = null, size = '3vh') => {
+    if (!name || name === 'Не назначен') {
+      return (
+        <div 
+          className="assignee-avatar"
+          style={{ 
+            backgroundColor: '#e0e0e0',
+            width: size,
+            height: size,
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#666',
+            fontWeight: 600,
+            fontSize: 'calc(' + size + ' * 0.4)'
+          }}
+        >
+          ?
+        </div>
+      );
+    }
     
-    // Фильтр по проекту
-    const filters = { 
-      project: projectId,
-      page: 1
-    };
+    // Получаем инициалы
+    let initials = '';
+    try {
+      const words = name.split(' ').filter(word => word && word.length > 0);
+      if (words.length >= 2) {
+        initials = words[0][0] + words[words.length - 1][0];
+      } else if (words.length === 1) {
+        initials = words[0][0];
+      } else {
+        initials = 'И';
+      }
+    } catch (error) {
+      console.error('Ошибка при получении инициалов:', error);
+      initials = 'И';
+    }
     
-    // Запрашиваем задачи для конкретного проекта
-    const response = await getTasks(useMockData, filters);
+    // Цвет для фона
+    const colors = [
+      '#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0', 
+      '#118AB2', '#EF476F', '#9D4EDD', '#F15BB5',
+      '#2A9D8F', '#E76F51', '#264653', '#E9C46A'
+    ];
+    const hash = name.split('').reduce((acc, char) => acc + (char.charCodeAt(0) || 0), 0);
+    const backgroundColor = colors[hash % colors.length];
     
-    // API возвращает {results: [], count: X}
-    const apiTasks = response.results || [];
-    
-    console.log(`✅ Получено ${apiTasks.length} задач для проекта`);
-    
-    // Конвертируем задачи API в формат канбана
-    const kanbanTasks = apiTasks.map(task => {
-      const kanbanStatus = apiToKanbanStatus[task.status] || 'new';
+    // Если есть изображение
+    if (imageUrl && imageUrl.trim() !== '') {
+      let fullImageUrl;
       
-      return {
-        id: task.id,
-        title: task.name || 'Без названия',
-        startDate: formatDateForDisplay(task.created) || 'Не указано',
-        deadline: formatDateForDisplay(task.deadline) || 'Не указано',
-        assignee: task.performer_name || 'Не назначен',
-        assigneeId: task.performer,
-        status: kanbanStatus,
-        comment: task.description || '',
-        originalTask: task
+      // Формируем полный URL
+      if (imageUrl.startsWith('http')) {
+        fullImageUrl = imageUrl;
+      } else if (imageUrl.startsWith('/')) {
+        fullImageUrl = `https://api.acrelis.ru/media/${imageUrl}`;
+      } else {
+        fullImageUrl = `https://api.acrelis.ru/media/${imageUrl}`;
+      }
+      
+      return (
+        <div 
+          className="assignee-avatar"
+          style={{ 
+            backgroundColor: backgroundColor,
+            position: 'relative',
+            width: size,
+            height: size,
+            borderRadius: '50%',
+            overflow: 'hidden'
+          }}
+        >
+          {/* Изображение */}
+          <img 
+            src={fullImageUrl} 
+            alt={name}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              position: 'absolute',
+              top: 0,
+              left: 0
+            }}
+            onError={(e) => {
+              console.log('Ошибка загрузки аватарки для', name, 'URL:', fullImageUrl);
+              e.target.style.display = 'none';
+              // Показываем инициалы
+              e.target.nextSibling.style.display = 'flex';
+            }}
+            crossOrigin="anonymous"
+          />
+          
+          {/* Fallback с инициалами (скрыт по умолчанию) */}
+          <div 
+            style={{
+              display: 'none',
+              width: '100%',
+              height: '100%',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              fontWeight: 600,
+              fontSize: 'calc(' + size + ' * 0.4)',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              backgroundColor: backgroundColor
+            }}
+          >
+            {initials}
+          </div>
+        </div>
+      );
+    }
+    
+    // Если нет изображения, показываем только инициалы
+    return (
+      <div 
+        className="assignee-avatar"
+        style={{ 
+          backgroundColor: backgroundColor,
+          width: size,
+          height: size,
+          borderRadius: '50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'white',
+          fontWeight: 600,
+          fontSize: 'calc(' + size + ' * 0.4)'
+        }}
+      >
+        {initials}
+      </div>
+    );
+  };
+
+  // Загрузка задач проекта
+  const loadProjectTasks = async () => {
+    if (!projectId) {
+      navigate('/projects');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      console.log(`🔄 Загружаю задачи для проекта ${projectId}`);
+      
+      // Фильтр по проекту
+      const filters = { 
+        project: projectId,
+        page: 1
       };
-    });
-    
-    setTasks(kanbanTasks);
-    
-  } catch (error) {
-    console.error('❌ Ошибка загрузки задач:', error);
-    setError('Не удалось загрузить задачи. Проверьте подключение.');
-    setTasks([]);
-  } finally {
-    setIsLoading(false);
-  }
-};
+      
+      // Запрашиваем задачи для конкретного проекта
+      const response = await getTasks(useMockData, filters);
+      
+      // API возвращает {results: [], count: X}
+      const apiTasks = response.results || [];
+      
+      console.log(`✅ Получено ${apiTasks.length} задач для проекта`);
+      console.log('Пример задачи из API:', apiTasks[0]); // Для отладки
+      
+      // Конвертируем задачи API в формат канбана
+      const kanbanTasks = apiTasks.map(task => {
+        const kanbanStatus = apiToKanbanStatus[task.status] || 'new';
+        
+        return {
+          id: task.id,
+          title: task.name || 'Без названия',
+          startDate: formatDateForDisplay(task.created) || 'Не указано',
+          deadline: formatDateForDisplay(task.deadline) || 'Не указано',
+          assignee: task.performer_name || 'Не назначен',
+          assigneeId: task.performer,
+          assigneeImage: task.performer_image, // Используем performer_image из API
+          status: kanbanStatus,
+          comment: task.description || '',
+          originalTask: task
+        };
+      });
+      
+      setTasks(kanbanTasks);
+      
+    } catch (error) {
+      console.error('❌ Ошибка загрузки задач:', error);
+      setError('Не удалось загрузить задачи. Проверьте подключение.');
+      setTasks([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const loadStaffList = async () => {
     try {
@@ -351,18 +492,21 @@ const loadProjectTasks = async () => {
 
   // Функция для получения инициалов
   const getInitials = (name) => {
+    if (!name || name === 'Не назначен') return '?';
     return name.split(' ').map(n => n[0]).join('');
   };
 
-  // Функция для генерации цвета как в ProjectList
+  // Функция для генерации цвета
   const getAvatarColor = (name) => {
-    const colors = ['#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0', '#118AB2', '#EF476F'];
-    const colorIndex = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length;
-    return colors[colorIndex];
-  };
-
-  const handleTaskClick = (task) => {
-    navigate(`/tasks/${task.id}`);
+    if (name === 'Не назначен') return '#e0e0e0';
+    
+    const colors = [
+      '#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0', 
+      '#118AB2', '#EF476F', '#9D4EDD', '#F15BB5',
+      '#2A9D8F', '#E76F51', '#264653', '#E9C46A'
+    ];
+    const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return colors[hash % colors.length];
   };
 
   // Клик по аватару
@@ -371,6 +515,10 @@ const loadProjectTasks = async () => {
     if (task.assigneeId && task.assigneeId !== 'Не назначен') {
       navigate(`/staff/${task.assigneeId}`);
     }
+  };
+
+  const handleTaskClick = (task) => {
+    navigate(`/tasks/${task.id}`);
   };
 
   if (isLoading) {
@@ -539,16 +687,9 @@ const loadProjectTasks = async () => {
                       </div>
                     </div>
                     
-                    {/* 4. Исполнитель в виде кружка как в ProjectList */}
+                    {/* 4. Исполнитель в виде кружка как в ProjectCard */}
                     <div className="task-assignee">
-                      <div 
-                        className="assignee-avatar"
-                        style={{ backgroundColor: getAvatarColor(task.assignee) }}
-                        onClick={(e) => handleAvatarClick(e, task)}
-                        title={`${task.assignee}\nНажмите для просмотра профиля`}
-                      >
-                        {getInitials(task.assignee)}
-                      </div>
+                      {generateAvatar(task.assignee, task.assigneeImage, '3vh')}
                     </div>
                     
                     {/* 5. Комментарий - прямоугольник белый с закругленными краями */}

@@ -957,6 +957,7 @@ export async function createTask(taskData, USE_MOCK_DATA) {
 }
 
 // Получение задачи по ID
+// Получение задачи по ID
 export async function getTaskById(taskId, USE_MOCK_DATA) {
   if (USE_MOCK_DATA) {
     await new Promise(resolve => setTimeout(resolve, 300));
@@ -973,6 +974,7 @@ export async function getTaskById(taskId, USE_MOCK_DATA) {
       director_name: 'Лутфуллин Амир Айратович',
       performer: 5,
       performer_name: 'Азат',
+      performer_image: 'staff_photos/1716959483_9fcb82061eb13984e346a7a61fed9400.jpg', // Добавьте это поле
       deadline: '2025-12-25T00:00:00+03:00',
       hours: 10,
       is_overdue: false,
@@ -1009,6 +1011,7 @@ export async function getTaskById(taskId, USE_MOCK_DATA) {
     }
 
     const taskData = await response.json();
+    console.log(taskData)
     return taskData;
   } catch (error) {
     console.error(`❌ Ошибка загрузки задачи ${taskId}:`, error);
@@ -1385,6 +1388,7 @@ export async function getEmployeeById(employeeId, USE_MOCK_DATA) {
 }
 
 // Форматирование данных проекта
+// Форматирование данных проекта
 function formatProjectData(project) {
   return {
     id: project.id,
@@ -1405,10 +1409,17 @@ function formatProjectData(project) {
     startDateFormatted: formatDateForDisplay(project.start_date || project.created),
     deadlineFormatted: formatDateForDisplay(project.deadline),
     
+    // ВАЖНО: Сохраняем оригинальные performers для использования в компоненте
+    performers: project.performers || [],
+    
+    // И преобразуем их в team для обратной совместимости
     team: (project.performers || []).map(p => ({
       id: p.id,
       name: p.staff_name || 'Исполнитель',
-      role: p.staff_post || 'Участник'
+      staff_name: p.staff_name || 'Исполнитель', // Добавляем staff_name
+      staff_image: p.staff_image, // Сохраняем staff_image
+      role: p.staff_post || 'Участник',
+      assigned_at: p.assigned_at
     })),
     
     files: (project.files || []).map(file => ({

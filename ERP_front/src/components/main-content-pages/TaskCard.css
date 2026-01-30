@@ -1,4 +1,4 @@
-.taskcard-container {
+.taskcard-container_task_card {
   padding: 3vh;
   background-color: #F6F6FE;
   min-height: calc(100vh - 9vh);
@@ -7,11 +7,11 @@
 }
 
 /* Заголовок */
-.taskcard-header {
+.taskcard-header_task_card {
   margin-bottom: 2vh;
 }
 
-.taskcard-title {
+.taskcard-title_task_card {
   font-size: 2.2vh;
   font-weight: 600;
   color: #5B5B5B;
@@ -19,23 +19,23 @@
   padding: 0;
 }
 
-.mytasks-link {
+.mytasks-link_task_card {
   color: #5B5B5B;
   cursor: pointer;
   transition: all 0.2s;
 }
 
-.mytasks-link:hover {
+.mytasks-link_task_card:hover {
   text-decoration: underline;
   text-underline-offset: 0.3vh;
 }
 
-.task-number {
+.task-number_task_card {
   font-weight: 600;
 }
 
 /* Форма ввода комментария */
-.comment-form-container {
+.comment-form-container_task_card {
   background: #FFFFFF;
   border-radius: 1vh;
   padding: 2vh;
@@ -43,7 +43,7 @@
   box-shadow: 0 0.2vh 0.5vh rgba(0,0,0,0.1);
 }
 
-.comment-input {
+.comment-input_task_card {
   width: 100%;
   min-height: 10vh;
   border: none;
@@ -55,17 +55,17 @@
   background: transparent;
 }
 
-.comment-input::placeholder {
+.comment-input_task_card::placeholder {
   color: #888;
   font-style: italic;
 }
 
 /* Основное содержимое */
-.taskcard-main-content {
+.taskcard-main-content_task_card {
   width: 100%;
 }
 
-.taskcard-grid {
+.taskcard-grid_task_card {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   gap: 2vh;
@@ -73,8 +73,8 @@
 }
 
 /* Общие стили для прямоугольников */
-.column-rectangle,
-.info-rectangle {
+.column-rectangle_task_card,
+.info-rectangle_task_card {
   background: #FFFFFF;
   border-radius: 1vh;
   padding: 2vh;
@@ -82,12 +82,12 @@
 }
 
 /* Стили для чата и файлов (колонки 1 и 2) */
-.column-section {
+.column-section_task_card {
   display: flex;
   flex-direction: column;
 }
 
-.column-rectangle {
+.column-rectangle_task_card {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -96,14 +96,14 @@
 }
 
 /* Стили для 3-х информационных прямоугольников (колонка 3) */
-.column-section:last-child {
+.column-section_task_card:last-child {
   display: flex;
   flex-direction: column;
   gap: 2vh;
   height: 100%;
 }
 
-.info-rectangle {
+.info-rectangle_task_card {
   flex: 1;
   min-height: 0;
   display: flex;
@@ -111,19 +111,19 @@
 }
 
 /* Для равномерного распределения высоты 3 прямоугольников */
-.column-section:last-child .info-rectangle:nth-child(1) {
+.column-section_task_card:last-child .info-rectangle_task_card:nth-child(1) {
   flex: 1;
 }
 
-.column-section:last-child .info-rectangle:nth-child(2) {
+.column-section_task_card:last-child .info-rectangle_task_card:nth-child(2) {
   flex: 1.2;
 }
 
-.column-section:last-child .info-rectangle:nth-child(3) {
+.column-section_task_card:last-child .info-rectangle_task_card:nth-child(3) {
   flex: 1;
 }
 
-.column-title {
+.column-title_task_card {
   font-size: 1.5vh;
   color: #6C757D;
   margin: 0 0 1.6vh 0;
@@ -131,7 +131,7 @@
 }
 
 /* КОНТЕЙНЕР ДЛЯ СКРОЛЛА ЧАТА */
-.chat-scroll-container {
+.chat-scroll-container_task_card {
   flex: 1;
   overflow-y: auto;
   margin-bottom: 1.5vh;
@@ -143,13 +143,13 @@
 }
 
 /* Колонка 1: Чат */
-.chat-column {
+.chat-column_task_card {
   display: flex;
   flex-direction: column;
   height: 100%;
 }
 
-.chat-container {
+.chat-container_task_card {
   padding: 1vh;
   display: flex;
   flex-direction: column;
@@ -159,7 +159,7 @@
 }
 
 /* Заголовок даты в чате */
-.chat-date-header {
+.chat-date-header_task_card {
   font-size: 1.1vh;
   color: #6C757D;
   font-weight: 500;
@@ -169,7 +169,7 @@
   border-radius: 0.4vh;
 }
 
-.comment-item {
+.comment-item_task_card {
   padding: 1vh;
   background: #EAF6F7;
   border-radius: 0.8vh;
@@ -178,50 +178,34 @@
   gap: 0.6vh;
 }
 
-.comment-header {
+.comment-header_task_card {
   display: flex;
   align-items: center;
   gap: 1vh;
 }
 
-.taskcard-avatar {
-  width: 2.8vh;
-  height: 2.8vh;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: 600;
-  font-size: 1.2vh;
-  flex-shrink: 0;
-  border: 0.2vh solid white;
-  box-shadow: 0 0.2vh 0.4vh rgba(0,0,0,0.1);
-}
-
-.comment-user-info {
+.comment-user-info_task_card {
   display: flex;
   flex-direction: column;
   flex: 1;
   gap: 0.2vh;
 }
 
-.comment-user-name {
+.comment-user-name_task_card {
   font-weight: 700;
   color: #333;
   font-size: 1.3vh;
 }
 
-.comment-time {
+.comment-time_task_card {
   font-size: 1vh;
   color: #6C757D;
-  /* Убрали фон и бордеры */
   background: none;
   padding: 0;
   border-radius: 0;
 }
 
-.comment-text {
+.comment-text_task_card {
   font-size: 1.2vh;
   color: #333;
   line-height: 1.4;
@@ -229,7 +213,7 @@
   padding-right: 0;
 }
 
-.replies-container {
+.replies-container_task_card {
   margin-left: 3.8vh;
   display: flex;
   flex-direction: column;
@@ -237,78 +221,55 @@
   margin-top: 0.6vh;
 }
 
-.reply-item {
+.reply-item_task_card {
   padding: 0.6vh;
   background: rgba(255, 255, 255, 0.7);
   border-radius: 0.6vh;
   position: relative;
 }
 
-.reply-header {
+.reply-header_task_card {
   display: flex;
   align-items: center;
   gap: 0.6vh;
 }
 
-.reply-user-info {
+.reply-user-info_task_card {
   display: flex;
   flex-direction: column;
   flex: 1;
   gap: 0.2vh;
 }
 
-.reply-user-name {
+.reply-user-name_task_card {
   font-weight: 600;
   color: #333;
   font-size: 1.2vh;
 }
 
-.reply-time {
+.reply-time_task_card {
   font-size: 0.9vh;
   color: #6C757D;
-  /* Убрали фон и бордеры */
   background: none;
   padding: 0;
   border-radius: 0;
 }
 
-.reply-text {
+.reply-text_task_card {
   font-size: 1.1vh;
   color: #333;
   margin-top: 0.3vh;
 }
 
-.reply-btn {
-  align-self: flex-end;
-  background: none;
-  border: none;
-  color: #5B5B5B;
-  font-size: 1.1vh;
-  cursor: pointer;
-  text-decoration: underline;
-  text-underline-offset: 0.2vh;
-  padding: 0.2vh 0.4vh;
-  transition: all 0.2s;
-  margin-left: auto;
-}
-
-.reply-btn:hover {
-  color: #333;
-}
-
-.reply-btn.active {
-  color: #FF6B6B;
-}
-
 /* Колонка 2: Файлы */
-.files-header {
+.files-header_task_card {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.2vh;
 }
 
-.upload-file-btn {
+.upload-file-btn_task_card {
   background: none;
   border: 0.2vh solid #DEE2E6;
   color: #6C757D;
@@ -321,12 +282,12 @@
   display: inline-block;
 }
 
-.upload-file-btn:hover {
+.upload-file-btn_task_card:hover {
   background-color: #F8F9FA;
   border-color: #ADB5BD;
 }
 
-.files-list {
+.files-list_task_card {
   flex: 1;
   overflow-y: auto;
   display: flex;
@@ -336,7 +297,7 @@
   min-height: 0;
 }
 
-.file-item {
+.file-item_task_card {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -344,11 +305,11 @@
   transition: all 0.2s;
 }
 
-.file-item:hover {
+.file-item_task_card:hover {
   transform: translateY(-0.2vh);
 }
 
-.file-details {
+.file-details_task_card {
   display: flex;
   flex-direction: column;
   gap: 0.3vh;
@@ -356,7 +317,7 @@
   min-width: 0;
 }
 
-.file-name1 {
+.file-name_task_card {
   font-size: 1.2vh;
   font-weight: 500;
   color: #333;
@@ -365,12 +326,12 @@
   text-overflow: ellipsis;
 }
 
-.file-size {
+.file-size_task_card {
   font-size: 1vh;
   color: #6C757D;
 }
 
-.file-download {
+.file-download_task_card {
   background: none;
   border: 0.2vh solid #DEE2E6;
   color: #6C757D;
@@ -387,12 +348,12 @@
   margin-left: 1vh;
 }
 
-.file-download:hover {
+.file-download_task_card:hover {
   background-color: #F8F9FA;
   border-color: #868686;
 }
 
-.files-count {
+.files-count_task_card {
   font-size: 1.2vh;
   color: #6C757D;
   font-weight: 500;
@@ -403,62 +364,73 @@
 }
 
 /* Колонка 3: Информационные прямоугольники */
-.info-rectangle .date-item {
+.info-rectangle_task_card .date-item_task_card {
   display: flex;
   flex-direction: column;
-  gap: 0.2vh; /* Уменьшили отступ между строками */
+  gap: 0.2vh;
   flex: 1;
 }
 
-.date-row {
+.date-row_task_card {
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-size: 1.3vh;
-  margin-bottom: 0.5vh; /* Отступ между парами строка-значение */
+  margin-bottom: 0.5vh;
 }
 
 /* Начало и дедлайн в две строки */
-.info-rectangle .date-row:nth-child(1),
-.info-rectangle .date-row:nth-child(3) {
+.info-rectangle_task_card .date-row_task_card:nth-child(1),
+.info-rectangle_task_card .date-row_task_card:nth-child(3) {
   justify-content: flex-start;
   margin-bottom: 0.2vh;
 }
 
-.info-rectangle .date-row:nth-child(2),
-.info-rectangle .date-row:nth-child(4) {
+.info-rectangle_task_card .date-row_task_card:nth-child(2),
+.info-rectangle_task_card .date-row_task_card:nth-child(4) {
   justify-content: flex-start;
   margin-bottom: 1vh;
 }
 
-.date-label {
+.date-label_task_card {
   color: #6C757D;
   font-weight: 500;
 }
 
-.date-value {
+.date-value_task_card {
   font-weight: 600;
   font-size: 1.8vh;
   color: #333;
 }
 
+.editable_task_card {
+  cursor: text;
+  border-bottom: 0.1vh dashed #ccc;
+  min-width: 8vh;
+  display: inline-block;
+}
+
+.editable_task_card:hover {
+  background-color: #f5f5f5;
+}
+
 /* СТАТУС С ВЫПАДАЮЩИМ СПИСКОМ */
-.status-header {
+.status-header_task_card {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.6vh;
 }
 
-.status-header .column-title {
+.status-header_task_card .column-title_task_card {
   margin: 0;
 }
 
-.status-dropdown-wrapper {
+.status-dropdown-wrapper_task_card {
   position: relative;
 }
 
-.change-status-btn {
+.change-status-btn_task_card {
   background: none;
   border: 0.2vh solid #DEE2E6;
   color: #6C757D;
@@ -471,12 +443,12 @@
   white-space: nowrap;
 }
 
-.change-status-btn:hover {
+.change-status-btn_task_card:hover {
   background-color: #F8F9FA;
   border-color: #ADB5BD;
 }
 
-.status-dropdown {
+.status-dropdown_task_card {
   position: absolute;
   top: 100%;
   right: 0;
@@ -489,7 +461,7 @@
   min-width: 15vh;
 }
 
-.status-option {
+.status-option_task_card {
   padding: 0.8vh 1.2vh;
   font-size: 1.2vh;
   color: #333;
@@ -498,44 +470,44 @@
   white-space: nowrap;
 }
 
-.status-option:hover {
+.status-option_task_card:hover {
   background: #F8F9FA;
 }
 
-.status-option:first-child {
+.status-option_task_card:first-child {
   border-radius: 0.5vh 0.5vh 0 0;
 }
 
-.status-option:last-child {
+.status-option_task_card:last-child {
   border-radius: 0 0 0.5vh 0.5vh;
 }
 
-.status-info {
+.status-info_task_card {
   display: flex;
   flex-direction: column;
   gap: 1.2vh;
   flex: 1;
 }
 
-.status-row {
+.status-row_task_card {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.current-status {
+.current-status_task_card {
   font-size: 1.4vh;
   font-weight: 600;
   color: #333;
 }
 
-.progress-section {
+.progress-section_task_card {
   display: flex;
   align-items: center;
   gap: 1vh;
 }
 
-.progress-bar {
+.progress-bar_task_card {
   flex: 1;
   height: 1vh;
   background: #E9ECEF;
@@ -543,14 +515,14 @@
   overflow: hidden;
 }
 
-.progress-fill {
+.progress-fill_task_card {
   height: 100%;
   background: #B2E9EF;
   border-radius: 0.6vh;
   transition: width 0.3s ease;
 }
 
-.progress-label {
+.progress-label_task_card {
   font-size: 1.2vh;
   font-weight: 600;
   color: #333;
@@ -558,46 +530,46 @@
   text-align: center;
 }
 
-.person-item {
+.person-item_task_card {
   margin-bottom: 1.2vh;
 }
 
-.person-item:last-child {
+.person-item_task_card:last-child {
   margin-bottom: 0;
 }
 
-.person-role {
+.person-role_task_card {
   font-size: 1.2vh;
   color: #6C757D;
   margin-bottom: 0.6vh;
 }
 
-.person-info {
+.person-info_task_card {
   display: flex;
   align-items: center;
   gap: 1vh;
 }
 
-.person-name {
+.person-name_task_card {
   font-size: 1.3vh;
   font-weight: 500;
   color: #333;
 }
 
 /* Форма для комментария в чате */
-.new-comment-section {
+.new-comment-section_task_card {
   border-top: 0.1vh solid #E9ECEF;
   padding-top: 1.2vh;
   margin-top: auto;
 }
 
-.new-comment-form {
+.new-comment-form_task_card {
   display: flex;
   flex-direction: column;
   gap: 0.8vh;
 }
 
-.new-comment-input {
+.new-comment-input_task_card {
   width: 100%;
   min-height: 6vh;
   padding: 0.8vh;
@@ -611,23 +583,23 @@
   box-sizing: border-box;
 }
 
-.new-comment-input:focus {
+.new-comment-input_task_card:focus {
   outline: none;
   border-color: #6EDCE1;
 }
 
-.new-comment-input::placeholder {
+.new-comment-input_task_card::placeholder {
   color: #888;
 }
 
 /* Кнопки в форме комментария */
-.comment-buttons {
+.comment-buttons_task_card {
   display: flex;
   justify-content: flex-end;
   gap: 1vh;
 }
 
-.cancel-reply-btn {
+.cancel-reply-btn_task_card {
   background: none;
   border: 0.2vh solid #DEE2E6;
   color: #6C757D;
@@ -639,12 +611,12 @@
   transition: all 0.2s;
 }
 
-.cancel-reply-btn:hover {
+.cancel-reply-btn_task_card:hover {
   background-color: #F8F9FA;
   border-color: #ADB5BD;
 }
 
-.send-comment-btn {
+.send-comment-btn_task_card {
   background: #6EDCE1;
   color: white;
   border: none;
@@ -657,47 +629,105 @@
   min-width: 8vh;
 }
 
-.send-comment-btn:hover {
+.send-comment-btn_task_card:hover {
   background: #4ECDC4;
   transform: translateY(-0.2vh);
 }
 
-.send-comment-btn:active {
+.send-comment-btn_task_card:active {
   transform: translateY(0);
 }
 
 /* Стили для скроллбара */
-.chat-scroll-container::-webkit-scrollbar {
+.chat-scroll-container_task_card::-webkit-scrollbar {
   width: 0.6vh;
 }
 
-.chat-scroll-container::-webkit-scrollbar-track {
+.chat-scroll-container_task_card::-webkit-scrollbar-track {
   border-radius: 0.3vh;
 }
 
-.chat-scroll-container::-webkit-scrollbar-thumb {
+.chat-scroll-container_task_card::-webkit-scrollbar-thumb {
   background: #E5E5E5;
   border-radius: 0.3vh;
 }
 
-.chat-scroll-container::-webkit-scrollbar-thumb:hover {
+.chat-scroll-container_task_card::-webkit-scrollbar-thumb:hover {
   background: #cccccc;
 }
 
-.files-list::-webkit-scrollbar {
+.files-list_task_card::-webkit-scrollbar {
   width: 0.6vh;
 }
 
-.files-list::-webkit-scrollbar-track {
+.files-list_task_card::-webkit-scrollbar-track {
   background: #F1F1F1;
   border-radius: 0.3vh;
 }
 
-.files-list::-webkit-scrollbar-thumb {
+.files-list_task_card::-webkit-scrollbar-thumb {
   background: #B2E9EF;
   border-radius: 0.3vh;
 }
 
-.files-list::-webkit-scrollbar-thumb:hover {
+.files-list_task_card::-webkit-scrollbar-thumb:hover {
   background: #4ECDC4;
+}
+
+/* СТИЛИ ДЛЯ АВАТАРОК */
+.avatar-container_task_card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 0.2vh 0.4vh rgba(0,0,0,0.1);
+}
+
+.taskcard-avatar-img_task_card {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.avatar-fallback_task_card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: white;
+  font-weight: 600;
+}
+
+/* Размеры аватарок в комментариях */
+.comment-header_task_card .avatar-container_task_card {
+  width: 2.8vh;
+  height: 2.8vh;
+  min-width: 2.8vh;
+  min-height: 2.8vh;
+  margin-right: 0.8vh;
+  font-size: 1.2vh;
+}
+
+/* Размеры аватарок в ответах */
+.reply-header_task_card .avatar-container_task_card {
+  width: 2.4vh;
+  height: 2.4vh;
+  min-width: 2.4vh;
+  min-height: 2.4vh;
+  margin-right: 0.6vh;
+  font-size: 1vh;
+}
+
+/* Размеры аватарок в секции исполнителя/руководителя */
+.person-info_task_card .avatar-container_task_card {
+  width: 3vh;
+  height: 3vh;
+  min-width: 3vh;
+  min-height: 3vh;
+  margin-right: 1vh;
+  font-size: 1.4vh;
 }

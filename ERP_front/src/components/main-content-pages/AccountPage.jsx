@@ -1,4 +1,3 @@
-// ERP_front/src/components/main-content-pages/AccountPage.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { getEmployeeById, authFetch } from '../../services/api/api';
 import './AccountPage.css';
@@ -38,7 +37,6 @@ function AccountPage() {
     const nameRef = useRef(null);
     const postRef = useRef(null);
     const emailRef = useRef(null);
-    const telegramRef = useRef(null);
     const phoneRef = useRef(null);
     const birthDateRef = useRef(null);
 
@@ -83,7 +81,7 @@ function AccountPage() {
                 email: employeeData.email || '',
                 telegram: employeeData.telegram || '',
                 phone: formattedPhone,
-                originalPhone: employeeData.phone || '', // Сохраняем оригинальный номер
+                originalPhone: employeeData.phone || '',
                 birthday: employeeData.birthday || '',
                 birthDate: formattedBirthDate,
                 image: employeeData.image || null,
@@ -132,17 +130,47 @@ function AccountPage() {
             setIsLoading(false);
         }
     };
+    const formatTelegramForDisplay = (telegram) => {
+    if (!telegram) return '';
+    
+    // Если уже начинается с @, возвращаем как есть
+    if (telegram.startsWith('@')) {
+        return telegram;
+    }
+    
+    // Если это полная ссылка
+    if (telegram.includes('t.me/')) {
+        // Извлекаем username из ссылки
+        const match = telegram.match(/t\.me\/([a-zA-Z0-9_]+)/);
+        if (match && match[1]) {
+            return `@${match[1]}`;
+        }
+    }
+    
+    // Если это username без @
+    if (telegram.match(/^[a-zA-Z0-9_]+$/)) {
+        return `@${telegram}`;
+    }
+    
+    // В остальных случаях возвращаем как есть
+    return telegram;
+};
+    const getTelegramLink = () => {
+        const userId = localStorage.getItem('staff_id');
+        if (userId) {
+            return `https://t.me/MouseAcrelisBot?start=${userId}`;
+        }
+        return '#';
+    };
 
     const formatBirthDateForDisplay = (dateString) => {
         if (!dateString) return '';
         
         try {
-            // Если это уже отформатированная дата DD.MM.YYYY, возвращаем как есть
             if (dateString.match(/^\d{2}\.\d{2}\.\d{4}$/)) {
                 return dateString;
             }
             
-            // Пытаемся разобрать дату в формате YYYY-MM-DD
             if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
                 const date = new Date(dateString);
                 if (!isNaN(date.getTime())) {
@@ -153,7 +181,6 @@ function AccountPage() {
                 }
             }
             
-            // Если это ISO строка
             const date = new Date(dateString);
             if (!isNaN(date.getTime())) {
                 const day = String(date.getDate()).padStart(2, '0');
@@ -173,7 +200,6 @@ function AccountPage() {
         if (!dateString) return '';
         
         try {
-            // Если дата в формате DD.MM.YYYY
             if (dateString.match(/^\d{2}\.\d{2}\.\d{4}$/)) {
                 const [day, month, year] = dateString.split('.');
                 const date = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
@@ -182,12 +208,10 @@ function AccountPage() {
                 }
             }
             
-            // Если это уже YYYY-MM-DD формат
             if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
                 return dateString;
             }
             
-            // Пытаемся разобрать любую дату
             const date = new Date(dateString);
             if (!isNaN(date.getTime())) {
                 const year = date.getFullYear();
@@ -206,42 +230,32 @@ function AccountPage() {
     const formatPhoneForDisplay = (phone) => {
         if (!phone) return '';
         
-        // Если номер уже отформатирован
         if (phone.includes('(') || phone.includes(')')) {
             return phone;
         }
         
-        // Убираем все нецифровые символы
         const cleaned = phone.replace(/\D/g, '');
         
-        // Форматируем российский номер
         if (cleaned.length === 11) {
-            // Формат: +7 (XXX) XXX-XX-XX
             return `+7 (${cleaned.substring(1, 4)}) ${cleaned.substring(4, 7)}-${cleaned.substring(7, 9)}-${cleaned.substring(9)}`;
         } else if (cleaned.length === 10) {
-            // Формат: +7 (XXX) XXX-XX-XX (без первой 7/8)
             return `+7 (${cleaned.substring(0, 3)}) ${cleaned.substring(3, 6)}-${cleaned.substring(6, 8)}-${cleaned.substring(8)}`;
         } else if (cleaned.length === 12 && cleaned.startsWith('7')) {
-            // Формат: +7 (XXX) XXX-XX-XX (уже с +7 в начале)
             return `+7 (${cleaned.substring(1, 4)}) ${cleaned.substring(4, 7)}-${cleaned.substring(7, 9)}-${cleaned.substring(9)}`;
         }
         
-        // Если не удалось отформатировать, возвращаем как есть
         return phone;
     };
 
     const formatPhoneForAPI = (phone) => {
         if (!phone) return '';
         
-        // Убираем все нецифровые символы
         const cleaned = phone.replace(/\D/g, '');
         
-        // Если номер начинается с 7 или 8, оставляем как есть
         if (cleaned.startsWith('7') || cleaned.startsWith('8')) {
             return cleaned;
         }
         
-        // Если номер начинается с других цифр, добавляем 7
         if (cleaned.length === 10) {
             return '7' + cleaned;
         }
@@ -275,11 +289,9 @@ function AccountPage() {
             const formData = new FormData();
             let hasChanges = false;
             
-            // Получаем текущие значения из редактируемых полей
             const currentName = nameRef.current?.textContent || userData.name;
             const currentPost = postRef.current?.textContent || userData.post;
             const currentEmail = emailRef.current?.textContent || userData.email;
-            const currentTelegram = telegramRef.current?.textContent || userData.telegram;
             const currentPhone = phoneRef.current?.textContent || userData.phone;
             const currentBirthDate = birthDateRef.current?.textContent || userData.birthDate;
             
@@ -287,12 +299,10 @@ function AccountPage() {
                 name: currentName,
                 post: currentPost,
                 email: currentEmail,
-                telegram: currentTelegram,
                 phone: currentPhone,
                 birthDate: currentBirthDate
             });
 
-            // Проверяем изменения и добавляем в formData
             if (currentName !== originalData.name) {
                 formData.append('name', currentName);
                 hasChanges = true;
@@ -311,12 +321,6 @@ function AccountPage() {
                 console.log('Изменен email:', currentEmail);
             }
             
-            if (currentTelegram !== originalData.telegram) {
-                formData.append('telegram', currentTelegram);
-                hasChanges = true;
-                console.log('Изменен telegram:', currentTelegram);
-            }
-            
             if (currentPhone !== originalData.phone) {
                 const cleanPhone = formatPhoneForAPI(currentPhone);
                 formData.append('phone', cleanPhone);
@@ -333,17 +337,10 @@ function AccountPage() {
                 }
             }
             
-            // Добавляем новое изображение если есть
             if (imageFile) {
                 formData.append('image', imageFile);
                 hasChanges = true;
                 console.log('Добавлено новое изображение');
-            }
-
-            if (!hasChanges) {
-                setError('Нет изменений для сохранения');
-                setIsSaving(false);
-                return;
             }
 
             console.log('Отправляем PATCH запрос с данными:', {
@@ -366,38 +363,15 @@ function AccountPage() {
             const updatedData = await response.json();
             console.log('Ответ от сервера:', updatedData);
             
-            // Обновляем локальные данные
-            const formattedUpdatedData = {
-                id: updatedData.id,
-                name: updatedData.name,
-                post: updatedData.post,
-                email: updatedData.email,
-                telegram: updatedData.telegram || '',
-                phone: formatPhoneForDisplay(updatedData.phone),
-                originalPhone: updatedData.phone || '',
-                birthday: updatedData.birthday || '',
-                birthDate: formatBirthDateForDisplay(updatedData.birthday), // Автоматическое форматирование
-                image: updatedData.image || updatedData.image_url || null,
-                image_url: updatedData.image_url || updatedData.image || null,
-                director: updatedData.director || userData.director,
-                department: updatedData.department || '',
-                department_name: updatedData.department_name || '',
-                is_active: updatedData.is_active !== undefined ? updatedData.is_active : true,
-                created: updatedData.created || userData.created
-            };
-            
-            setUserData(formattedUpdatedData);
-            setOriginalData(formattedUpdatedData);
+            // Закрываем режим редактирования
             setIsEditing(false);
             setImageFile(null);
             setImagePreview(null);
             
-            // Обновляем localStorage
-            localStorage.setItem('name', formattedUpdatedData.name);
-            localStorage.setItem('post', formattedUpdatedData.post);
-            localStorage.setItem('email', formattedUpdatedData.email);
+            console.log('Данные успешно сохранены');
             
-            console.log('Данные успешно сохранены и обновлены');
+            // ПОСЛЕ УСПЕШНОГО СОХРАНЕНИЯ - ОБНОВЛЯЕМ ДАННЫЕ
+            await fetchAccountData();
             
         } catch (error) {
             console.error('Ошибка сохранения данных:', error);
@@ -466,7 +440,6 @@ function AccountPage() {
                         alt={userData.name} 
                         className="avatar-image"
                         onError={(e) => {
-                            // Если изображение не загружается, показываем SVG
                             e.target.style.display = 'none';
                             const svg = e.target.parentNode.querySelector('svg');
                             if (svg) svg.style.display = 'block';
@@ -595,7 +568,7 @@ function AccountPage() {
 
                     <div className="name-section">
                         {isEditing ? (
-                            <>
+                            <>  
                                 <h1 
                                     ref={nameRef}
                                     className="user-name editable"
@@ -661,19 +634,26 @@ function AccountPage() {
                         <div className="input-group">
                             <label className="input-label">Telegram</label>
                             <div className="input-field">
-                                {isEditing ? (
-                                    <div 
-                                        ref={telegramRef}
-                                        className="readonly-input editable"
-                                        contentEditable
-                                        suppressContentEditableWarning
-                                    >
-                                        {userData.telegram || ''}
+                                {userData.telegram ? (
+                                    <div className={`telegram-field ${isEditing ? 'readonly-editing' : ''}`}>
+                                        <div className="readonly-input">
+                                            {formatTelegramForDisplay(userData.telegram)}
+                                        </div>
+                                        {isEditing && (
+                                            <div className="telegram-edit-info">
+                                                Для изменения Telegram используйте кнопку ниже
+                                            </div>
+                                        )}
                                     </div>
                                 ) : (
-                                    <div className="readonly-input">
-                                        {userData.telegram || 'Не указан'}
-                                    </div>
+                                    <a 
+                                        href={getTelegramLink()} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="telegram-link-button"
+                                    >
+                                        Привязать Telegram
+                                    </a>
                                 )}
                             </div>
                         </div>

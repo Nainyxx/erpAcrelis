@@ -352,17 +352,6 @@ function InviteRegistrationEnd() {
               required
             />
           </div>
-          <div className="register_half_register_page">
-            <input
-              type="text"
-              name="telegram"
-              value={formData.telegram}
-              onChange={handleInputChange}
-              placeholder="Telegram (необязательно)"
-              className="login_input_login_page"
-              autoComplete="off"
-            />
-          </div>
         </div>
         
         {/* Поле Дата рождения */}

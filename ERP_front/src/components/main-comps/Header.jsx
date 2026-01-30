@@ -51,9 +51,6 @@ function Header({ currentUser }) {
         <header className="HeaderCont">
             <img className="logo" src={AcrelisLogo} alt="Acrelis Logo"/>
             <div className="navCont">
-                <button className="navButt" title="Уведомления">
-                    <img src={NotificationIcon} alt="Уведомления" />
-                </button>
                 
                 <button 
                     className="navButt1" 

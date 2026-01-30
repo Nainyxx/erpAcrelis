@@ -240,21 +240,15 @@ const ProjectsList = ({ useMockData = true, onProjectSelect }) => {
   const startProject = (currentPage - 1) * PROJECTS_PER_PAGE + 1;
   const endProject = Math.min(currentPage * PROJECTS_PER_PAGE, totalProjects);
 
-const generateAvatar = (name) => {
-  let safeName = '';
-  
-  if (!name) {
-    safeName = 'Исполнитель';
-  } else if (typeof name === 'string') {
-    safeName = name.trim();
-    if (safeName === '') safeName = 'Исполнитель';
-  } else {
-    safeName = String(name);
-  }
+const generateAvatar = (member) => {
+  const name = member?.staff_name || 'Исполнитель';
+  const imageUrl = member?.staff_image ? 
+    `https://api.acrelis.ru/media/${member.staff_image}` : 
+    null;
   
   const colors = ['#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0', '#118AB2', '#EF476F'];
   
-  const words = safeName.split(' ').filter(word => word.length > 0);
+  const words = name.split(' ').filter(word => word.length > 0);
   let initials = '';
   
   if (words.length >= 2) {
@@ -265,7 +259,27 @@ const generateAvatar = (name) => {
     initials = 'И';
   }
   
-  const colorIndex = safeName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length;
+  const colorIndex = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length;
+  
+  if (imageUrl) {
+    return (
+      <div className="avatar" style={{ backgroundColor: colors[colorIndex] }}>
+        <img 
+          src={imageUrl} 
+          alt={name}
+          onError={(e) => {
+            e.target.style.display = 'none';
+            const span = e.target.parentElement.querySelector('.avatar-initials');
+            if (span) span.style.display = 'block';
+          }}
+          className="avatar-image"
+        />
+        <span className="avatar-initials" style={{ display: 'none' }}>
+          {initials.toUpperCase()}
+        </span>
+      </div>
+    );
+  }
   
   return (
     <div className="avatar" style={{ backgroundColor: colors[colorIndex] }}>
@@ -273,7 +287,6 @@ const generateAvatar = (name) => {
     </div>
   );
 };
-
 const renderTeamAvatars = (team) => {
   if (!team || team.length === 0) {
     return <div className="team-avatars">Нет исполнителей</div>;
@@ -285,17 +298,11 @@ const renderTeamAvatars = (team) => {
 
   return (
     <div className="team-avatars">
-      {visibleTeam.map((member, index) => {
-        const memberName = member?.staff_name || 
-                          member?.name || 
-                          `Исполнитель ${index + 1}`;
-        
-        return (
-          <div key={member?.id || index} className="avatar-wrapper" style={{ zIndex: maxVisible - index }}>
-            {generateAvatar(memberName)}
-          </div>
-        );
-      })}
+      {visibleTeam.map((member, index) => (
+        <div key={member?.id || index} className="avatar-wrapper" style={{ zIndex: maxVisible - index }}>
+          {generateAvatar(member)}
+        </div>
+      ))}
       {extraCount > 0 && (
         <div className="avatar extra-avatar">
           +{extraCount}
