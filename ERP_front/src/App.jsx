@@ -97,7 +97,6 @@ function App() {
   };
 
   return (
-    <Router>
       <div className='App'>
         {/* Контейнер для WebSocket уведомлений - показываем только когда пользователь авторизован */}
         {shouldShowWebSocketNotifications() && <NotificationContainer />}
@@ -221,7 +220,6 @@ function App() {
           } />
         </Routes>
       </div>
-    </Router>
   );
 }
 

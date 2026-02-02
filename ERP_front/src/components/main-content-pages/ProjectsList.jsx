@@ -1,4 +1,6 @@
+// ERP_front/src/components/main-content-pages/ProjectsList.jsx
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom'; // Добавляем useNavigate
 import { getProjects, createProject } from '../../services/api/api';
 import './ProjectsList.css';
 
@@ -15,6 +17,8 @@ const savePageToStorage = (page) => {
 };
 
 const ProjectsList = ({ useMockData = true, onProjectSelect }) => {
+  const navigate = useNavigate(); // Инициализируем navigate
+  
   const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState('all');
@@ -287,6 +291,7 @@ const generateAvatar = (member) => {
     </div>
   );
 };
+
 const renderTeamAvatars = (team) => {
   if (!team || team.length === 0) {
     return <div className="team-avatars">Нет исполнителей</div>;
@@ -311,6 +316,17 @@ const renderTeamAvatars = (team) => {
     </div>
   );
 };
+
+  // Обработчик клика по проекту - используем navigate
+  const handleProjectSelect = (project) => {
+    // Если есть переданный обработчик, используем его
+    if (onProjectSelect && typeof onProjectSelect === 'function') {
+      onProjectSelect(project);
+    } else {
+      // Иначе используем navigate
+      navigate(`/projects/${project.id}`);
+    }
+  };
 
   // Универсальный компонент загрузки
   const LoadingSpinner = ({ message = "Загрузка проектов..." }) => (
@@ -491,27 +507,27 @@ const renderTeamAvatars = (team) => {
         ) : (
           projects.map((project) => (
             <div className="project-row" key={project.id}>
-              <div onClick={() => onProjectSelect(project)}>
+              <div onClick={() => handleProjectSelect(project)}>
                 <div className="project-name-text">{project.name}</div>
               </div>
               
-              <div onClick={() => onProjectSelect(project)}>
+              <div onClick={() => handleProjectSelect(project)}>
                 {renderTeamAvatars(project.team)}
               </div>
               
-              <div onClick={() => onProjectSelect(project)}>
+              <div onClick={() => handleProjectSelect(project)}>
                 <span className={`project-type ${project.type}`}>
                   {project.typeLabel || getTypeLabel(project.type)}
                 </span>
               </div>
               
-              <div onClick={() => onProjectSelect(project)}>
+              <div onClick={() => handleProjectSelect(project)}>
                 <span className={`project-status ${project.status}`}>
                   {project.status_display || 'Планирование'}
                 </span>
               </div>
               
-              <div onClick={() => onProjectSelect(project)}>
+              <div onClick={() => handleProjectSelect(project)}>
                 <div className="project-hours">{project.hours} ч</div>
               </div>
             </div>

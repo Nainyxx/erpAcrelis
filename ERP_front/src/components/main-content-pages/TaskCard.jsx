@@ -914,16 +914,6 @@ const TaskCard = ({ useMockData = false }) => {
                                                             <div className="comment-user-info_task_card">
                                                                 <div className="comment-user-name_task_card">
                                                                     {comment.userName}
-                                                                    {comment.isPending && (
-                                                                        <span style={{
-                                                                            marginLeft: '8px',
-                                                                            fontSize: '11px',
-                                                                            color: '#888',
-                                                                            fontStyle: 'italic'
-                                                                        }}>
-                                                                            Отправляется...
-                                                                        </span>
-                                                                    )}
                                                                 </div>
                                                                 <div className="comment-time_task_card">{comment.time}</div>
                                                             </div>
@@ -991,7 +981,6 @@ const TaskCard = ({ useMockData = false }) => {
                                     <div key={file.id} className="file-item_task_card">
                                         <div className="file-details_task_card">
                                             <span className="file-name_task_card">{file.name}</span>
-                                            <span className="file-size_task_card">{file.size}</span>
                                         </div>
                                         <button 
                                             className="file-download_task_card" 
