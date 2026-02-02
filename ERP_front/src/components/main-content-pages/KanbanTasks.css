@@ -112,6 +112,10 @@
   background: #F3D8F3 !important;
 }
 
+.project-info-note {
+  font-size: 2vh;
+}
+
 .task-card-in_progress {
   background: #F1D8D0 !important;
 }

@@ -13,12 +13,12 @@ import './TaskCard.css';
 
 const TaskCard = ({ useMockData = false }) => {
     const navigate = useNavigate();
-    const { taskId } = useParams();
+    const { taskId, taskName } = useParams();
     const chatContainerRef_task_card = useRef(null);
     const fileInputRef_task_card = useRef(null);
     const patchTimeoutRef_task_card = useRef(null);
     
-    // Флаг для отслеживания первой загрузки
+    // Флаги для отслеживания состояния
     const initialLoadDone = useRef(false);
     
     // WebSocket реф
@@ -27,14 +27,13 @@ const TaskCard = ({ useMockData = false }) => {
     // Данные задачи
     const [task, setTask] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [loadingComments, setLoadingComments] = useState(false);
     const [error, setError] = useState(null);
     
-    // WebSocket состояния
+    // WebSocket состояния (скрыты от пользователя)
     const [isWebSocketConnected, setIsWebSocketConnected] = useState(false);
     const [wsError, setWsError] = useState(null);
     const [isReconnecting, setIsReconnecting] = useState(false);
-const [reconnectAttempt, setReconnectAttempt] = useState(0);
+    const [reconnectAttempt, setReconnectAttempt] = useState(0);
     
     // Состояния для полей
     const [comment, setComment] = useState('');
@@ -42,6 +41,10 @@ const [reconnectAttempt, setReconnectAttempt] = useState(0);
     const [replyToCommentId, setReplyToCommentId] = useState(null);
     const [commentsList, setCommentsList] = useState([]);
     const [files, setFiles] = useState([]);
+    
+    // Для оптимистичного обновления UI
+    const [pendingComments, setPendingComments] = useState([]);
+    const [isSending, setIsSending] = useState(false);
     
     const [startDate, setStartDate] = useState('');
     const [deadline, setDeadline] = useState('');
@@ -73,88 +76,91 @@ const [reconnectAttempt, setReconnectAttempt] = useState(0);
 
     // Форматирование комментария
     const formatComment = (commentData) => {
-        const commentDate = new Date(commentData.created);
+        const commentDate = new Date(commentData.created || commentData.createdAt || new Date());
         
         let userInitials = '??';
-        if (commentData.author_name) {
-            const nameParts = commentData.author_name.split(' ');
+        if (commentData.author_name || commentData.userName) {
+            const name = commentData.author_name || commentData.userName;
+            const nameParts = name.split(' ');
             userInitials = nameParts.map(n => n[0]).join('').toUpperCase().slice(0, 2);
         }
         
         return {
-            id: commentData.id,
-            userId: `comment_${commentData.id}`,
-            userName: commentData.author_name || 'Автор',
+            id: commentData.id || `temp_${Date.now()}_${Math.random()}`,
+            userId: commentData.author_id || `comment_${commentData.id}`,
+            userName: commentData.author_name || commentData.userName || 'Автор',
             userInitials: userInitials,
             userColor: '#06D6A0',
-            text: commentData.content,
-            date: `${commentDate.getDate().toString().padStart(2, '0')}.${(commentDate.getMonth() + 1).toString().padStart(2, '0')}.${commentDate.getFullYear()}`,
-            time: `${commentDate.getHours().toString().padStart(2, '0')}:${commentDate.getMinutes().toString().padStart(2, '0')}`,
+            text: commentData.content || commentData.text,
+            date: commentData.date || `${commentDate.getDate().toString().padStart(2, '0')}.${(commentDate.getMonth() + 1).toString().padStart(2, '0')}.${commentDate.getFullYear()}`,
+            time: commentData.time || `${commentDate.getHours().toString().padStart(2, '0')}:${commentDate.getMinutes().toString().padStart(2, '0')}`,
             replies: [],
-            createdAt: commentData.created,
-            isFromWebSocket: false
+            createdAt: commentData.created || commentData.createdAt,
+            isFromWebSocket: commentData.isFromWebSocket || false,
+            isPending: commentData.isPending || false,
+            tempId: commentData.tempId
         };
     };
 
     // ==================== WebSocket функции ====================
 
     // Инициализация WebSocket
-const initWebSocket = useCallback(() => {
-    if (!taskId || wsServiceRef.current) return;
-    
-    console.log('🔄 Инициализация WebSocket для задачи:', taskId);
-    
-    wsServiceRef.current = new TaskWebSocketService(taskId, {
-        maxReconnectAttempts: 10,
-        reconnectDelay: 3000,
-        pingInterval: 25000,
-        pingTimeout: 10000
-    });
-    
-    // Подписка на события WebSocket
-    const unsubscribeComment = wsServiceRef.current.onComment((newCommentData) => {
-        console.log('💬 Получен новый комментарий через WS:', newCommentData);
-        handleNewCommentFromWebSocket(newCommentData);
-    });
-    
-    const unsubscribeConnect = wsServiceRef.current.onConnect(() => {
-        console.log('✅ WebSocket подключен');
-        setIsWebSocketConnected(true);
-        setIsReconnecting(false);
-        setWsError(null);
-    });
-    
-    const unsubscribeDisconnect = wsServiceRef.current.onDisconnect((code, reason) => {
-        console.log('🔌 WebSocket отключен:', reason);
-        setIsWebSocketConnected(false);
-    });
-    
-    const unsubscribeError = wsServiceRef.current.onError((error) => {
-        console.error('❌ WebSocket ошибка:', error);
-        setWsError(error.message);
-        setIsWebSocketConnected(false);
-    });
-    
-    const unsubscribeReconnecting = wsServiceRef.current.onReconnecting((attempt, delay) => {
-        console.log(`🔄 Переподключение ${attempt} через ${delay}мс`);
-        setIsReconnecting(true);
-        setReconnectAttempt(attempt);
-    });
-    
-    // Очистка при размонтировании
-    return () => {
-        unsubscribeComment();
-        unsubscribeConnect();
-        unsubscribeDisconnect();
-        unsubscribeError();
-        unsubscribeReconnecting();
+    const initWebSocket = useCallback(() => {
+        if (!taskId || wsServiceRef.current) return;
         
-        if (wsServiceRef.current) {
-            wsServiceRef.current.disconnect();
-            wsServiceRef.current = null;
-        }
-    };
-}, [taskId]);
+        console.log('🔄 Инициализация WebSocket для задачи:', taskId);
+        
+        wsServiceRef.current = new TaskWebSocketService(taskId, {
+            maxReconnectAttempts: 10,
+            reconnectDelay: 3000,
+            pingInterval: 25000,
+            pingTimeout: 10000
+        });
+        
+        // Подписка на события WebSocket
+        const unsubscribeComment = wsServiceRef.current.onComment((newCommentData) => {
+            console.log('💬 Получен новый комментарий через WS:', newCommentData);
+            handleNewCommentFromWebSocket(newCommentData);
+        });
+        
+        const unsubscribeConnect = wsServiceRef.current.onConnect(() => {
+            console.log('✅ WebSocket подключен');
+            setIsWebSocketConnected(true);
+            setIsReconnecting(false);
+            setWsError(null);
+        });
+        
+        const unsubscribeDisconnect = wsServiceRef.current.onDisconnect((code, reason) => {
+            console.log('🔌 WebSocket отключен:', reason);
+            setIsWebSocketConnected(false);
+        });
+        
+        const unsubscribeError = wsServiceRef.current.onError((error) => {
+            console.error('❌ WebSocket ошибка:', error);
+            setWsError(error.message);
+            setIsWebSocketConnected(false);
+        });
+        
+        const unsubscribeReconnecting = wsServiceRef.current.onReconnecting((attempt, delay) => {
+            console.log(`🔄 Переподключение ${attempt} через ${delay}мс`);
+            setIsReconnecting(true);
+            setReconnectAttempt(attempt);
+        });
+        
+        // Очистка при размонтировании
+        return () => {
+            unsubscribeComment();
+            unsubscribeConnect();
+            unsubscribeDisconnect();
+            unsubscribeError();
+            unsubscribeReconnecting();
+            
+            if (wsServiceRef.current) {
+                wsServiceRef.current.disconnect();
+                wsServiceRef.current = null;
+            }
+        };
+    }, [taskId]);
 
     // Обработка нового комментария из WebSocket
     const handleNewCommentFromWebSocket = (commentData) => {
@@ -165,22 +171,28 @@ const initWebSocket = useCallback(() => {
         
         setCommentsList(prev => {
             // Проверяем, нет ли уже такого комментария (дублирование)
-            const exists = prev.some(c => c.id === commentData.id);
-            if (exists) return prev;
+            const exists = prev.some(c => c.id === commentData.id || c.tempId === commentData.tempId);
+            if (exists) {
+                // Обновляем временный комментарий на постоянный
+                return prev.map(c => 
+                    c.tempId === commentData.tempId ? formattedComment : c
+                );
+            }
             
+            // Добавляем новый комментарий
             return [...prev, formattedComment];
         });
         
+        // Удаляем из pending, если это подтверждение нашего сообщения
+        if (commentData.tempId) {
+            setPendingComments(prev => prev.filter(id => id !== commentData.tempId));
+        }
+        
         // Прокрутка к новому сообщению
-        setTimeout(() => {
-            if (chatContainerRef_task_card.current) {
-                chatContainerRef_task_card.current.scrollTop = 
-                    chatContainerRef_task_card.current.scrollHeight;
-            }
-        }, 100);
+        scrollToBottom();
     };
 
-    // Отправка комментария через WebSocket
+    // Отправка комментария через WebSocket с оптимистичным обновлением
     const sendCommentViaWebSocket = async (commentText) => {
         if (!commentText.trim()) {
             throw new Error('Комментарий не может быть пустым');
@@ -190,25 +202,65 @@ const initWebSocket = useCallback(() => {
             throw new Error('Нет соединения с чатом');
         }
         
+        const tempId = `temp_${Date.now()}_${Math.random()}`;
+        
+        // ОПТИМИСТИЧНОЕ ОБНОВЛЕНИЕ: сразу показываем сообщение
+        const optimisticComment = {
+            id: tempId,
+            tempId: tempId,
+            userName: 'Вы',
+            text: commentText,
+            createdAt: new Date().toISOString(),
+            isPending: true
+        };
+        
+        const formattedOptimisticComment = formatComment(optimisticComment);
+        
+        setCommentsList(prev => [...prev, formattedOptimisticComment]);
+        setPendingComments(prev => [...prev, tempId]);
+        
+        // Прокручиваем к новому сообщению
+        scrollToBottom();
+        
         try {
-            wsServiceRef.current.sendComment(commentText);
-            return true;
+            // Отправляем через WebSocket
+            wsServiceRef.current.sendComment(commentText, tempId);
+            return tempId;
         } catch (error) {
             console.error('❌ Ошибка отправки через WebSocket:', error);
+            
+            // Откатываем оптимистичное обновление при ошибке
+            setCommentsList(prev => prev.filter(c => c.tempId !== tempId));
+            setPendingComments(prev => prev.filter(id => id !== tempId));
+            
             throw error;
         }
     };
 
-    // Ручное переподключение WebSocket
-    const reconnectWebSocket = () => {
-        if (wsServiceRef.current) {
-            console.log('🔄 Ручное переподключение WebSocket');
-            wsServiceRef.current.disconnect();
-            wsServiceRef.current = null;
-            setWsError(null);
-            initWebSocket();
+    // Отправка комментария через API (fallback)
+    const sendCommentViaAPI = async (commentText) => {
+        if (!commentText.trim() || !taskId) {
+            throw new Error('Комментарий не может быть пустым');
+        }
+        
+        try {
+            const response = await addCommentToTask(taskId, { content: commentText }, useMockData);
+            return response;
+        } catch (error) {
+            console.error('❌ Ошибка отправки комментария через API:', error);
+            throw error;
         }
     };
+
+    // Прокрутка чата к последнему сообщению
+    const scrollToBottom = useCallback(() => {
+        setTimeout(() => {
+            if (chatContainerRef_task_card.current) {
+                chatContainerRef_task_card.current.scrollTop = 
+                    chatContainerRef_task_card.current.scrollHeight;
+            }
+        }, 100);
+    }, []);
 
     // ==================== Загрузка данных ТОЛЬКО ПРИ ОТКРЫТИИ ====================
 
@@ -287,7 +339,12 @@ const initWebSocket = useCallback(() => {
             console.log('📊 Загружены комментарии из основного запроса (только при открытии):', taskData.comments);
             
             if (taskData.comments && taskData.comments.length > 0) {
-                const formattedComments = taskData.comments.map(comment => formatComment(comment));
+                // Сортируем комментарии по дате создания (самые новые внизу)
+                const sortedComments = [...taskData.comments].sort((a, b) => 
+                    new Date(a.created) - new Date(b.created)
+                );
+                
+                const formattedComments = sortedComments.map(comment => formatComment(comment));
                 setCommentsList(formattedComments);
             } else {
                 setCommentsList([]);
@@ -297,6 +354,18 @@ const initWebSocket = useCallback(() => {
             initialLoadDone.current = true;
             console.log('✅ Первоначальная загрузка данных завершена');
             
+            // Прокручиваем к последнему сообщению после загрузки
+            scrollToBottom();
+            
+            // ТОЛЬКО ПОСЛЕ ЗАГРУЗКИ ДАННЫХ инициализируем WebSocket
+            setTimeout(() => {
+                console.log('🚀 Загрузка данных завершена, инициализирую WebSocket');
+                const cleanupWebSocket = initWebSocket();
+                
+                // Сохраняем cleanup функцию для использования при размонтировании
+                wsServiceRef.current.cleanup = cleanupWebSocket;
+            }, 500); // Небольшая задержка для стабильности
+            
         } catch (error) {
             console.error('❌ Ошибка загрузки задачи:', error);
             setError('Не удалось загрузить задачу. Проверьте подключение.');
@@ -305,7 +374,62 @@ const initWebSocket = useCallback(() => {
         }
     };
 
-    // ==================== Остальные функции (без изменений) ====================
+    // ==================== Обработка отправки комментария ====================
+
+    const handleChatCommentSubmit_task_card = async (e) => {
+        e.preventDefault();
+        const textToSend = newComment.trim();
+        
+        if (!textToSend) return;
+        
+        // Блокируем повторную отправку
+        if (isSending) return;
+        
+        setIsSending(true);
+        const commentToSend = textToSend;
+        
+        // Очищаем поле ввода сразу (оптимистично)
+        setNewComment('');
+        setReplyToCommentId(null);
+        
+        try {
+            // Пытаемся отправить через WebSocket
+            if (isWebSocketConnected && wsServiceRef.current) {
+                console.log('📤 Отправляю комментарий через WebSocket');
+                await sendCommentViaWebSocket(commentToSend);
+            } else {
+                // Если WebSocket не подключен, используем API
+                console.log('📤 WebSocket не подключен, отправляю через API');
+                await sendCommentViaAPI(commentToSend);
+                
+                // После успешной отправки через API, сразу добавляем комментарий в список
+                const tempId = `temp_${Date.now()}_${Math.random()}`;
+                const optimisticComment = {
+                    id: tempId,
+                    tempId: tempId,
+                    userName: 'Вы',
+                    text: commentToSend,
+                    createdAt: new Date().toISOString(),
+                    isPending: true
+                };
+                
+                const formattedOptimisticComment = formatComment(optimisticComment);
+                setCommentsList(prev => [...prev, formattedOptimisticComment]);
+                setPendingComments(prev => [...prev, tempId]);
+                
+                scrollToBottom();
+            }
+            
+            console.log('✅ Комментарий отправлен');
+        } catch (error) {
+            console.error('❌ Ошибка отправки комментария:', error);
+            alert('Не удалось отправить комментарий. Проверьте подключение.');
+        } finally {
+            setIsSending(false);
+        }
+    };
+
+    // ==================== Остальные функции ====================
 
     const generateAvatar_task_card = (initials, color, imageUrl = null) => {
         const avatarSize_task_card = '2.5vh';
@@ -461,31 +585,6 @@ const initWebSocket = useCallback(() => {
         setShowStatusDropdown_task_card(false);
     };
 
-    const handleChatCommentSubmit_task_card = async (e) => {
-        e.preventDefault();
-        const textToSend = newComment.trim();
-        
-        if (!textToSend) return;
-        
-        // Пытаемся отправить через WebSocket
-        if (isWebSocketConnected && wsServiceRef.current) {
-            console.log('📤 Отправляю комментарий через WebSocket');
-            try {
-                await sendCommentViaWebSocket(textToSend);
-                // Очищаем поле ввода - комментарий придет через WebSocket
-                setNewComment('');
-                setReplyToCommentId(null);
-            } catch (error) {
-                console.error('❌ Ошибка отправки комментария через WS:', error);
-                // Fallback: если WebSocket не работает, пробуем через REST API
-            }
-        } else {
-            // Если WebSocket не подключен, используем API
-        }
-    };
-
-
-
     const handleFileUpload_task_card = async (e) => {
         const files = e.target.files;
         if (files.length === 0) return;
@@ -541,12 +640,21 @@ const initWebSocket = useCallback(() => {
     // Группировка комментариев по дате
     const groupCommentsByDate_task_card = () => {
         const grouped = {};
-        commentsList.forEach(comment => {
+        
+        // Сортируем комментарии по дате создания (старые сверху, новые снизу)
+        const sortedComments = [...commentsList].sort((a, b) => {
+            const dateA = a.createdAt ? new Date(a.createdAt) : new Date();
+            const dateB = b.createdAt ? new Date(b.createdAt) : new Date();
+            return dateA.getTime() - dateB.getTime();
+        });
+        
+        sortedComments.forEach(comment => {
             if (!grouped[comment.date]) {
                 grouped[comment.date] = [];
             }
             grouped[comment.date].push(comment);
         });
+        
         return grouped;
     };
     
@@ -554,33 +662,35 @@ const initWebSocket = useCallback(() => {
     const sortedDates_task_card = Object.keys(groupedComments_task_card).sort((a, b) => {
         const dateA = a.split('.').reverse().join('-');
         const dateB = b.split('.').reverse().join('-');
-        return new Date(dateA) - new Date(dateB);
+        return new Date(dateA).getTime() - new Date(dateB).getTime();
     });
 
-    // Прокрутка чата к последнему сообщению
+    // Прокрутка чата при изменении комментариев
     useEffect(() => {
-        if (chatContainerRef_task_card.current && commentsList.length > 0) {
-            chatContainerRef_task_card.current.scrollTop = 
-                chatContainerRef_task_card.current.scrollHeight;
-        }
-    }, [commentsList]);
+        scrollToBottom();
+    }, [commentsList, scrollToBottom]);
 
     // ==================== ОСНОВНОЙ useEffect ====================
-    // Загружаем данные ТОЛЬКО при открытии страницы
     useEffect(() => {
         if (!initialLoadDone.current) {
             console.log('🚀 Начальная загрузка страницы задачи');
             loadTask_task_card();
         }
         
-        // Инициализация WebSocket
-        const cleanupWebSocket = initWebSocket();
-        
+        // Очистка при размонтировании
         return () => {
             clearTimeout(patchTimeoutRef_task_card.current);
             
             // Очистка WebSocket
-            if (cleanupWebSocket) cleanupWebSocket();
+            if (wsServiceRef.current) {
+                if (wsServiceRef.current.cleanup) {
+                    wsServiceRef.current.cleanup();
+                }
+                if (wsServiceRef.current.disconnect) {
+                    wsServiceRef.current.disconnect();
+                }
+                wsServiceRef.current = null;
+            }
         };
     }, [taskId, useMockData]);
 
@@ -644,7 +754,7 @@ const initWebSocket = useCallback(() => {
 
     return (
         <div className="taskcard-container_task_card">
-            {/* Заголовок */}
+            {/* Заголовок - показываем название задачи вместо ID */}
             <div className="taskcard-header_task_card">
                 <h1 className="taskcard-title_task_card">
                     <span 
@@ -653,43 +763,17 @@ const initWebSocket = useCallback(() => {
                     >
                         Мои задачи
                     </span>
-                    {' — Задача '}
-                    <span className="task-number_task_card">{taskId || '3'}</span>
-                    
-                    {/* Индикатор WebSocket */}
-                    <span 
-                        className={`ws-status-indicator ${isWebSocketConnected ? 'ws-connected' : 'ws-disconnected'}`}
-                        title={isWebSocketConnected ? 'Чат онлайн' : 'Чат офлайн'}
-                        style={{ marginLeft: '10px', fontSize: '12px', verticalAlign: 'middle' }}
-                    >
-                        
-                    </span>
-                    {wsError && (
-                        <button 
-                            onClick={reconnectWebSocket}
-                            style={{
-                                marginLeft: '10px',
-                                padding: '2px 8px',
-                                fontSize: '11px',
-                                backgroundColor: '#ff6b6b',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '3px',
-                                cursor: 'pointer'
-                            }}
-                        >
-                            Переподключить чат
-                        </button>
-                    )}
+                    {' — '}
+                    <span className="task-name_task_card">{task.name || taskName || 'Задача'}</span>
                 </h1>
             </div>
 
-            {/* Форма ввода комментария */}
+            {/* Форма ввода описания задачи */}
             <div className="comment-form-container_task_card">
                 <form onSubmit={(e) => e.preventDefault()}>
                     <textarea
                         className="comment-input_task_card"
-                        placeholder="Начните ввод"
+                        placeholder="Описание задачи..."
                         value={comment}
                         onChange={handleCommentChange_task_card}
                         onBlur={() => patchDescription_task_card(comment)}
@@ -703,12 +787,7 @@ const initWebSocket = useCallback(() => {
                     {/* Колонка 1: Чат */}
                     <div className="column-section_task_card">
                         <div className="column-rectangle_task_card chat-column_task_card">
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <h3 className="column-title_task_card">Чат</h3>
-                                <span style={{ fontSize: '12px', color: isWebSocketConnected ? '#06D6A0' : '#666' }}>
-                                    {isWebSocketConnected ? 'Чат онлайн' : 'Чат офлайн'}
-                                </span>
-                            </div>
+                            <h3 className="column-title_task_card">Чат</h3>
                             
                             <div className="chat-scroll-container_task_card" ref={chatContainerRef_task_card}>
                                 <div className="chat-container_task_card">
@@ -722,11 +801,19 @@ const initWebSocket = useCallback(() => {
                                                 <div className="chat-date-header_task_card">{date}</div>
                                                 
                                                 {groupedComments_task_card[date].map(comment => (
-                                                    <div key={comment.id} className="comment-item_task_card">
+                                                    <div 
+                                                        key={comment.id} 
+                                                        className={`comment-item_task_card ${comment.isPending ? 'comment-pending' : ''}`}
+                                                        style={{    
+                                                            position: 'relative'
+                                                        }}
+                                                    >
                                                         <div className="comment-header_task_card">
                                                             {generateAvatar_task_card(comment.userInitials, comment.userColor)}
                                                             <div className="comment-user-info_task_card">
-                                                                <div className="comment-user-name_task_card">{comment.userName}</div>
+                                                                <div className="comment-user-name_task_card">
+                                                                    {comment.userName}
+                                                                </div>
                                                                 <div className="comment-time_task_card">{comment.time}</div>
                                                             </div>
                                                         </div>
@@ -747,6 +834,7 @@ const initWebSocket = useCallback(() => {
                                         value={newComment}
                                         onChange={(e) => setNewComment(e.target.value)}
                                         rows={2}
+                                        disabled={isSending}
                                     />
                                     <div className="comment-buttons_task_card">
                                         {replyToCommentId && (
@@ -761,8 +849,9 @@ const initWebSocket = useCallback(() => {
                                         <button 
                                             type="submit" 
                                             className="send-comment-btn_task_card"
+                                            disabled={!newComment.trim() || isSending}
                                         >
-                                            Отправить
+                                            {isSending ? 'Отправка...' : 'Отправить'}
                                         </button>
                                     </div>
                                 </form>

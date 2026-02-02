@@ -32,13 +32,13 @@ function AccountPage() {
     const [isSaving, setIsSaving] = useState(false);
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
+    const [tempBirthDate, setTempBirthDate] = useState('');
+    const [tempPhone, setTempPhone] = useState('');
     
     const fileInputRef = useRef(null);
     const nameRef = useRef(null);
     const postRef = useRef(null);
     const emailRef = useRef(null);
-    const phoneRef = useRef(null);
-    const birthDateRef = useRef(null);
 
     useEffect(() => {
         fetchAccountData();
@@ -55,7 +55,6 @@ function AccountPage() {
                 throw new Error('Не удалось определить сотрудника');
             }
 
-            // Получаем полные данные сотрудника из API
             const response = await authFetch(`https://api.acrelis.ru/staff/staff/${staffId}/`, {
                 method: 'GET'
             });
@@ -68,10 +67,7 @@ function AccountPage() {
             
             console.log('Полученные данные сотрудника:', employeeData);
             
-            // Форматируем телефон для отображения
             const formattedPhone = formatPhoneForDisplay(employeeData.phone);
-            
-            // Автоматически форматируем дату рождения
             const formattedBirthDate = formatBirthDateForDisplay(employeeData.birthday);
             
             const formattedData = {
@@ -95,8 +91,9 @@ function AccountPage() {
             
             setUserData(formattedData);
             setOriginalData(formattedData);
+            setTempBirthDate(formattedBirthDate);
+            setTempPhone(formattedPhone);
             
-            // Обновляем localStorage актуальными данными
             localStorage.setItem('name', formattedData.name);
             localStorage.setItem('post', formattedData.post);
             localStorage.setItem('email', formattedData.email);
@@ -105,7 +102,6 @@ function AccountPage() {
             console.error('Ошибка загрузки данных аккаунта:', error);
             setError(error.message);
             
-            // Fallback на данные из localStorage
             const fallbackData = {
                 id: parseInt(localStorage.getItem('staff_id')) || null,
                 name: localStorage.getItem('name') || '',
@@ -126,35 +122,34 @@ function AccountPage() {
             
             setUserData(fallbackData);
             setOriginalData(fallbackData);
+            setTempBirthDate('');
+            setTempPhone('');
         } finally {
             setIsLoading(false);
         }
     };
+
     const formatTelegramForDisplay = (telegram) => {
-    if (!telegram) return '';
-    
-    // Если уже начинается с @, возвращаем как есть
-    if (telegram.startsWith('@')) {
-        return telegram;
-    }
-    
-    // Если это полная ссылка
-    if (telegram.includes('t.me/')) {
-        // Извлекаем username из ссылки
-        const match = telegram.match(/t\.me\/([a-zA-Z0-9_]+)/);
-        if (match && match[1]) {
-            return `@${match[1]}`;
+        if (!telegram) return '';
+        
+        if (telegram.startsWith('@')) {
+            return telegram;
         }
-    }
-    
-    // Если это username без @
-    if (telegram.match(/^[a-zA-Z0-9_]+$/)) {
-        return `@${telegram}`;
-    }
-    
-    // В остальных случаях возвращаем как есть
-    return telegram;
-};
+        
+        if (telegram.includes('t.me/')) {
+            const match = telegram.match(/t\.me\/([a-zA-Z0-9_]+)/);
+            if (match && match[1]) {
+                return `@${match[1]}`;
+            }
+        }
+        
+        if (telegram.match(/^[a-zA-Z0-9_]+$/)) {
+            return `@${telegram}`;
+        }
+        
+        return telegram;
+    };
+
     const getTelegramLink = () => {
         const userId = localStorage.getItem('staff_id');
         if (userId) {
@@ -167,20 +162,6 @@ function AccountPage() {
         if (!dateString) return '';
         
         try {
-            if (dateString.match(/^\d{2}\.\d{2}\.\d{4}$/)) {
-                return dateString;
-            }
-            
-            if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                const date = new Date(dateString);
-                if (!isNaN(date.getTime())) {
-                    const day = String(date.getDate()).padStart(2, '0');
-                    const month = String(date.getMonth() + 1).padStart(2, '0');
-                    const year = date.getFullYear();
-                    return `${day}.${month}.${year}`;
-                }
-            }
-            
             const date = new Date(dateString);
             if (!isNaN(date.getTime())) {
                 const day = String(date.getDate()).padStart(2, '0');
@@ -202,22 +183,11 @@ function AccountPage() {
         try {
             if (dateString.match(/^\d{2}\.\d{2}\.\d{4}$/)) {
                 const [day, month, year] = dateString.split('.');
-                const date = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
-                if (!isNaN(date.getTime())) {
-                    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-                }
+                return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
             }
             
             if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
                 return dateString;
-            }
-            
-            const date = new Date(dateString);
-            if (!isNaN(date.getTime())) {
-                const year = date.getFullYear();
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const day = String(date.getDate()).padStart(2, '0');
-                return `${year}-${month}-${day}`;
             }
             
             return '';
@@ -266,6 +236,8 @@ function AccountPage() {
     const handleEditClick = () => {
         setIsEditing(true);
         setError(null);
+        setTempBirthDate(userData.birthDate || '');
+        setTempPhone(userData.phone || '');
     };
 
     const handleCancelClick = () => {
@@ -274,6 +246,44 @@ function AccountPage() {
         setError(null);
         setImageFile(null);
         setImagePreview(null);
+        setTempBirthDate(originalData.birthDate || '');
+        setTempPhone(originalData.phone || '');
+    };
+
+    const handleBirthDateChange = (e) => {
+        let value = e.target.value.replace(/\D/g, '');
+        
+        if (value.length <= 2) {
+            value = value;
+        } else if (value.length <= 4) {
+            value = value.slice(0, 2) + '.' + value.slice(2);
+        } else if (value.length <= 6) {
+            value = value.slice(0, 2) + '.' + value.slice(2, 4) + '.' + value.slice(4);
+        } else {
+            value = value.slice(0, 2) + '.' + value.slice(2, 4) + '.' + value.slice(4, 8);
+        }
+        
+        setTempBirthDate(value);
+    };
+
+    // Новый обработчик для телефона с автоформатированием
+    const handlePhoneChange = (e) => {
+        let value = e.target.value.replace(/\D/g, '');
+        
+        // Форматируем российский номер телефона
+        if (value.length <= 1) {
+            value = value;
+        } else if (value.length <= 4) {
+            value = '+7 (' + value.slice(1, 4);
+        } else if (value.length <= 7) {
+            value = '+7 (' + value.slice(1, 4) + ') ' + value.slice(4, 7);
+        } else if (value.length <= 9) {
+            value = '+7 (' + value.slice(1, 4) + ') ' + value.slice(4, 7) + '-' + value.slice(7, 9);
+        } else {
+            value = '+7 (' + value.slice(1, 4) + ') ' + value.slice(4, 7) + '-' + value.slice(7, 9) + '-' + value.slice(9, 11);
+        }
+        
+        setTempPhone(value);
     };
 
     const handleSaveClick = async () => {
@@ -289,12 +299,13 @@ function AccountPage() {
             const formData = new FormData();
             let hasChanges = false;
             
+            // Получаем значения из contentEditable полей
             const currentName = nameRef.current?.textContent || userData.name;
             const currentPost = postRef.current?.textContent || userData.post;
             const currentEmail = emailRef.current?.textContent || userData.email;
-            const currentPhone = phoneRef.current?.textContent || userData.phone;
-            const currentBirthDate = birthDateRef.current?.textContent || userData.birthDate;
-            
+            const currentPhone = tempPhone;
+            const currentBirthDate = tempBirthDate;
+
             console.log('Текущие значения:', {
                 name: currentName,
                 post: currentPost,
@@ -348,7 +359,13 @@ function AccountPage() {
                 hasChanges: hasChanges
             });
 
-            // Отправляем PATCH запрос
+            if (!hasChanges) {
+                setIsEditing(false);
+                setImageFile(null);
+                setImagePreview(null);
+                return;
+            }
+
             const response = await authFetch(`https://api.acrelis.ru/staff/staff/${userData.id}/`, {
                 method: 'PATCH',
                 body: formData
@@ -363,14 +380,12 @@ function AccountPage() {
             const updatedData = await response.json();
             console.log('Ответ от сервера:', updatedData);
             
-            // Закрываем режим редактирования
             setIsEditing(false);
             setImageFile(null);
             setImagePreview(null);
             
             console.log('Данные успешно сохранены');
             
-            // ПОСЛЕ УСПЕШНОГО СОХРАНЕНИЯ - ОБНОВЛЯЕМ ДАННЫЕ
             await fetchAccountData();
             
         } catch (error) {
@@ -503,15 +518,7 @@ function AccountPage() {
         return (
             <div className="account-page-container">
                 <div className="account-card">
-                    <div className="error-state">
-                        <p className="error-message">Ошибка загрузки данных: {error}</p>
-                        <button 
-                            className="retry-button"
-                            onClick={fetchAccountData}
-                        >
-                            Повторить попытку
-                        </button>
-                    </div>
+                    
                 </div>
             </div>
         );
@@ -534,9 +541,6 @@ function AccountPage() {
                         onClick={handleEditClick}
                     >
                         Редактировать
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M8 13.3333H14M11 2.33333C11.2652 2.06811 11.6249 1.91905 12 1.91905C12.1857 1.91905 12.3696 1.95566 12.5412 2.02667C12.7128 2.09768 12.8687 2.20165 13 2.33333C13.1313 2.46501 13.2355 2.62115 13.3066 2.79306C13.3778 2.96497 13.4144 3.14917 13.4144 3.33521C13.4144 3.52125 13.3778 3.70545 13.3066 3.87736C13.2355 4.04927 13.1313 4.20541 13 4.33709L4.66667 12.6667L2 13.3333L2.66667 10.6667L11 2.33333Z" stroke="#0066CC" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
                     </button>
                 ) : (
                     <div className="edit-controls">
@@ -557,12 +561,6 @@ function AccountPage() {
                     </div>
                 )}
 
-                {error && (
-                    <div className="error-message-banner">
-                        {error}
-                    </div>
-                )}
-
                 <div className="profile-section">
                     {renderAvatar()}
 
@@ -577,19 +575,19 @@ function AccountPage() {
                                 >
                                     {userData.name || ''}
                                 </h1>
-                                <span 
+                                <h2 
                                     ref={postRef}
                                     className="user-post editable"
                                     contentEditable
                                     suppressContentEditableWarning
                                 >
                                     {userData.post || ''}
-                                </span>
+                                </h2>
                             </>
                         ) : (
                             <>
                                 <h1 className="user-name">{userData.name || 'Имя не указано'}</h1>
-                                <p className="user-post">{userData.post || 'Должность не указана'}</p>
+                                <h2 className="user-post">{userData.post || 'Должность не указана'}</h2>
                             </>
                         )}
                         {userData.director && userData.director.name && (
@@ -639,11 +637,6 @@ function AccountPage() {
                                         <div className="readonly-input">
                                             {formatTelegramForDisplay(userData.telegram)}
                                         </div>
-                                        {isEditing && (
-                                            <div className="telegram-edit-info">
-                                                Для изменения Telegram используйте кнопку ниже
-                                            </div>
-                                        )}
                                     </div>
                                 ) : (
                                     <a 
@@ -664,14 +657,14 @@ function AccountPage() {
                             <label className="input-label">Телефон</label>
                             <div className="input-field">
                                 {isEditing ? (
-                                    <div 
-                                        ref={phoneRef}
-                                        className="readonly-input editable"
-                                        contentEditable
-                                        suppressContentEditableWarning
-                                    >
-                                        {userData.phone || ''}
-                                    </div>
+                                    <input
+                                        type="text"
+                                        value={tempPhone}
+                                        onChange={handlePhoneChange}
+                                        className="editable-input"
+                                        placeholder="+7 (XXX) XXX-XX-XX"
+                                        maxLength="18"
+                                    />
                                 ) : (
                                     <div className="readonly-input">
                                         {userData.phone || 'Не указан'}
@@ -684,14 +677,14 @@ function AccountPage() {
                             <label className="input-label">Дата рождения</label>
                             <div className="input-field">
                                 {isEditing ? (
-                                    <div 
-                                        ref={birthDateRef}
-                                        className="readonly-input editable"
-                                        contentEditable
-                                        suppressContentEditableWarning
-                                    >
-                                        {userData.birthDate || ''}
-                                    </div>
+                                    <input
+                                        type="text"
+                                        value={tempBirthDate}
+                                        onChange={handleBirthDateChange}
+                                        className="editable-input"
+                                        placeholder="дд.мм.гггг"
+                                        maxLength="10"
+                                    />
                                 ) : (
                                     <div className="readonly-input">
                                         {userData.birthDate || 'Не указана'}

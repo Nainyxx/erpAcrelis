@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { 
   getTasks, 
+  getProjectById, // Получаем название проекта
   formatDateForDisplay, 
   createTask, 
   getStaffList 
@@ -15,7 +16,7 @@ const KanbanTasks = ({ useMockData = true }) => {
   const [tasks, setTasks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isCreating, setIsCreating] = useState(false);
+  const [projectName, setProjectName] = useState('Проект'); // Инициализируем
 
   const columns = [
     { id: 'new', title: 'Новое' },
@@ -199,7 +200,7 @@ const KanbanTasks = ({ useMockData = true }) => {
     );
   };
 
-  // Загрузка задач проекта
+  // Загрузка задач проекта и названия проекта
   const loadProjectTasks = async () => {
     if (!projectId) {
       navigate('/projects');
@@ -211,6 +212,15 @@ const KanbanTasks = ({ useMockData = true }) => {
     
     try {
       console.log(`🔄 Загружаю задачи для проекта ${projectId}`);
+      
+      // Сначала загружаем данные проекта
+      try {
+        const projectData = await getProjectById(projectId, useMockData);
+        setProjectName(projectData.name || 'Проект');
+      } catch (projectError) {
+        console.error('Ошибка загрузки проекта:', projectError);
+        setProjectName('Проект');
+      }
       
       // Фильтр по проекту
       const filters = { 
@@ -225,7 +235,7 @@ const KanbanTasks = ({ useMockData = true }) => {
       const apiTasks = response.results || [];
       
       console.log(`✅ Получено ${apiTasks.length} задач для проекта`);
-      console.log('Пример задачи из API:', apiTasks[0]); // Для отладки
+      console.log('Название проекта:', projectName); // Для отладки
       
       // Конвертируем задачи API в формат канбана
       const kanbanTasks = apiTasks.map(task => {
@@ -269,6 +279,11 @@ const KanbanTasks = ({ useMockData = true }) => {
   useEffect(() => {
     loadProjectTasks();
   }, [projectId, useMockData]);
+
+  // Обработчик для случая, когда у проекта нет задач
+  const handleNoTasksRedirect = () => {
+    navigate(`/projects/${projectId}`);
+  };
 
   const openCreateModal = () => {
     setShowCreateModal(true);
@@ -490,37 +505,6 @@ const KanbanTasks = ({ useMockData = true }) => {
     ));
   };
 
-  // Функция для получения инициалов
-  const getInitials = (name) => {
-    if (!name || name === 'Не назначен') return '?';
-    return name.split(' ').map(n => n[0]).join('');
-  };
-
-  // Функция для генерации цвета
-  const getAvatarColor = (name) => {
-    if (name === 'Не назначен') return '#e0e0e0';
-    
-    const colors = [
-      '#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0', 
-      '#118AB2', '#EF476F', '#9D4EDD', '#F15BB5',
-      '#2A9D8F', '#E76F51', '#264653', '#E9C46A'
-    ];
-    const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return colors[hash % colors.length];
-  };
-
-  // Клик по аватару
-  const handleAvatarClick = (e, task) => {
-    e.stopPropagation();
-    if (task.assigneeId && task.assigneeId !== 'Не назначен') {
-      navigate(`/staff/${task.assigneeId}`);
-    }
-  };
-
-  const handleTaskClick = (task) => {
-    navigate(`/tasks/${task.id}`);
-  };
-
   if (isLoading) {
     return (
       <div className="kanban-container">
@@ -551,7 +535,7 @@ const KanbanTasks = ({ useMockData = true }) => {
               className="breadcrumb-link" 
               onClick={() => navigate(`/projects/${projectId}`)}
             >
-              Карточка проекта
+              {projectName || 'Проект'}
             </span>
             {' — Канбан задач'}
           </h1>
@@ -591,7 +575,7 @@ const KanbanTasks = ({ useMockData = true }) => {
               className="breadcrumb-link" 
               onClick={() => navigate(`/projects/${projectId}`)}
             >
-              Карточка проекта
+              {projectName || 'Проект'}
             </span>
             {' — Канбан задач'}
           </h1>
@@ -615,6 +599,18 @@ const KanbanTasks = ({ useMockData = true }) => {
             >
               Создать задачу
             </button>
+            <button 
+              onClick={handleNoTasksRedirect}
+              className="gantt-back-btn_gantt_class"
+              style={{ 
+                marginTop: '1vh',
+                backgroundColor: 'transparent',
+                color: '#666',
+                border: '1px solid #ddd'
+              }}
+            >
+              Вернуться к проекту
+            </button>
           </div>
         </div>
       </div>
@@ -637,7 +633,7 @@ const KanbanTasks = ({ useMockData = true }) => {
             className="breadcrumb-link" 
             onClick={() => navigate(`/projects/${projectId}`)}
           >
-            Карточка проекта
+            {projectName || 'Проект'}
           </span>
           {' — Канбан задач'}
         </h1>
@@ -668,7 +664,7 @@ const KanbanTasks = ({ useMockData = true }) => {
                   <div 
                     key={task.id} 
                     className={`task-card task-card-${task.status}`}
-                    onClick={() => handleTaskClick(task)}
+                    onClick={() => navigate(`/tasks/${task.id}`)}
                   >
                     {/* 1. Название задачи по центру */}
                     <div className="task-title">{task.title}</div>

@@ -14,68 +14,63 @@
 
 body {
   background-color: #F6F6FE;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
 }
 
 .main-container {
-    display: flex;
-    margin-top: 10vh;
-    min-height: 85vh;
-    width: 100%;
+  display: flex;
+  margin-top: 10vh;
+  min-height: 85vh;
+  width: 100%;
 }
 
 .sidebar-wrapper {
-    width: 25vh;
-    flex-shrink: 0;
+  width: 25vh;
+  flex-shrink: 0;
 }
 
 .content-wrapper {
-    flex: 1;
-    min-width: 0;
-    width: 100%;
-    background: #F6F6FE;
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  background: #F6F6FE;
 }
 
 .content {
-    width: calc(100%-25vh);
-    min-width: 0;
-    box-sizing: border-box;
-    height: 100%;
+  width: calc(100% - 25vh);
+  min-width: 0;
+  box-sizing: border-box;
+  height: 100%;
 }
 
-/* ДОБАВЛЕННЫЕ СТИЛИ ДЛЯ УВЕДОМЛЕНИЙ */
+/* КОНТЕЙНЕР УВЕДОМЛЕНИЙ - СПРАВА СВЕРХУ */
 .notifications-container {
   position: fixed;
-  top: 12vh;
+  top: 8vh;
   right: 2vh;
   z-index: 9999;
   display: flex;
   flex-direction: column;
-  gap: 1vh;
+  align-items: flex-end;
   pointer-events: none;
-}
-
-.notification {
-  position: relative;
-  padding: 1.5vh 2vh;
-  border-radius: 0.8vh;
-  box-shadow: 0 0.3vh 0.8vh rgba(0, 0, 0, 0.2);
-  min-width: 30vh;
   max-width: 40vh;
-  animation: slideIn 0.3s ease-out;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 1.6vh;
-  line-height: 1.4;
+}
+
+.notification-wrapper {
   pointer-events: auto;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, opacity;
+  margin-bottom: 1vh;
+  width: 100%;
 }
 
-@keyframes slideIn {
+.notification-enter {
+  animation: slideInFromRight 0.3s ease-out;
+}
+
+@keyframes slideInFromRight {
   from {
-    transform: translateX(100%);
+    transform: translateX(5vh);
     opacity: 0;
   }
   to {
@@ -84,71 +79,35 @@ body {
   }
 }
 
-.notification-content {
-  flex: 1;
-  padding-right: 2vh;
+.notification-exit {
+  animation: fadeOut 0.3s ease-in forwards;
 }
 
-.notification-close {
-  background: none;
-  border: none;
-  font-size: 2.2vh;
-  cursor: pointer;
-  color: inherit;
-  opacity: 0.7;
-  padding: 0;
-  width: 2.5vh;
-  height: 2.5vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: all 0.2s ease;
-  font-weight: bold;
-}
-
-.notification-close:hover {
-  opacity: 1;
-  background: rgba(255, 255, 255, 0.2);
-}
-
-/* Типы уведомлений */
-.notification-info {
-  background: #0066CC;
-  color: white;
-  border-left: 0.5vh solid #004C99;
-}
-
-.notification-success {
-  background: #00A86B;
-  color: white;
-  border-left: 0.5vh solid #008759;
-}
-
-.notification-warning {
-  background: #FF9500;
-  color: white;
-  border-left: 0.5vh solid #CC7700;
-}
-
-.notification-error {
-  background: #FF3B30;
-  color: white;
-  border-left: 0.5vh solid #CC3026;
-}
-
-/* Анимация исчезновения */
-.notification-leave {
-  animation: slideOut 0.3s ease-in forwards;
-}
-
-@keyframes slideOut {
+@keyframes fadeOut {
   from {
-    transform: translateX(0);
     opacity: 1;
   }
   to {
-    transform: translateX(100%);
     opacity: 0;
   }
+}
+
+@media (max-width: 768px) {
+  .notifications-container {
+    left: 1vh;
+    right: 1vh;
+    top: 7vh;
+    max-width: calc(100% - 2vh);
+    align-items: stretch;
+  }
+  
+  .notification-wrapper {
+    margin-bottom: 0.8vh;
+  }
+}
+
+/* Стиль для спиннера загрузки */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }

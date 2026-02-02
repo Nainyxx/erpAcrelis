@@ -7,6 +7,10 @@ const ProjectCard = ({ useMockData = false }) => {
   const navigate = useNavigate();
   const { projectId } = useParams();
   
+  // Константы с ограничениями по количеству символов
+  const CUSTOMER_NAME_MAX_LENGTH = 20; // Максимум 20 символов для заказчика
+  const PROJECT_TYPE_MAX_LENGTH = 20;  // Максимум 20 символов для типа проекта
+  
   const [project, setProject] = useState(null);
   const [projectName, setProjectName] = useState('');
   const [startDate, setStartDate] = useState('');
@@ -710,6 +714,29 @@ const ProjectCard = ({ useMockData = false }) => {
                     className="project-type1 editable" 
                     contentEditable
                     suppressContentEditableWarning
+                    onKeyDown={(e) => {
+                      // Проверяем, если текст уже 20 символов и не нажата клавиша удаления
+                      const currentText = e.target.textContent;
+                      if (currentText.length >= PROJECT_TYPE_MAX_LENGTH && 
+                          e.key !== 'Backspace' && 
+                          e.key !== 'Delete' &&
+                          e.key !== 'ArrowLeft' &&
+                          e.key !== 'ArrowRight' &&
+                          e.key !== 'ArrowUp' &&
+                          e.key !== 'ArrowDown' &&
+                          e.key !== 'Tab') {
+                        e.preventDefault();
+                      }
+                    }}
+                    onPaste={(e) => {
+                      e.preventDefault();
+                      const pastedText = e.clipboardData.getData('text');
+                      const currentText = e.target.textContent;
+                      const newText = currentText + pastedText;
+                      if (newText.length <= PROJECT_TYPE_MAX_LENGTH) {
+                        document.execCommand('insertText', false, pastedText);
+                      }
+                    }}
                     onBlur={(e) => setProjectType(e.target.textContent)}
                   >
                     {projectType || project.typeLabel || project.type_display || project.type || 'Не указан'}
@@ -736,6 +763,29 @@ const ProjectCard = ({ useMockData = false }) => {
                       className="customer-name editable" 
                       contentEditable
                       suppressContentEditableWarning
+                      onKeyDown={(e) => {
+                        // Проверяем, если текст уже 20 символов и не нажата клавиша удаления
+                        const currentText = e.target.textContent;
+                        if (currentText.length >= CUSTOMER_NAME_MAX_LENGTH && 
+                            e.key !== 'Backspace' && 
+                            e.key !== 'Delete' &&
+                            e.key !== 'ArrowLeft' &&
+                            e.key !== 'ArrowRight' &&
+                            e.key !== 'ArrowUp' &&
+                            e.key !== 'ArrowDown' &&
+                            e.key !== 'Tab') {
+                          e.preventDefault();
+                        }
+                      }}
+                      onPaste={(e) => {
+                        e.preventDefault();
+                        const pastedText = e.clipboardData.getData('text');
+                        const currentText = e.target.textContent;
+                        const newText = currentText + pastedText;
+                        if (newText.length <= CUSTOMER_NAME_MAX_LENGTH) {
+                          document.execCommand('insertText', false, pastedText);
+                        }
+                      }}
                       onBlur={(e) => setCustomer(e.target.textContent)}
                     >
                       {customer}
@@ -907,7 +957,6 @@ const ProjectCard = ({ useMockData = false }) => {
                     backgroundColor: 'white',
                     border: '1px solid #ddd',
                     borderRadius: '4px',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                     zIndex: 1000,
                     maxHeight: '200px',
                     overflowY: 'auto'

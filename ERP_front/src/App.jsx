@@ -1,6 +1,6 @@
 // ERP_front/src/App.js
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import './App.css';
 
 // Страницы аутентификации
@@ -13,6 +13,7 @@ import InviteRegistrationEnd from './components/main-comps/InviteRegistrationEnd
 // Основные компоненты
 import Header from './components/main-comps/Header';
 import SideBar from './components/main-comps/SideBar';
+import NotificationContainer from './components/main-comps/Notification'; // WebSocket уведомления
 
 // Страницы контента
 import ProjectsList from './components/main-content-pages/ProjectsList';
@@ -76,20 +77,31 @@ function PrivateRoute({ children }) {
   return isAuth ? children : <Navigate to="/login" />;
 }
 
+
 function App() {
   const [projects] = useState(projectsData);
   const [useMockData] = useState(CONFIG.USE_MOCK_DATA);
   const [currentUser, setCurrentUser] = useState(null);
+  const [isAuthenticatedUser, setIsAuthenticatedUser] = useState(false);
 
   useEffect(() => {
     // Получаем текущего пользователя при загрузке
     const user = getCurrentUser();
     setCurrentUser(user);
+    setIsAuthenticatedUser(isAuthenticated());
   }, []);
+
+  // Добавляем условия для отображения WebSocket уведомлений только когда пользователь авторизован
+  const shouldShowWebSocketNotifications = () => {
+    return isAuthenticatedUser && window.location.pathname !== '/login';
+  };
 
   return (
     <Router>
       <div className='App'>
+        {/* Контейнер для WebSocket уведомлений - показываем только когда пользователь авторизован */}
+        {shouldShowWebSocketNotifications() && <NotificationContainer />}
+        
         <Routes>
           {/* Публичные маршруты */}
           <Route path="/login" element={<LoginPage />} />
@@ -118,7 +130,9 @@ function App() {
                       
                       {/* Страница аккаунта */}
                       <Route path="/account" element={
-                        <AccountPage />
+                        <AccountPage 
+                          showNotification={() => {}} // Передаем пустую функцию для совместимости
+                        />
                       } />
                       
                       {/* Список проектов */}
@@ -128,6 +142,7 @@ function App() {
                           onProjectSelect={(project) => {
                             window.location.href = `/projects/${project.id}`;
                           }} 
+                          showNotification={() => {}} // WebSocket уведомления будут работать через NotificationContainer
                         />
                       } />
                       
@@ -135,6 +150,7 @@ function App() {
                       <Route path="/projects/:projectId" element={
                         <ProjectCard 
                           useMockData={useMockData}
+                          showNotification={() => {}}
                         />
                       } />
                       
@@ -143,6 +159,7 @@ function App() {
                         <KanbanWrapper 
                           projects={projects}
                           useMockData={useMockData}
+                          showNotification={() => {}}
                         />
                       } />
                       
@@ -151,28 +168,38 @@ function App() {
                         <GanttChartWrapper 
                           projects={projects}
                           useMockData={useMockData}
+                          showNotification={() => {}}
                         />
                       } />
                       
                       {/* Страница моих задач */}
                       <Route path="/my-tasks" element={
-                        <MyTasksWrapper useMockData={useMockData} />
+                        <MyTasksWrapper 
+                          useMockData={useMockData} 
+                          showNotification={() => {}}
+                        />
                       } />
                       
                       {/* Карточка задачи */}
                       <Route path="/tasks/:taskId" element={
-                        <TaskCard useMockData={useMockData} />
+                        <TaskCard 
+                          useMockData={useMockData}
+                          showNotification={() => {}}
+                        />
                       } />
                       
                       {/* Бухгалтерия */}
                       <Route path="/accounting" element={
-                        <AccountingPage />
+                        <AccountingPage 
+                          showNotification={() => {}}
+                        />
                       } />
                       
                       {/* Список сотрудников */}
                       <Route path="/staff" element={
                         <StaffList 
                           useMockData={useMockData}
+                          showNotification={() => {}}
                         />
                       } />
                       
@@ -180,6 +207,7 @@ function App() {
                       <Route path="/staff/:employeeId" element={
                         <EmployeeCard 
                           useMockData={useMockData}
+                          showNotification={() => {}}
                         />
                       } />
                       
@@ -198,7 +226,7 @@ function App() {
 }
 
 // Обёртки для компонентов
-function KanbanWrapper({ projects, useMockData }) {
+function KanbanWrapper({ projects, useMockData, showNotification }) {
   const path = window.location.pathname;
   const parts = path.split('/');
   const projectId = parts[2] ? parseInt(parts[2]) : null;
@@ -230,11 +258,12 @@ function KanbanWrapper({ projects, useMockData }) {
     <KanbanTasks 
       project={project}
       useMockData={useMockData}
+      showNotification={showNotification}
     />
   );
 }
 
-function GanttChartWrapper({ projects, useMockData }) {
+function GanttChartWrapper({ projects, useMockData, showNotification }) {
   const path = window.location.pathname;
   const parts = path.split('/');
   const projectId = parts[2] ? parseInt(parts[2]) : null;
@@ -266,20 +295,22 @@ function GanttChartWrapper({ projects, useMockData }) {
     <GanttChart2 
       project={project}
       useMockData={useMockData}
+      showNotification={showNotification}
     />
   );
 }
 
-function MyTasksWrapper({ useMockData }) {
+function MyTasksWrapper({ useMockData, showNotification }) {
   return (
     <MyTasks 
       useMockData={useMockData}
+      showNotification={showNotification}
     />
   );
 }
 
 // Страница Бухгалтерия
-function AccountingPage() {
+function AccountingPage({ showNotification }) {
   return (
     <div style={{
       padding: '30px',
@@ -298,7 +329,9 @@ function AccountingPage() {
         padding: '20px',
         boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
       }}>
-        <p style={{ color: '#666', fontSize: '16px' }}>Раздел находится в разработке</p>
+        <p style={{ color: '#666', fontSize: '16px', marginBottom: '15px' }}>
+          Раздел находится в разработке
+        </p>
       </div>
     </div>
   );

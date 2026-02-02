@@ -1,31 +1,88 @@
-/* src/components/main-comps/Notification.css */
-.notification-container {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 9999;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  max-width: 350px;
+/* Notification.css */
+.notification-wrapper {
+  position: relative;
+  width: 100%;
+  animation: slideInFromRight 0.3s ease-out;
 }
 
 .notification {
-  background-color: #000000;
-  color: #ffffff;
-  padding: 15px 20px;
-  border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  animation: slideIn 0.3s ease-out;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  position: relative;
+  min-width: 30vh;
+  max-width: 40vh;
+  background-color: #B2E9EF;
+  border-radius: 1.2vh;
+  box-shadow: 
+    0 0.4vh 0.6vh -0.1vh rgba(0, 0, 0, 0.1),
+    0 0.2vh 0.4vh -0.1vh rgba(0, 0, 0, 0.06);
+  padding: 1.6vh 2vh;
+  padding-right: 4vh;
+  border: 0.1vh solid rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
 }
 
-@keyframes slideIn {
+.notification:hover {
+  transform: translateY(-0.1vh);
+  box-shadow: 
+    0 1vh 1.5vh -0.3vh rgba(0, 0, 0, 0.1),
+    0 0.4vh 0.6vh -0.2vh rgba(0, 0, 0, 0.05);
+}
+
+.notification-content {
+  font-size: 1.4vh;
+  color: #000000;
+  line-height: 1.4;
+}
+
+.notification-title {
+  font-size: 1.6vh;
+  color: #000000;
+  font-weight: 700;
+  line-height: 1.3;
+  display: block;
+  margin-bottom: 0.6vh;
+}
+
+.notification-message {
+  opacity: 0.9;
+  word-wrap: break-word;
+  font-size: 1.4vh;
+  line-height: 1.5;
+}
+
+.notification-close {
+  position: absolute;
+  top: 1.2vh;
+  right: 1.2vh;
+  width: 2.4vh;
+  height: 2.4vh;
+  border: none;
+  background: rgba(0, 0, 0, 0.1);
+  color: #000000;
+  font-size: 1.8vh;
+  font-weight: 600;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: all 0.2s ease;
+}
+
+.notification-close:hover {
+  background: rgba(0, 0, 0, 0.15);
+  transform: scale(1.1);
+}
+
+.notification-close:active {
+  background: rgba(0, 0, 0, 0.2);
+  transform: scale(0.95);
+}
+
+/* Анимация появления */
+@keyframes slideInFromRight {
   from {
-    transform: translateX(100%);
+    transform: translateX(5vh);
     opacity: 0;
   }
   to {
@@ -34,50 +91,101 @@
   }
 }
 
-.notification-success {
-  border-left: 4px solid #4CAF50;
+/* Анимация исчезновения - уходит вправо */
+@keyframes slideOutToRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(10vh);
+    opacity: 0;
+  }
 }
 
-.notification-error {
-  border-left: 4px solid #F44336;
+/* Альтернативная анимация - сдвиг вправо и сжатие */
+@keyframes slideOutAndShrink {
+  0% {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+  70% {
+    transform: translateX(8vh) scale(0.95);
+    opacity: 0.7;
+  }
+  100% {
+    transform: translateX(15vh) scale(0.9);
+    opacity: 0;
+  }
+}
+
+/* Анимация с эффектом "ускользания" */
+@keyframes slideOutFade {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  30% {
+    transform: translateX(3vh);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateX(12vh);
+    opacity: 0;
+  }
+}
+
+/* Класс для анимации ухода *//*
+.notification-exit {
+  animation: slideOutToRight 0.3s ease-in forwards;
+} */
+
+/* Вариант 2: более плавный уход */
+.notification-exit {
+  animation: slideOutFade 0.4s ease-in forwards;
+} 
+
+/* Вариант 3: с эффектом сжатия */
+/* .notification-exit {
+  animation: slideOutAndShrink 0.4s ease-in forwards;
+} */
+
+.notification-info {
+  border-left: 0.4vh solid #1890ff;
+}
+
+.notification-success {
+  border-left: 0.4vh solid #52c41a;
 }
 
 .notification-warning {
-  border-left: 4px solid #FF9800;
+  border-left: 0.4vh solid #faad14;
 }
 
-.notification-info {
-  border-left: 4px solid #2196F3;
+.notification-error {
+  border-left: 0.4vh solid #ff4d4f;
 }
 
-.notification-content {
-  flex: 1;
-  font-size: 14px;
-  line-height: 1.4;
-  padding-right: 10px;
-}
-
-.notification-close {
-  background: none;
-  border: none;
-  color: #ffffff;
-  font-size: 18px;
-  cursor: pointer;
-  padding: 0;
-  margin: 0;
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0.7;
-  transition: opacity 0.2s;
-}
-
-.notification-close:hover {
-  opacity: 1;
-}
-
-.notification-close:focus {
-  outline: none;
+@media (max-width: 768px) {
+  .notification {
+    min-width: auto;
+    max-width: 100%;
+    width: 100%;
+  }
+  
+  /* На мобильных устройствах - сдвигаем вправо */
+  @keyframes slideOutToRightMobile {
+    from {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+  }
+  
+  .notification-exit {
+    animation: slideOutToRightMobile 0.3s ease-in forwards;
+  }
 }

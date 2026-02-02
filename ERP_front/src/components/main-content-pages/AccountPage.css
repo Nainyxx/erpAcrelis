@@ -1,5 +1,5 @@
 .account-page-container {
-    min-height: 100vh;
+    min-height: 85vh;
     background-color: #F6F6FE;
     padding: 4vh 8vh;
 }
@@ -10,7 +10,7 @@
     padding: 6vh 8vh;
     box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.08);
     position: relative;
-    max-width: 140vh;
+    max-width: 100%;
     margin: 0 auto;
 }
 
@@ -22,17 +22,17 @@
     align-items: center;
     gap: 1vh;
     background: transparent;
-    border: 0.2vh solid #0066CC;
+    border: 0.2vh solid #666;
     border-radius: 1vh;
     padding: 1.5vh 3vh;
     font-size: 1.6vh;
-    color: #0066CC;
+    color: #000000;
     cursor: pointer;
     transition: all 0.3s ease;
 }
 
 .edit-button:hover {
-    background: #0066CC;
+    background: #666;
     color: white;
 }
 
@@ -267,7 +267,7 @@
 
 .save-button {
     padding: 1.5vh 3vh;
-    background: #0066CC;
+    background: #666;
     color: white;
     border: none;
     border-radius: 1vh;
@@ -278,7 +278,7 @@
 }
 
 .save-button:hover:not(:disabled) {
-    background: #0052A3;
+    background: #585858;
 }
 
 .save-button:disabled {
@@ -377,7 +377,7 @@
 
 .save-button {
     padding: 1.5vh 3vh;
-    background: #0066CC;
+    background: #666;
     color: white;
     border: none;
     border-radius: 1vh;
@@ -388,7 +388,7 @@
 }
 
 .save-button:hover:not(:disabled) {
-    background: #0052A3;
+    background: #525252;
 }
 
 .save-button:disabled {
@@ -561,4 +561,69 @@
     font-size: 1.4vh;
     color: #666;
     font-style: italic;
+}
+
+/* Добавь эти стили в конец файла AccountPage.css */
+
+/* Стили для input в режиме редактирования - должны совпадать с readonly-input */
+.editable-input {
+    width: 100%;
+    padding: 2vh 3vh;
+    background: #6EDCE133; 
+    border: 0.2vh solid #E5E5E5;
+    border-radius: 1vh;
+    font-size: 2vh;
+    color: #26262C;
+    transition: border-color 0.3s ease;
+    box-sizing: border-box;
+    font-family: inherit;
+    outline: none;
+}
+
+.editable-input:focus {
+    outline: none;
+    border-color: #0066CC;
+}
+
+/* Убираем дефолтные стили input */
+.editable-input[type="text"] {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+/* Чтобы input выглядел как readonly-input в неактивном состоянии */
+.readonly-input.editable {
+    cursor: text;
+    background: #6EDCE133;
+}
+
+.readonly-input.editable:focus {
+    outline: none;
+    border-color: #0066CC;
+}
+
+/* Стили для редактируемых полей */
+.user-name.editable,
+.user-post.editable {
+    display: block;
+    min-width: 10vh;
+    padding: 0.2vh 0.5vh;
+    background: transparent;
+    border: 0.1vh solid transparent;
+    border-radius: 0.5vh;
+    cursor: text;
+    width: 60vh;
+}
+
+.user-name.editable:focus,
+.user-post.editable:focus {
+    outline: none;
+}
+
+.user-name.editable:hover,
+.user-post.editable:hover {
+    text-decoration: underline;
+    text-decoration-color: black;
+    text-underline-offset: 0.3vh;
 }
