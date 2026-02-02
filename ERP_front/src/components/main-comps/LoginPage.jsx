@@ -52,7 +52,6 @@ function LoginPage() {
         // Если запрос успешен, переходим на главную
         navigate('/');
       } catch (apiError) {
-        console.error('Ошибка при проверке прав:', apiError);
         
         // Проверяем, если это ошибка доступа 403
         if (apiError.message.includes('403') || 

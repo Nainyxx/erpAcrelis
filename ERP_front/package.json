@@ -4,10 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 0.0.0.0 --port 3000 --mode development",
+    "dev": "vite --host 0.0.0.0 --port 3000",
     "build": "vite build",
-    "preview": "vite preview --host 0.0.0.0 --port 3000"
-  },
+    "preview": "vite preview --host 0.0.0.0 --port 3000",
+    "serve": "serve dist -s -l 3000",
+    "dev:fix": "vite --host --force"
+  }
+,
   "dependencies": {
     "frappe-gantt": "^1.0.4",
     "react": "^18.2.0",
@@ -23,6 +26,7 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
+    "serve": "^14.2.5",
     "vite": "^7.2.4"
   }
 }

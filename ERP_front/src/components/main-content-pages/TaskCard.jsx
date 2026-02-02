@@ -11,6 +11,10 @@ import {
 import TaskWebSocketService from '../../services/taskWebSocketService';
 import './TaskCard.css';
 
+// Константы для ограничения длины названий файлов
+const MAX_FILENAME_LENGTH = 15; // Максимальная длина названия файла до обрезания
+const MAX_FILENAME_EXTENSION_LENGTH = 5; // Максимальная длина расширения (например .png, .webm)
+
 const TaskCard = ({ useMockData = false }) => {
     const navigate = useNavigate();
     const { taskId, taskName } = useParams();
@@ -72,11 +76,105 @@ const TaskCard = ({ useMockData = false }) => {
         { value: 'draft', label: 'Черновик', progress: 10, apiValue: 'draft' }
     ];
 
+    // ==================== Функции для обработки названий файлов ====================
+    
+    // Функция для обрезки длинного названия файла
+    const truncateFilename = (filename) => {
+        if (!filename) return 'Файл';
+        
+        // Разделяем имя файла и расширение
+        const lastDotIndex = filename.lastIndexOf('.');
+        
+        if (lastDotIndex === -1) {
+            // Если нет расширения
+            if (filename.length <= MAX_FILENAME_LENGTH) {
+                return filename;
+            }
+            return filename.substring(0, MAX_FILENAME_LENGTH) + '...';
+        }
+        
+        const name = filename.substring(0, lastDotIndex);
+        const extension = filename.substring(lastDotIndex + 1);
+        
+        // Обрезаем расширение если оно слишком длинное
+        let truncatedExtension = extension;
+        if (extension.length > MAX_FILENAME_EXTENSION_LENGTH) {
+            truncatedExtension = extension.substring(0, MAX_FILENAME_EXTENSION_LENGTH) + '...';
+        }
+        
+        // Обрезаем имя если оно слишком длинное
+        if (name.length <= MAX_FILENAME_LENGTH) {
+            return `${name}.${truncatedExtension}`;
+        }
+        
+        return `${name.substring(0, MAX_FILENAME_LENGTH)}....${truncatedExtension}`;
+    };
+    
+    // Функция для получения полного названия файла (для title атрибута)
+    const getFullFilename = (filename) => {
+        if (!filename) return 'Файл';
+        return filename;
+    };
+    
+    // Функция для получения расширения файла
+    const getFileExtension = (filename) => {
+        if (!filename) return '';
+        const lastDotIndex = filename.lastIndexOf('.');
+        if (lastDotIndex === -1) return '';
+        return filename.substring(lastDotIndex + 1).toLowerCase();
+    };
+    
+    // Функция для получения иконки в зависимости от типа файла
+    const getFileIcon = (filename) => {
+        const extension = getFileExtension(filename);
+        
+        switch(extension) {
+            case 'pdf':
+                return '📄';
+            case 'doc':
+            case 'docx':
+                return '📝';
+            case 'xls':
+            case 'xlsx':
+                return '📊';
+            case 'jpg':
+            case 'jpeg':
+            case 'png':
+            case 'gif':
+            case 'svg':
+                return '🖼️';
+            case 'zip':
+            case 'rar':
+            case '7z':
+                return '📦';
+            case 'mp4':
+            case 'avi':
+            case 'mov':
+            case 'webm':
+                return '🎬';
+            case 'mp3':
+            case 'wav':
+            case 'ogg':
+                return '🎵';
+            case 'txt':
+                return '📃';
+            default:
+                return '📎';
+        }
+    };
+    
+    // Функция для форматирования размера файла
+    const formatFileSize = (bytes) => {
+        if (!bytes) return 'Неизвестно';
+        if (bytes < 1024) return bytes + ' Б';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' КБ';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' МБ';
+    };
+
     // ==================== Функции для комментариев ====================
 
     // Форматирование комментария
     const formatComment = (commentData) => {
-        console.log('🔧 Formatting comment:', commentData);
         
         const commentDate = new Date(commentData.created || commentData.createdAt || new Date());
         
@@ -106,7 +204,6 @@ const TaskCard = ({ useMockData = false }) => {
             tempId: commentData.tempId || commentData.temp_id
         };
         
-        console.log('✅ Formatted comment:', formatted);
         return formatted;
     };
 
@@ -115,14 +212,9 @@ const TaskCard = ({ useMockData = false }) => {
     // Инициализация WebSocket
     const initWebSocket = useCallback(() => {
         if (!taskId || wsServiceRef.current) {
-            console.log('🚫 Пропускаем инициализацию WebSocket:', {
-                taskId,
-                hasWsService: !!wsServiceRef.current
-            });
             return;
         }
         
-        console.log('🔄 Инициализация WebSocket для задачи:', taskId);
         
         try {
             wsServiceRef.current = new TaskWebSocketService(taskId, {
@@ -132,24 +224,17 @@ const TaskCard = ({ useMockData = false }) => {
                 pingTimeout: 10000
             });
             
-            console.log('✅ TaskWebSocketService создан');
             
             // Подписка на события WebSocket
             const unsubscribeComment = wsServiceRef.current.onComment((newCommentData) => {
-                console.log('🔥🔥🔥 WebSocket comment event FIRED:', {
-                    data: newCommentData,
-                    type: typeof newCommentData,
-                    keys: Object.keys(newCommentData || {})
-                });
+
                 
                 if (!newCommentData) {
-                    console.error('❌ Получен пустой commentData');
                     return;
                 }
                 
                 // Проверяем, что это комментарий для этой задачи
                 if (newCommentData.task_id && newCommentData.task_id !== parseInt(taskId)) {
-                    console.log('⚠️ Комментарий для другой задачи, игнорируем');
                     return;
                 }
                 
@@ -157,25 +242,21 @@ const TaskCard = ({ useMockData = false }) => {
             });
             
             const unsubscribeConnect = wsServiceRef.current.onConnect(() => {
-                console.log('✅ WebSocket подключен');
                 setIsWebSocketConnected(true);
                 setIsReconnecting(false);
                 setWsError(null);
             });
             
             const unsubscribeDisconnect = wsServiceRef.current.onDisconnect((code, reason) => {
-                console.log('🔌 WebSocket отключен:', code, reason);
                 setIsWebSocketConnected(false);
             });
             
             const unsubscribeError = wsServiceRef.current.onError((error) => {
-                console.error('❌ WebSocket ошибка:', error);
                 setWsError(error.message);
                 setIsWebSocketConnected(false);
             });
             
             const unsubscribeReconnecting = wsServiceRef.current.onReconnecting((attempt, delay) => {
-                console.log(`🔄 Переподключение ${attempt} через ${delay}мс`);
                 setIsReconnecting(true);
                 setReconnectAttempt(attempt);
             });
@@ -189,38 +270,26 @@ const TaskCard = ({ useMockData = false }) => {
                 reconnecting: unsubscribeReconnecting
             };
             
-            console.log('✅ WebSocket подписки установлены');
             
         } catch (error) {
-            console.error('❌ Ошибка инициализации WebSocket:', error);
             setWsError(error.message);
         }
     }, [taskId]);
 
     // Обработка нового комментария из WebSocket
     const handleNewCommentFromWebSocket = useCallback((commentData) => {
-        console.log('💬 Получен новый комментарий через WS:', commentData);
         
         if (!commentData) {
-            console.error('❌ commentData is null or undefined');
             return;
         }
         
-        console.log('📊 commentData structure:', {
-            id: commentData.id,
-            tempId: commentData.tempId || commentData.temp_id,
-            author_name: commentData.author_name,
-            content: commentData.content,
-            created: commentData.created
-        });
+
         
         const formattedComment = formatComment(commentData);
         formattedComment.isFromWebSocket = true;
         
-        console.log('📝 Formatted comment:', formattedComment);
         
         setCommentsList(prev => {
-            console.log('🔄 Updating comments list, current length:', prev.length);
             
             // Ищем дубликаты
             const tempId = commentData.tempId || commentData.temp_id;
@@ -231,17 +300,14 @@ const TaskCard = ({ useMockData = false }) => {
                 c.id === realId || c.tempId === tempId
             );
             
-            console.log(`🔍 Checking duplicates: tempId=${tempId}, realId=${realId}, foundIndex=${existingIndex}`);
             
             if (existingIndex !== -1) {
-                console.log('⚠️ Comment already exists, updating...');
                 // Обновляем существующий комментарий
                 const newComments = [...prev];
                 newComments[existingIndex] = formattedComment;
                 return newComments;
             }
             
-            console.log('➕ Adding new comment');
             // Добавляем новый комментарий в конец (самые новые внизу)
             return [...prev, formattedComment];
         });
@@ -249,16 +315,13 @@ const TaskCard = ({ useMockData = false }) => {
         // Удаляем из pending, если это подтверждение нашего сообщения
         const tempId = commentData.tempId || commentData.temp_id;
         if (tempId) {
-            console.log('🗑️ Removing tempId from pending:', tempId);
             setPendingComments(prev => {
                 const newPending = prev.filter(id => id !== tempId);
-                console.log(`📋 Pending comments: ${prev.length} -> ${newPending.length}`);
                 return newPending;
             });
         }
         
         // Прокрутка к новому сообщению
-        console.log('⬇️ Scrolling to bottom');
         setTimeout(() => {
             if (chatContainerRef_task_card.current) {
                 chatContainerRef_task_card.current.scrollTop = 
@@ -279,7 +342,6 @@ const TaskCard = ({ useMockData = false }) => {
         
         const tempId = `temp_${Date.now()}_${Math.random()}`;
         
-        console.log('📤 Отправка комментария через WebSocket с tempId:', tempId);
         
         // ОПТИМИСТИЧНОЕ ОБНОВЛЕНИЕ: сразу показываем сообщение
         const optimisticComment = {
@@ -301,12 +363,9 @@ const TaskCard = ({ useMockData = false }) => {
         
         try {
             // Отправляем через WebSocket
-            console.log('📤 Sending comment via WebSocket...');
             const result = wsServiceRef.current.sendComment(commentText, tempId);
-            console.log('✅ Comment sent via WebSocket, result:', result);
             return tempId;
         } catch (error) {
-            console.error('❌ Ошибка отправки через WebSocket:', error);
             
             // Откатываем оптимистичное обновление при ошибке
             setCommentsList(prev => prev.filter(c => c.tempId !== tempId));
@@ -323,12 +382,9 @@ const TaskCard = ({ useMockData = false }) => {
         }
         
         try {
-            console.log('📤 Отправка комментария через API...');
             const response = await addCommentToTask(taskId, { content: commentText }, useMockData);
-            console.log('✅ Comment sent via API, response:', response);
             return response;
         } catch (error) {
-            console.error('❌ Ошибка отправки комментария через API:', error);
             throw error;
         }
     };
@@ -347,7 +403,6 @@ const TaskCard = ({ useMockData = false }) => {
 
     const loadTask_task_card = async () => {
         if (initialLoadDone.current) {
-            console.log('🚫 Пропускаем повторную загрузку данных задачи');
             return;
         }
         
@@ -355,9 +410,7 @@ const TaskCard = ({ useMockData = false }) => {
         setError(null);
         
         try {
-            console.log('📥 Загрузка данных задачи (только при открытии)...');
             const taskData = await getTaskById(taskId, useMockData);
-            console.log('✅ Данные задачи получены:', taskData);
             
             setTask(taskData);
             
@@ -405,12 +458,15 @@ const TaskCard = ({ useMockData = false }) => {
                 });
             }
             
-            // Файлы (только при первой загрузке)
+            // Файлы (только при первой загрузке) - ОБНОВЛЕНО
             if (taskData.files && taskData.files.length > 0) {
                 const formattedFiles = taskData.files.map(file => ({
                     id: file.id,
                     name: file.file ? file.file.split('/').pop() : 'Файл',
-                    size: formatFileSize(file.size) || 'Неизвестно',
+                    truncatedName: file.file ? truncateFilename(file.file.split('/').pop()) : 'Файл',
+                    fullName: file.file ? file.file.split('/').pop() : 'Файл',
+                    extension: file.file ? getFileExtension(file.file.split('/').pop()) : '',
+                    icon: file.file ? getFileIcon(file.file.split('/').pop()) : '📎',
                     fileData: file
                 }));
                 setFiles(formattedFiles);
@@ -419,7 +475,6 @@ const TaskCard = ({ useMockData = false }) => {
             }
             
             // КОММЕНТАРИИ: загружаем ТОЛЬКО при открытии страницы
-            console.log('📊 Загружены комментарии из основного запроса:', taskData.comments);
             
             if (taskData.comments && taskData.comments.length > 0) {
                 // Сортируем комментарии по дате создания (самые новые внизу)
@@ -427,7 +482,6 @@ const TaskCard = ({ useMockData = false }) => {
                     new Date(a.created) - new Date(b.created)
                 );
                 
-                console.log('📝 Комментарии после сортировки:', sortedComments);
                 
                 const formattedComments = sortedComments.map(comment => formatComment(comment));
                 setCommentsList(formattedComments);
@@ -437,13 +491,11 @@ const TaskCard = ({ useMockData = false }) => {
             
             // Помечаем, что первая загрузка выполнена
             initialLoadDone.current = true;
-            console.log('✅ Первоначальная загрузка данных завершена');
             
             // Прокручиваем к последнему сообщению после загрузки
             scrollToBottom();
             
             // ТОЛЬКО ПОСЛЕ ЗАГРУЗКИ ДАННЫХ инициализируем WebSocket
-            console.log('🚀 Загрузка данных завершена, инициализирую WebSocket');
             
             // Небольшая задержка для стабильности
             setTimeout(() => {
@@ -451,7 +503,6 @@ const TaskCard = ({ useMockData = false }) => {
             }, 100);
             
         } catch (error) {
-            console.error('❌ Ошибка загрузки задачи:', error);
             setError('Не удалось загрузить задачу. Проверьте подключение.');
         } finally {
             setLoading(false);
@@ -468,14 +519,12 @@ const TaskCard = ({ useMockData = false }) => {
         
         // Блокируем повторную отправку
         if (isSending) {
-            console.log('⚠️ Already sending, skipping');
             return;
         }
         
         setIsSending(true);
         const commentToSend = textToSend;
         
-        console.log('📤 Отправка комментария:', commentToSend);
         
         // Очищаем поле ввода сразу (оптимистично)
         setNewComment('');
@@ -484,13 +533,10 @@ const TaskCard = ({ useMockData = false }) => {
         try {
             // Пытаемся отправить через WebSocket
             if (isWebSocketConnected && wsServiceRef.current) {
-                console.log('📤 Отправляю комментарий через WebSocket');
                 await sendCommentViaWebSocket(commentToSend);
             } else {
                 // Если WebSocket не подключен, используем API
-                console.log('📤 WebSocket не подключен, отправляю через API');
                 const response = await sendCommentViaAPI(commentToSend);
-                console.log('✅ API response:', response);
                 
                 // После успешной отправки через API, сразу добавляем комментарий в список
                 const tempId = `temp_${Date.now()}_${Math.random()}`;
@@ -510,9 +556,7 @@ const TaskCard = ({ useMockData = false }) => {
                 scrollToBottom();
             }
             
-            console.log('✅ Комментарий отправлен');
         } catch (error) {
-            console.error('❌ Ошибка отправки комментария:', error);
             alert('Не удалось отправить комментарий. Проверьте подключение.');
         } finally {
             setIsSending(false);
@@ -619,7 +663,6 @@ const TaskCard = ({ useMockData = false }) => {
                 const updatedTask = await updateTask(taskId, updateData, useMockData);
                 setTask(updatedTask);
             } catch (error) {
-                console.error('❌ Ошибка обновления описания:', error);
             }
         }, 1000);
     };
@@ -641,7 +684,6 @@ const TaskCard = ({ useMockData = false }) => {
                 const updatedTask = await updateTask(taskId, updateData, useMockData);
                 setTask(updatedTask);
             } catch (error) {
-                console.error('❌ Ошибка обновления дедлайна:', error);
             }
         }, 1000);
     };
@@ -654,7 +696,6 @@ const TaskCard = ({ useMockData = false }) => {
             setStatus(statusLabel);
             setProgress(newProgress);
         } catch (error) {
-            console.error('❌ Ошибка обновления статуса:', error);
         }
     };
 
@@ -683,6 +724,7 @@ const TaskCard = ({ useMockData = false }) => {
         e.target.value = null;
     };
 
+    // Обновленная функция загрузки файла
     const postFileUpload_task_card = async (file) => {
         if (!file || !task) return;
         
@@ -691,12 +733,15 @@ const TaskCard = ({ useMockData = false }) => {
             const formattedFile = {
                 id: uploadedFile.id,
                 name: file.name,
+                truncatedName: truncateFilename(file.name),
+                fullName: file.name,
+                extension: getFileExtension(file.name),
+                icon: getFileIcon(file.name),
                 size: formatFileSize(file.size),
                 fileData: uploadedFile
             };
             setFiles(prev => [...prev, formattedFile]);
         } catch (error) {
-            console.error('❌ Ошибка загрузки файла:', error);
         }
     };
 
@@ -718,13 +763,6 @@ const TaskCard = ({ useMockData = false }) => {
         setTimeout(() => {
             document.body.removeChild(a);
         }, 10);
-    };
-
-    const formatFileSize = (bytes) => {
-        if (!bytes) return 'Неизвестно';
-        if (bytes < 1024) return bytes + ' Б';
-        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' КБ';
-        return (bytes / (1024 * 1024)).toFixed(1) + ' МБ';
     };
 
     // Группировка комментариев по дате
@@ -763,18 +801,15 @@ const TaskCard = ({ useMockData = false }) => {
     // ==================== ОСНОВНОЙ useEffect ====================
     useEffect(() => {
         if (!initialLoadDone.current) {
-            console.log('🚀 Начальная загрузка страницы задачи');
             loadTask_task_card();
         }
         
         // Очистка при размонтировании
         return () => {
-            console.log('🧹 Очистка TaskCard');
             clearTimeout(patchTimeoutRef_task_card.current);
             
             // Очистка WebSocket
             if (wsServiceRef.current) {
-                console.log('🔌 Отключение WebSocket');
                 
                 // Отписываемся от всех событий
                 if (wsServiceRef.current.unsubscribeFunctions) {
@@ -978,16 +1013,36 @@ const TaskCard = ({ useMockData = false }) => {
                             </div>
                             <div className="files-list_task_card">
                                 {files.map(file => (
-                                    <div key={file.id} className="file-item_task_card">
+                                    <div 
+                                        key={file.id} 
+                                        className="file-item_task_card"
+                                        title={file.fullName}
+                                    >
                                         <div className="file-details_task_card">
-                                            <span className="file-name_task_card">{file.name}</span>
+                                            <span 
+                                                className="file-name_task_card"
+                                                style={{
+                                                    display: 'inline-block',
+                                                    maxWidth: 'calc(100% - 40px)',
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'nowrap',
+                                                    verticalAlign: 'middle'
+                                                }}
+                                            >
+                                                {file.truncatedName}
+                                            </span>
                                         </div>
-                                        <button 
-                                            className="file-download_task_card" 
-                                            onClick={() => handleFileDownload_task_card(file)}
-                                        >
-                                            ↓
-                                        </button>
+                                        <div className="file-info_task_card">
+                                            <span className="file-size_task_card">{file.size}</span>
+                                            <button 
+                                                className="file-download_task_card" 
+                                                onClick={() => handleFileDownload_task_card(file)}
+                                                title="Скачать файл"
+                                            >
+                                                ↓
+                                            </button>
+                                        </div>
                                     </div>
                                 ))}
                             </div>

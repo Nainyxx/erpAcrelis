@@ -32,7 +32,6 @@ function Header({ currentUser }) {
                 }
             }
         } catch (error) {
-            console.error('Ошибка загрузки аватарки:', error);
         } finally {
             setIsLoading(false);
         }

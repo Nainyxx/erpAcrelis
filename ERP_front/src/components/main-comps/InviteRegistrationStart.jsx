@@ -48,7 +48,6 @@ function InviteRegistrationStart() {
       }
       
       try {
-        console.log('🔍 Проверка токена:', token);
         
         const response = await fetch(`https://api.acrelis.ru/staff/register/invite/${token}/`, {
           method: 'POST',
@@ -65,12 +64,12 @@ function InviteRegistrationStart() {
           })
         });
 
-        console.log('📊 Ответ проверки токена:', response.status);
-        
+
+      
         if (response.status === 400) {
           const errorText = await response.text();
-          console.log('📄 Текст ошибки:', errorText);
-          
+
+
           try {
             const errorData = JSON.parse(errorText);
             
@@ -100,7 +99,6 @@ function InviteRegistrationStart() {
           setTokenError('Ошибка при проверке приглашения');
         }
       } catch (error) {
-        console.error('Ошибка проверки токена:', error);
         setTokenError('Не удалось проверить приглашение. Попробуйте позже.');
       } finally {
         setValidatingToken(false);

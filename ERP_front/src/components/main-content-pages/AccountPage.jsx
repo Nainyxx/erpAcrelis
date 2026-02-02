@@ -65,7 +65,6 @@ function AccountPage() {
 
             const employeeData = await response.json();
             
-            console.log('Полученные данные сотрудника:', employeeData);
             
             const formattedPhone = formatPhoneForDisplay(employeeData.phone);
             const formattedBirthDate = formatBirthDateForDisplay(employeeData.birthday);
@@ -99,7 +98,6 @@ function AccountPage() {
             localStorage.setItem('email', formattedData.email);
             
         } catch (error) {
-            console.error('Ошибка загрузки данных аккаунта:', error);
             setError(error.message);
             
             const fallbackData = {
@@ -172,7 +170,6 @@ function AccountPage() {
             
             return dateString;
         } catch (error) {
-            console.error('Ошибка форматирования даты:', error);
             return dateString;
         }
     };
@@ -192,7 +189,6 @@ function AccountPage() {
             
             return '';
         } catch (error) {
-            console.error('Ошибка конвертации даты для API:', error);
             return '';
         }
     };
@@ -306,37 +302,26 @@ function AccountPage() {
             const currentPhone = tempPhone;
             const currentBirthDate = tempBirthDate;
 
-            console.log('Текущие значения:', {
-                name: currentName,
-                post: currentPost,
-                email: currentEmail,
-                phone: currentPhone,
-                birthDate: currentBirthDate
-            });
 
             if (currentName !== originalData.name) {
                 formData.append('name', currentName);
                 hasChanges = true;
-                console.log('Изменено имя:', currentName);
             }
             
             if (currentPost !== originalData.post) {
                 formData.append('post', currentPost);
                 hasChanges = true;
-                console.log('Изменена должность:', currentPost);
             }
             
             if (currentEmail !== originalData.email) {
                 formData.append('email', currentEmail);
                 hasChanges = true;
-                console.log('Изменен email:', currentEmail);
             }
             
             if (currentPhone !== originalData.phone) {
                 const cleanPhone = formatPhoneForAPI(currentPhone);
                 formData.append('phone', cleanPhone);
                 hasChanges = true;
-                console.log('Изменен телефон:', cleanPhone);
             }
             
             if (currentBirthDate !== originalData.birthDate) {
@@ -344,20 +329,14 @@ function AccountPage() {
                 if (apiDate) {
                     formData.append('birthday', apiDate);
                     hasChanges = true;
-                    console.log('Изменена дата рождения:', apiDate);
                 }
             }
             
             if (imageFile) {
                 formData.append('image', imageFile);
                 hasChanges = true;
-                console.log('Добавлено новое изображение');
             }
 
-            console.log('Отправляем PATCH запрос с данными:', {
-                id: userData.id,
-                hasChanges: hasChanges
-            });
 
             if (!hasChanges) {
                 setIsEditing(false);
@@ -373,23 +352,19 @@ function AccountPage() {
 
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error('Ошибка API:', errorText);
                 throw new Error(`Ошибка сохранения: ${response.status} - ${errorText}`);
             }
 
             const updatedData = await response.json();
-            console.log('Ответ от сервера:', updatedData);
             
             setIsEditing(false);
             setImageFile(null);
             setImagePreview(null);
             
-            console.log('Данные успешно сохранены');
             
             await fetchAccountData();
             
         } catch (error) {
-            console.error('Ошибка сохранения данных:', error);
             setError(error.message || 'Ошибка при сохранении данных');
         } finally {
             setIsSaving(false);

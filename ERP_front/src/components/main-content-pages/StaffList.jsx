@@ -26,8 +26,6 @@ const StaffList = ({ useMockData = false }) => {
         // 2. Загружаем отделы отдельным запросом
         const departmentsData = await getStaffDepartments(useMockData);
         
-        console.log('Загруженные сотрудники:', loadedEmployees);
-        console.log('Загруженные отделы:', departmentsData);
         
         // 3. Создаем фильтр отделов
         const departmentOptions = [
@@ -65,7 +63,6 @@ const StaffList = ({ useMockData = false }) => {
         setDepartments(departmentOptions);
         
       } catch (error) {
-        console.error('Ошибка загрузки данных сотрудников:', error);
         setError('Не удалось загрузить данные сотрудников. Проверьте подключение.');
         setEmployees([]);
         setDepartments([]);

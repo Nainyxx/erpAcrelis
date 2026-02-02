@@ -59,7 +59,6 @@ const ProjectCard = ({ useMockData = false }) => {
         const [year, month, day] = datePart.split('-');
         return `${day}.${month}.${year}`;
       } catch (e) {
-        console.error('Ошибка парсинга даты:', dateString);
         return 'Неверная дата';
       }
     }
@@ -97,7 +96,6 @@ const ProjectCard = ({ useMockData = false }) => {
         initials = 'И';
       }
     } catch (error) {
-      console.error('Ошибка при получении инициалов:', error);
       initials = 'И';
     }
     
@@ -125,7 +123,6 @@ const ProjectCard = ({ useMockData = false }) => {
               left: 0
             }}
             onError={(e) => {
-              console.log('Ошибка загрузки аватарки для', name, 'URL:', imageUrl);
               e.target.style.display = 'none';
               e.target.nextSibling.style.display = 'flex';
             }}
@@ -183,23 +180,19 @@ const ProjectCard = ({ useMockData = false }) => {
     if (!project) return;
     
     try {
-      console.log(`🔄 Отправляем PATCH запрос для обновления статуса проекта на: ${statusLabel} (${statusApiValue})`);
       
       const updateData = { status: statusApiValue };
       
       const updatedProject = await updateProject(project.id, updateData, useMockData);
       
-      console.log('✅ PATCH запрос успешен:', updatedProject);
       
       // После обновления статуса делаем новый GET запрос
       await loadProjectAndLogs();
       
       setShowStatusDropdown(false);
       
-      console.log(`✅ Статус проекта успешно обновлен на: ${statusLabel}`);
       
     } catch (error) {
-      console.error('❌ Ошибка PATCH запроса для статуса:', error);
       alert('Ошибка при обновлении статуса проекта');
     }
   };
@@ -223,7 +216,6 @@ const ProjectCard = ({ useMockData = false }) => {
       const staffList = staffListResult.employees || [];
       setAllStaff(staffList);
     } catch (error) {
-      console.error('Ошибка загрузки списка сотрудников:', error);
     }
   };
 
@@ -316,7 +308,6 @@ const ProjectCard = ({ useMockData = false }) => {
         updateData.customer = customer;
       }
       
-      console.log('Отправляемые данные для PATCH:', updateData);
       
       if (Object.keys(updateData).length > 0) {
         await updateProject(project.id, updateData, useMockData);
@@ -324,13 +315,10 @@ const ProjectCard = ({ useMockData = false }) => {
         // После сохранения делаем новый GET запрос для обновления данных
         await loadProjectAndLogs();
         
-        console.log('✅ Изменения успешно сохранены!');
       } else {
-        console.log('ℹ️ Нет изменений для сохранения');
       }
       
     } catch (error) {
-      console.error('❌ Ошибка сохранения:', error);
       alert('Ошибка при сохранении изменений');
     } finally {
       setIsSaving(false);
@@ -369,7 +357,6 @@ const ProjectCard = ({ useMockData = false }) => {
         return;
       }
       
-      console.log(`Найден сотрудник: ${foundStaff.name}, ID: ${foundStaff.id}`);
       
       await addPerformerToProject(project.id, parseInt(foundStaff.id), useMockData);
       
@@ -381,7 +368,6 @@ const ProjectCard = ({ useMockData = false }) => {
       setShowAddPerformerModal(false);
       
     } catch (error) {
-      console.error('Ошибка добавления исполнителя:', error);
       alert(`Ошибка: ${error.message}`);
     } finally {
       setAddingPerformer(false);
@@ -398,7 +384,6 @@ const ProjectCard = ({ useMockData = false }) => {
     const file = event.target.files[0];
     if (!file || !project) return;
 
-    console.log('Загружаю файл:', file.name, file.size, file.type);
     setUploadingFile(true);
 
     try {
@@ -411,7 +396,6 @@ const ProjectCard = ({ useMockData = false }) => {
       event.target.value = null;
       
     } catch (error) {
-      console.error('Ошибка загрузки файла:', error);
       alert(`Ошибка загрузки файла: ${error.message}`);
     } finally {
       setUploadingFile(false);
@@ -459,7 +443,6 @@ const ProjectCard = ({ useMockData = false }) => {
       }, 100);
       
     } catch (error) {
-      console.error('Ошибка скачивания файла через fetch:', error);
       
       try {
         const a = document.createElement('a');
@@ -474,7 +457,6 @@ const ProjectCard = ({ useMockData = false }) => {
           document.body.removeChild(a);
         }, 100);
       } catch (fallbackError) {
-        console.error('Fallback метод тоже не сработал:', fallbackError);
         alert('Не удалось скачать файл. Попробуйте позже или обратитесь к администратору.');
       }
     }
@@ -524,15 +506,12 @@ const ProjectCard = ({ useMockData = false }) => {
     
     setIsLoading(true);
     try {
-      console.log('🔄 Загружаем проект ID:', projectId);
       
       // Делаем GET запрос к API
       const projectData = await getProjectById(parseInt(projectId), useMockData);
-      console.log('✅ Загружен проект:', projectData);
       
       // Используем performers из API
       const performers = projectData.performers || [];
-      console.log('Исполнители проекта (performers):', performers);
       
       // Преобразуем performers в team для совместимости
       const team = performers.map(performer => ({
@@ -542,7 +521,6 @@ const ProjectCard = ({ useMockData = false }) => {
         staff_image: performer.staff_image
       }));
       
-      console.log('Преобразованный team:', team);
       
       setProject({
         ...projectData,
@@ -560,11 +538,9 @@ const ProjectCard = ({ useMockData = false }) => {
       setProjectStatus(statusLabel);
       
       const projectLogs = await getProjectLogs(parseInt(projectId), useMockData);
-      console.log('Загружены логи:', projectLogs);
       setChanges(projectLogs);
       
     } catch (error) {
-      console.error('❌ Ошибка загрузки проекта:', error);
     } finally {
       setIsLoading(false);
     }
@@ -828,13 +804,13 @@ const ProjectCard = ({ useMockData = false }) => {
               <div className="projectcard-tile">
                 <button 
                   className="action-btn kanban-btn" 
-                  onClick={() => navigate(`/projects/${project.id}/kanban`)}
+                  onClick={() => navigate(`/kanban/${project.id}`)}
                 >
                   Открыть канбан
                 </button>
                 <button 
                   className="action-btn gantt-btn" 
-                  onClick={() => window.location.href = `/projects/${project.id}/gantt`}
+                  onClick={() => navigate(`/gantt/${project.id}`)}
                 >
                   Диаграмма Ганта
                 </button>

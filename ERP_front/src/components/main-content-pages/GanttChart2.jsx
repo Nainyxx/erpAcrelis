@@ -116,12 +116,10 @@ const GanttChart = ({ useMockData = false }) => {
         }
         
       } catch (error) {
-        console.error('❌ Ошибка загрузки страницы задач:', error);
         hasMorePages = false;
       }
     }
     
-    console.log(`✅ Загружено ${allTasks.length} задач для проекта ${projectId}`);
     return allTasks;
   };
 
@@ -176,13 +174,9 @@ const GanttChart = ({ useMockData = false }) => {
         
         setDateRange({ start: minDate, end: maxDate });
 
-        console.log('📅 Диапазон проекта:');
-        console.log('Начало:', minDate.toLocaleDateString());
-        console.log('Конец:', maxDate.toLocaleDateString());
-        console.log(`📊 Всего задач: ${ganttTasks.length}`);
+
 
       } catch (error) {
-        console.error('❌ Ошибка загрузки данных:', error);
         setTeamMembers([
           { id: 1, name: 'Не назначен', color: taskColors[0] }
         ]);
@@ -281,7 +275,6 @@ const GanttChart = ({ useMockData = false }) => {
           deadline.setDate(deadline.getDate() + 7);
         }
       } catch (e) {
-        console.warn('Ошибка парсинга дат:', e);
         startDate = new Date();
         deadline = new Date();
         deadline.setDate(deadline.getDate() + 7);
@@ -394,7 +387,6 @@ const GanttChart = ({ useMockData = false }) => {
       const isLeapYear = (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0));
       const daysInYear = isLeapYear ? 366 : 365;
       
-      console.log(`📅 Генерируем год (${daysInYear} дней)`);
       
       const days = [];
       for (let i = 0; i < daysInYear; i++) {
@@ -431,8 +423,7 @@ const GanttChart = ({ useMockData = false }) => {
     const timeDiff = end.getTime() - current.getTime();
     const dayDiff = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
     
-    console.log(`📅 Диапазон: ${current.toLocaleDateString()} - ${end.toLocaleDateString()}`);
-    console.log(`📅 Всего дней: ${dayDiff}`);
+
     
     for (let i = 0; i < dayDiff; i++) {
       const dayCopy = new Date(current);

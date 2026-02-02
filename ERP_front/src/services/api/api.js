@@ -43,10 +43,6 @@ export async function login(username, password) {
       })
     });
 
-    console.log('🔐 Ответ от API при логине:', {
-      status: response.status,
-      statusText: response.statusText
-    });
 
     if (response.status === 403) {
       throw new Error('ACCESS_DENIED: Недостаточно прав для доступа к системе');
@@ -81,7 +77,6 @@ export async function login(username, password) {
     };
     
   } catch (error) {
-    console.error('❌ Ошибка входа:', error);
     throw error;
   }
 }
@@ -122,7 +117,6 @@ export async function register(userData) {
     };
     
   } catch (error) {
-    console.error('❌ Ошибка регистрации:', error);
     throw error;
   }
 }
@@ -158,7 +152,6 @@ export async function refreshAccessToken() {
     return newTokens.access;
     
   } catch (error) {
-    console.error('❌ Ошибка обновления токена:', error);
     throw error;
   }
 }
@@ -170,7 +163,6 @@ export function saveTokens(tokens) {
     localStorage.setItem('refresh_token', tokens.refresh);
     API_CONFIG.ACCESS_TOKEN = tokens.access;
   } catch (error) {
-    console.error('❌ Ошибка сохранения токенов:', error);
   }
 }
 
@@ -185,7 +177,6 @@ export function saveUserData(userData) {
     localStorage.setItem('post', userData.post || '');
     localStorage.setItem('department', userData.department || '');
   } catch (error) {
-    console.error('❌ Ошибка сохранения данных пользователя:', error);
   }
 }
 
@@ -200,7 +191,6 @@ export function clearUserData() {
     localStorage.removeItem('post');
     localStorage.removeItem('department');
   } catch (error) {
-    console.error('❌ Ошибка удаления данных пользователя:', error);
   }
 }
 
@@ -223,7 +213,6 @@ export function clearTokens() {
     clearUserData();
     API_CONFIG.ACCESS_TOKEN = '';
   } catch (error) {
-    console.error('❌ Ошибка удаления токенов:', error);
   }
 }
 
@@ -328,7 +317,6 @@ export async function authFetch(url, options = {}) {
     
     return response;
   } catch (error) {
-    console.error('❌ Ошибка authFetch:', error);
     throw error;
   }
 }
@@ -386,7 +374,6 @@ export async function getProjects(USE_MOCK_DATA, filters = {}) {
       url.searchParams.append('ordering', '-id');
     }
     
-    console.log('📡 Запрос проектов к API:', url.toString());
     
     const response = await authFetch(url.toString(), {
       method: 'GET'
@@ -437,7 +424,6 @@ export async function getProjects(USE_MOCK_DATA, filters = {}) {
     };
     
   } catch (error) {
-    console.error('❌ Ошибка API:', error);
     throw error;
   }
 }
@@ -464,7 +450,6 @@ export async function getProjectById(projectId, USE_MOCK_DATA) {
     const project = await response.json();
     return formatProjectData(project);
   } catch (error) {
-    console.error(`❌ Ошибка загрузки проекта ${projectId}:`, error);
     throw error;
   }
 }
@@ -522,7 +507,6 @@ export async function updateProject(projectId, updateData, USE_MOCK_DATA) {
     formData.append('customer', updateData.customer);
   }
   
-  console.log('📤 PATCH запрос для проекта', projectId, 'с данными:', Object.fromEntries(formData));
   
   try {
     const response = await authFetch(`${API_CONFIG.BASE_URL}projects/${projectId}/`, {
@@ -532,15 +516,12 @@ export async function updateProject(projectId, updateData, USE_MOCK_DATA) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ Ошибка PATCH запроса:', errorText);
       throw new Error(`API Error: ${response.status} - ${errorText}`);
     }
 
     const responseData = await response.json();
-    console.log('✅ PATCH запрос успешен:', responseData);
     return formatProjectData(responseData);
   } catch (error) {
-    console.error(`❌ Ошибка обновления проекта:`, error);
     throw error;
   }
 }
@@ -601,7 +582,6 @@ export async function createProject(projectData, USE_MOCK_DATA) {
     const responseData = await response.json();
     return formatProjectData(responseData);
   } catch (error) {
-    console.error('❌ Ошибка создания проекта:', error);
     throw error;
   }
 }
@@ -645,7 +625,6 @@ export async function uploadFileToProject(projectId, file, USE_MOCK_DATA) {
       size: file.size
     };
   } catch (error) {
-    console.error('❌ Ошибка загрузки:', error);
     throw error;
   }
 }
@@ -686,7 +665,6 @@ export async function addPerformerToProject(projectId, staffId, USE_MOCK_DATA) {
     const responseData = await response.json();
     return responseData;
   } catch (error) {
-    console.error('❌ Ошибка добавления:', error);
     throw error;
   }
 }
@@ -733,7 +711,6 @@ export async function getProjectLogs(projectId, USE_MOCK_DATA) {
       date: formatDateTime(log.created)
     }));
   } catch (error) {
-    console.error('❌ Ошибка загрузки логов:', error);
     return [];
   }
 }
@@ -827,7 +804,6 @@ export async function getTasks(USE_MOCK_DATA, filters = {}) {
       url.searchParams.append('ordering', '-deadline');
     }
     
-    console.log('📡 Запрос задач к API:', url.toString());
     
     const response = await authFetch(url.toString(), {
       method: 'GET'
@@ -844,7 +820,6 @@ export async function getTasks(USE_MOCK_DATA, filters = {}) {
     return tasksData;
     
   } catch (error) {
-    console.error('❌ Ошибка загрузки задач:', error);
     return {
       results: [],
       count: 0,
@@ -866,7 +841,6 @@ export async function getTasksByPerformer(performerId, USE_MOCK_DATA) {
     const tasks = await getTasks(false, { performer: performerId });
     return tasks;
   } catch (error) {
-    console.error('❌ Ошибка загрузки задач исполнителя:', error);
     return [];
   }
 }
@@ -951,7 +925,6 @@ export async function createTask(taskData, USE_MOCK_DATA) {
     const responseData = await response.json();
     return responseData;
   } catch (error) {
-    console.error('❌ Ошибка создания задачи:', error);
     throw error;
   }
 }
@@ -1014,7 +987,6 @@ export async function getTaskById(taskId, USE_MOCK_DATA) {
     
     return taskData;
   } catch (error) {
-    console.error(`❌ Ошибка загрузки задачи ${taskId}:`, error);
     throw error;
   }
 }
@@ -1089,7 +1061,6 @@ export async function updateTask(taskId, updateData, USE_MOCK_DATA) {
     const responseData = await response.json();
     return responseData;
   } catch (error) {
-    console.error(`❌ Ошибка обновления задачи:`, error);
     throw error;
   }
 }
@@ -1125,7 +1096,6 @@ export async function uploadFileToTask(taskId, file, USE_MOCK_DATA) {
     const responseData = await response.json();
     return responseData;
   } catch (error) {
-    console.error('❌ Ошибка загрузки файла задачи:', error);
     throw error;
   }
 }
@@ -1165,7 +1135,6 @@ export async function addCommentToTask(taskId, commentData, USE_MOCK_DATA) {
         const responseData = await response.json();
         return responseData;
     } catch (error) {
-        console.error('❌ Ошибка добавления комментария:', error);
         throw error;
     }
 }
@@ -1208,7 +1177,6 @@ export async function getStaffDepartments(USE_MOCK_DATA) {
     const departmentsData = await response.json();
     return departmentsData;
   } catch (error) {
-    console.error('❌ Ошибка загрузки отделов:', error);
     return [];
   }
 }
@@ -1309,7 +1277,6 @@ export async function getStaffList(USE_MOCK_DATA, filters = {}) {
       departments: departmentList
     };
   } catch (error) {
-    console.error('❌ Ошибка загрузки сотрудников:', error);
     return { 
       employees: [], 
       departments: [{ id: 'all', label: 'Все отделы', count: 0 }]
@@ -1383,7 +1350,6 @@ export async function getEmployeeById(employeeId, USE_MOCK_DATA) {
     
     return employee;
   } catch (error) {
-    console.error('❌ Ошибка загрузки сотрудника:', error);
     throw error;
   }
 }
@@ -1587,12 +1553,7 @@ function getFallbackProject() {
 // Регистрация по инвайт-ссылке
 export async function registerByInvite(token, userData) {
   try {
-    console.log('📤 Отправка данных регистрации по инвайту:', {
-      token,
-      username: userData.username,
-      email: userData.email,
-      staff_data: userData.staff_data
-    });
+    
 
     const response = await fetch(`${API_CONFIG.BASE_URL}staff/register/invite/${token}/`, {
       method: 'POST',
@@ -1603,13 +1564,9 @@ export async function registerByInvite(token, userData) {
       body: JSON.stringify(userData)
     });
 
-    console.log('📥 Ответ от API:', {
-      status: response.status,
-      statusText: response.statusText
-    });
+
 
     const responseText = await response.text();
-    console.log('📄 Текст ответа:', responseText);
 
     if (!response.ok) {
       let errorMessage = 'Ошибка регистрации';
@@ -1618,7 +1575,6 @@ export async function registerByInvite(token, userData) {
       if (responseText) {
         try {
           const errorData = JSON.parse(responseText);
-          console.error('❌ Парсированные данные ошибки:', errorData);
           
           // Извлекаем сообщение об ошибке
           if (errorData.error) {
@@ -1644,7 +1600,6 @@ export async function registerByInvite(token, userData) {
             }
           }
         } catch (parseError) {
-          console.error('❌ Ошибка парсинга JSON:', parseError);
           // Если не удалось распарсить, но есть текст
           if (responseText.includes('Приглашение истекло') || 
               responseText.includes('Неверное или несуществующее приглашение')) {
@@ -1658,7 +1613,6 @@ export async function registerByInvite(token, userData) {
         errorMessage = 'Ссылка приглашения не найдена';
       }
       
-      console.error('❌ Выбрасываем ошибку:', errorMessage);
       throw new Error(errorMessage);
     }
 
@@ -1667,11 +1621,9 @@ export async function registerByInvite(token, userData) {
     try {
       result = JSON.parse(responseText);
     } catch (parseError) {
-      console.error('❌ Ошибка парсинга успешного ответа:', parseError);
       throw new Error('Ошибка обработки ответа от сервера');
     }
     
-    console.log('✅ Успешный ответ от API:', result);
     
     // Если в ответе есть токены - сохраняем их
     if (result.access && result.refresh) {
@@ -1690,7 +1642,6 @@ export async function registerByInvite(token, userData) {
     };
     
   } catch (error) {
-    console.error('❌ Ошибка регистрации по инвайту:', error);
     throw error;
   }
 }

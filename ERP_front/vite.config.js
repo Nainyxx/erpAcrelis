@@ -5,15 +5,21 @@ export default defineConfig({
   plugins: [react()],
   server: {
     host: true,
-    port: 3000,
-    // ВАЖНО: добавь эту настройку
-    historyApiFallback: {
-      disableDotRule: true,
-      rewrites: [
-        // Все маршруты, кроме API, отправляй на index.html
-        { from: /^\/api\/.*/, to: '' },
-        { from: /./, to: '/index.html' }
-      ]
+    port: 3000
+  },
+  // КРИТИЧЕСКИ ВАЖНО: если приложение в корне, оставьте '/'
+  // Если в подпапке, например /erp/, тогда '/erp/'
+  base: '/',
+  build: {
+    outDir: 'dist',
+    // Для HashRouter это важно
+    assetsDir: 'assets',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom']
+        }
+      }
     }
   }
 })

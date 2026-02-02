@@ -29,7 +29,6 @@ class NotificationWebSocket {
     const token = localStorage.getItem('access_token');
     
     if (!token) {
-      console.warn('No access token found in localStorage, will retry in 10s');
       this.isConnecting = false;
       this.notifyStatusChange('error', 'No access token');
       
@@ -43,7 +42,6 @@ class NotificationWebSocket {
 
     const wsUrl = `wss://api.acrelis.ru/ws/notifications/?token=${encodeURIComponent(token)}`;
     
-    console.log('Connecting to WebSocket...');
     
     try {
       this.socket = new WebSocket(wsUrl);
@@ -54,7 +52,6 @@ class NotificationWebSocket {
       this.socket.onerror = (error) => this.handleError(error);
       
     } catch (error) {
-      console.error('WebSocket connection error:', error);
       this.isConnecting = false;
       this.notifyStatusChange('error', error.message);
       
@@ -65,7 +62,6 @@ class NotificationWebSocket {
   }
 
   handleOpen(event) {
-    console.log('✅ WebSocket connection established');
     this.isConnecting = false;
     this.reconnectAttempts = 0;
     this.notifyStatusChange('connected');
@@ -78,9 +74,7 @@ class NotificationWebSocket {
       
       switch(data.type) {
         case 'connected':
-          console.log('✅ WebSocket authenticated for user:', data.username);
           this.notifyStatusChange('authenticated', `User: ${data.username}`);
-          console.log('data', data)
           break;
           
         case 'notification':
@@ -96,7 +90,6 @@ class NotificationWebSocket {
           
         case 'pong':
           if (process.env.NODE_ENV === 'development') {
-            console.log('🏓 Pong received');
           }
           break;
           
@@ -106,13 +99,11 @@ class NotificationWebSocket {
           }
       }
     } catch (error) {
-      console.error('Error parsing WebSocket message:', error);
     }
   }
 
   getNotificationType(content) {
     const lowerContent = content.toLowerCase();
-    console.log(content)
     if (lowerContent.includes('ошибка') || lowerContent.includes('error')) {
       return 'error';
     } else if (lowerContent.includes('успех') || lowerContent.includes('success')) {
@@ -125,12 +116,10 @@ class NotificationWebSocket {
   }
 
   handleClose(event) {
-    console.log('📴 WebSocket disconnected, code:', event.code);
     this.isConnecting = false;
     this.stopPing();
     
     if (event.code === 401) {
-      console.warn('WebSocket authentication failed');
       this.notifyStatusChange('unauthorized', 'Authentication failed');
       this.handleTokenExpired();
       return;
@@ -142,7 +131,6 @@ class NotificationWebSocket {
     }
     
     if (event.code === 1006) {
-      console.warn('Connection failed (1006), retrying...');
       this.notifyStatusChange('error', 'Connection failed');
     } else {
       this.notifyStatusChange('disconnected', `Code: ${event.code}`);
@@ -154,7 +142,6 @@ class NotificationWebSocket {
   }
 
   handleError(error) {
-    console.error('WebSocket error:', error);
     this.isConnecting = false;
     this.notifyStatusChange('error', 'Connection error');
     
@@ -166,13 +153,11 @@ class NotificationWebSocket {
   }
 
   async handleTokenExpired() {
-    console.log('Attempting to refresh token...');
     
     try {
       const refreshToken = localStorage.getItem('refresh_token');
       
       if (!refreshToken) {
-        console.error('No refresh token available');
         this.notifyStatusChange('error', 'Login required');
         return;
       }
@@ -188,7 +173,6 @@ class NotificationWebSocket {
       if (response.ok) {
         const data = await response.json();
         localStorage.setItem('access_token', data.access);
-        console.log('Token refreshed successfully');
         
         setTimeout(() => {
           if (this.shouldReconnect && !this.isManuallyDisconnected) {
@@ -197,7 +181,6 @@ class NotificationWebSocket {
         }, 1000);
         
       } else {
-        console.error('Token refresh failed');
         this.notifyStatusChange('error', 'Session expired');
         
         setTimeout(() => {
@@ -208,7 +191,6 @@ class NotificationWebSocket {
       }
       
     } catch (error) {
-      console.error('Error refreshing token:', error);
       this.notifyStatusChange('error', 'Token refresh failed');
       
       setTimeout(() => {
@@ -225,13 +207,11 @@ class NotificationWebSocket {
     }
 
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error('Max reconnection attempts reached');
       this.notifyStatusChange('error', 'Max reconnection attempts reached');
       return;
     }
     
     this.reconnectAttempts++;
-    console.log(`Attempting to reconnect (${this.reconnectAttempts})...`);
     
     const delay = Math.min(
       this.reconnectInterval * Math.pow(1.5, this.reconnectAttempts - 1),
@@ -271,7 +251,6 @@ class NotificationWebSocket {
         this.socket.send(JSON.stringify(data));
         return true;
       } catch (error) {
-        console.error('Error sending WebSocket message:', error);
         return false;
       }
     }
@@ -305,7 +284,6 @@ class NotificationWebSocket {
       try {
         callback(notification);
       } catch (error) {
-        console.error('Error in notification callback:', error);
       }
     });
   }
@@ -315,13 +293,11 @@ class NotificationWebSocket {
       try {
         callback(status, details);
       } catch (error) {
-        console.error('Error in status callback:', error);
       }
     });
   }
 
   disconnect() {
-    console.log('Manual WebSocket disconnect');
     this.shouldReconnect = false;
     this.isManuallyDisconnected = true;
     this.stopPing();
@@ -336,7 +312,6 @@ class NotificationWebSocket {
   }
 
   reconnect() {
-    console.log('Manual WebSocket reconnect');
     this.isManuallyDisconnected = false;
     this.shouldReconnect = true;
     this.reconnectAttempts = 0;

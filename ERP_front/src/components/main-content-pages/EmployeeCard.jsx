@@ -84,7 +84,6 @@ const EmployeeCard = ({ useMockData = false }) => {
       }
       
       const employeeData = await response.json();
-      console.log('✅ Данные сотрудника получены из API:', employeeData);
       
       if (!employeeData || !employeeData.id) {
         throw new Error('Сотрудник не найден');
@@ -121,14 +120,12 @@ const EmployeeCard = ({ useMockData = false }) => {
       setEmployee(formattedEmployeeData);
       
     } catch (error) {
-      console.error('❌ Ошибка загрузки данных сотрудника:', error);
       setError('Не удалось загрузить данные сотрудника. Проверьте подключение.');
       
       // Fallback на getEmployeeById если API запрос не удался
       try {
         const fallbackData = await getEmployeeById(employeeId, useMockData);
         if (fallbackData && fallbackData.id) {
-          console.log('✅ Используем fallback данные:', fallbackData);
           // Форматируем Telegram и в fallback данных
           const formattedFallbackData = {
             ...fallbackData,
@@ -139,7 +136,6 @@ const EmployeeCard = ({ useMockData = false }) => {
           setError(null);
         }
       } catch (fallbackError) {
-        console.error('❌ Fallback тоже не сработал:', fallbackError);
         setEmployee(null);
       }
     } finally {
@@ -191,10 +187,8 @@ const EmployeeCard = ({ useMockData = false }) => {
             src={imageUrl} 
             alt={name || 'Сотрудник'}
             onError={() => {
-              console.log('❌ Ошибка загрузки аватарки:', imageUrl);
               setAvatarError(true);
             }}
-            onLoad={() => console.log('✅ Аватарка загружена:', imageUrl)}
           />
         </div>
       );

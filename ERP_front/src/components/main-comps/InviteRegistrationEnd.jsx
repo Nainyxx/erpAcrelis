@@ -62,7 +62,6 @@ function InviteRegistrationEnd() {
       setInviteData(parsedData);
       
     } catch (error) {
-      console.error('Ошибка загрузки данных:', error);
       localStorage.removeItem('invite_registration_data');
       if (safeToken) {
         localStorage.removeItem(`invite_step1_${safeToken}`);
@@ -211,7 +210,6 @@ function InviteRegistrationEnd() {
         }
       };
       
-      console.log('📤 Отправляемые данные:', JSON.stringify(registrationData, null, 2));
       
       await registerByInvite(token, registrationData);
       
@@ -226,7 +224,6 @@ function InviteRegistrationEnd() {
       }, 1500);
       
     } catch (err) {
-      console.error('❌ Ошибка при регистрации:', err);
       
       // Проверяем тип ошибки
       const errorMessage = err.message.toLowerCase();

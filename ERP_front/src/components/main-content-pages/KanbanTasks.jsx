@@ -96,7 +96,6 @@ const KanbanTasks = ({ useMockData = true }) => {
         initials = 'И';
       }
     } catch (error) {
-      console.error('Ошибка при получении инициалов:', error);
       initials = 'И';
     }
     
@@ -147,7 +146,6 @@ const KanbanTasks = ({ useMockData = true }) => {
               left: 0
             }}
             onError={(e) => {
-              console.log('Ошибка загрузки аватарки для', name, 'URL:', fullImageUrl);
               e.target.style.display = 'none';
               // Показываем инициалы
               e.target.nextSibling.style.display = 'flex';
@@ -211,14 +209,12 @@ const KanbanTasks = ({ useMockData = true }) => {
     setError(null);
     
     try {
-      console.log(`🔄 Загружаю задачи для проекта ${projectId}`);
       
       // Сначала загружаем данные проекта
       try {
         const projectData = await getProjectById(projectId, useMockData);
         setProjectName(projectData.name || 'Проект');
       } catch (projectError) {
-        console.error('Ошибка загрузки проекта:', projectError);
         setProjectName('Проект');
       }
       
@@ -233,9 +229,7 @@ const KanbanTasks = ({ useMockData = true }) => {
       
       // API возвращает {results: [], count: X}
       const apiTasks = response.results || [];
-      
-      console.log(`✅ Получено ${apiTasks.length} задач для проекта`);
-      console.log('Название проекта:', projectName); // Для отладки
+
       
       // Конвертируем задачи API в формат канбана
       const kanbanTasks = apiTasks.map(task => {
@@ -258,7 +252,7 @@ const KanbanTasks = ({ useMockData = true }) => {
       setTasks(kanbanTasks);
       
     } catch (error) {
-      console.error('❌ Ошибка загрузки задач:', error);
+
       setError('Не удалось загрузить задачи. Проверьте подключение.');
       setTasks([]);
     } finally {
@@ -272,7 +266,6 @@ const KanbanTasks = ({ useMockData = true }) => {
       const staffData = staffResult.employees || [];
       setAllStaff(staffData);
     } catch (error) {
-      console.error('Ошибка загрузки сотрудников:', error);
     }
   };
 
@@ -436,7 +429,6 @@ const KanbanTasks = ({ useMockData = true }) => {
         hours: newTask.hours || 0
       };
 
-      console.log('Создаю задачу для проекта:', projectId, taskData);
       
       await createTask(taskData, useMockData);
       
@@ -457,7 +449,6 @@ const KanbanTasks = ({ useMockData = true }) => {
       
       
     } catch (error) {
-      console.error('❌ Ошибка создания задачи:', error);
       
       let userFriendlyError = 'Не удалось создать задачу';
       

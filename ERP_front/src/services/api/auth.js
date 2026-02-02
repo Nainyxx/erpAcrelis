@@ -16,7 +16,6 @@ class SimpleAuthService {
   static setTokens(accessToken, refreshToken) {
     localStorage.setItem(TOKEN_KEYS.ACCESS, accessToken);
     localStorage.setItem(TOKEN_KEYS.REFRESH, refreshToken);
-    console.log('✅ Токены сохранены в localStorage');
   }
 
   // Получить access token

@@ -6,18 +6,8 @@ import './ProjectsList.css';
 
 const PROJECTS_PER_PAGE = 20;
 
-// Функции для работы с localStorage
-const getStoredPage = () => {
-  const stored = localStorage.getItem('projects-page');
-  return stored ? parseInt(stored) : 1;
-};
-
-const savePageToStorage = (page) => {
-  localStorage.setItem('projects-page', page.toString());
-};
-
-const ProjectsList = ({ useMockData = true, onProjectSelect }) => {
-  const navigate = useNavigate(); // Инициализируем navigate
+const ProjectsList = ({ useMockData = true, showNotification }) => {
+  const navigate = useNavigate(); // Добавляем navigate
   
   const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -26,11 +16,6 @@ const ProjectsList = ({ useMockData = true, onProjectSelect }) => {
   const [projectTypes, setProjectTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
-  // Пагинация через localStorage
-  const [currentPage, setCurrentPage] = useState(getStoredPage());
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalProjects, setTotalProjects] = useState(0);
   
   // Создание проекта
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -49,14 +34,12 @@ const ProjectsList = ({ useMockData = true, onProjectSelect }) => {
 
   const searchTimeoutRef = useRef(null);
 
-  // Загрузка проектов с пагинацией
+  // Загрузка проектов
   const loadProjects = async () => {
     setLoading(true);
     setError(null);
     
     try {
-      console.log(`🔄 Загружаю проекты: страница ${currentPage}, тип = ${selectedType}, поиск = ${searchQuery}`);
-      
       const filters = {};
       
       if (selectedType !== 'all') {
@@ -67,41 +50,21 @@ const ProjectsList = ({ useMockData = true, onProjectSelect }) => {
         filters.search = searchQuery.trim();
       }
       
-      // Добавляем пагинацию
-      if (currentPage > 1) {
-        filters.page = currentPage;
-      }
-      
       const result = await getProjects(useMockData, filters);
-      
-      console.log(`✅ Получено ${result.projects?.length || 0} проектов на странице ${currentPage}`);
-      console.log(`📊 Всего проектов: ${result.pagination?.count || 0}`);
       
       setProjects(result.projects || []);
       setProjectTypes(result.projectTypes || []);
       
-      // Устанавливаем пагинацию
-      if (result.pagination) {
-        setTotalProjects(result.pagination.count);
-        setTotalPages(result.pagination.total_pages || 1);
-      } else {
-        setTotalProjects(result.projects?.length || 0);
-        setTotalPages(1);
-      }
-      
     } catch (error) {
-      console.error('❌ Ошибка загрузки проектов:', error);
       setError('Не удалось загрузить проекты. Проверьте подключение.');
       setProjects([]);
       setProjectTypes([]);
-      setTotalProjects(0);
-      setTotalPages(1);
     } finally {
       setLoading(false);
     }
   };
 
-  // Обработчик изменения поиска с дебаунсом
+  // Обработчик изменения поиска
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchInput(value);
@@ -128,29 +91,10 @@ const ProjectsList = ({ useMockData = true, onProjectSelect }) => {
     }
   };
 
-  // Сохраняем страницу в localStorage при изменении
-  useEffect(() => {
-    savePageToStorage(currentPage);
-  }, [currentPage]);
-
-  // Сброс страницы при изменении фильтров
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [selectedType, searchQuery]);
-
-  // Загрузка проектов при изменении фильтров или страницы
+  // Загрузка проектов при изменении фильтров
   useEffect(() => {
     loadProjects();
-  }, [useMockData, selectedType, searchQuery, currentPage]);
-
-  // Очищаем таймер при размонтировании
-  useEffect(() => {
-    return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-    };
-  }, []);
+  }, [useMockData, selectedType, searchQuery]);
 
   const getTypeLabel = (type) => {
     const typeMap = {
@@ -164,6 +108,7 @@ const ProjectsList = ({ useMockData = true, onProjectSelect }) => {
     return typeMap[type] || 'Проект';
   };
 
+  // ОБРАБОТЧИК СОЗДАНИЯ ПРОЕКТА
   const handleCreateProject = async () => {
     if (!newProject.name.trim() || !newProject.customer.trim() || !newProject.deadline) {
       setCreateError('Заполните обязательные поля: Название, Заказчик, Дедлайн');
@@ -174,11 +119,9 @@ const ProjectsList = ({ useMockData = true, onProjectSelect }) => {
     setCreateError('');
 
     try {
-      console.log('Создаю проект:', newProject);
       
       const createdProject = await createProject(newProject, useMockData);
       
-      console.log('✅ Проект создан:', createdProject);
       
       setShowCreateModal(false);
       setNewProject({
@@ -192,165 +135,43 @@ const ProjectsList = ({ useMockData = true, onProjectSelect }) => {
         available: false
       });
       
-      // Сбрасываем на первую страницу при создании нового проекта
-      setCurrentPage(1);
+      // Перезагружаем список проектов
       await loadProjects();
       
+      // Показываем уведомление
+      if (showNotification) {
+        showNotification({
+          type: 'success',
+          message: `Проект "${createdProject.name}" успешно создан`
+        });
+      }
       
     } catch (error) {
-      console.error('❌ Ошибка создания проекта:', error);
       setCreateError(error.message || 'Ошибка при создании проекта');
     } finally {
       setCreating(false);
     }
   };
 
-  // Пагинация - обработчик смены страницы
-  const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= totalPages) {
-      setCurrentPage(newPage);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  };
-
-  // Генерация номеров страниц для отображения
-  const getPageNumbers = () => {
-    const pages = [];
-    const maxVisiblePages = 5;
-    
-    if (totalPages <= maxVisiblePages) {
-      // Если страниц мало, показываем все
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      // Если страниц много, показываем с многоточиями
-      if (currentPage <= 3) {
-        // В начале
-        pages.push(1, 2, 3, 4, '...', totalPages);
-      } else if (currentPage >= totalPages - 2) {
-        // В конце
-        pages.push(1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
-      } else {
-        // В середине
-        pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
-      }
-    }
-    
-    return pages;
-  };
-
-  // Рассчитываем отображаемый диапазон проектов
-  const startProject = (currentPage - 1) * PROJECTS_PER_PAGE + 1;
-  const endProject = Math.min(currentPage * PROJECTS_PER_PAGE, totalProjects);
-
-const generateAvatar = (member) => {
-  const name = member?.staff_name || 'Исполнитель';
-  const imageUrl = member?.staff_image ? 
-    `https://api.acrelis.ru/media/${member.staff_image}` : 
-    null;
-  
-  const colors = ['#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0', '#118AB2', '#EF476F'];
-  
-  const words = name.split(' ').filter(word => word.length > 0);
-  let initials = '';
-  
-  if (words.length >= 2) {
-    initials = words[0][0] + words[1][0];
-  } else if (words.length === 1) {
-    initials = words[0][0];
-  } else {
-    initials = 'И';
-  }
-  
-  const colorIndex = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length;
-  
-  if (imageUrl) {
-    return (
-      <div className="avatar" style={{ backgroundColor: colors[colorIndex] }}>
-        <img 
-          src={imageUrl} 
-          alt={name}
-          onError={(e) => {
-            e.target.style.display = 'none';
-            const span = e.target.parentElement.querySelector('.avatar-initials');
-            if (span) span.style.display = 'block';
-          }}
-          className="avatar-image"
-        />
-        <span className="avatar-initials" style={{ display: 'none' }}>
-          {initials.toUpperCase()}
-        </span>
-      </div>
-    );
-  }
-  
-  return (
-    <div className="avatar" style={{ backgroundColor: colors[colorIndex] }}>
-      {initials.toUpperCase()}
-    </div>
-  );
-};
-
-const renderTeamAvatars = (team) => {
-  if (!team || team.length === 0) {
-    return <div className="team-avatars">Нет исполнителей</div>;
-  }
-  
-  const maxVisible = 4;
-  const visibleTeam = team.slice(0, maxVisible);
-  const extraCount = team.length > maxVisible ? team.length - maxVisible : 0;
-
-  return (
-    <div className="team-avatars">
-      {visibleTeam.map((member, index) => (
-        <div key={member?.id || index} className="avatar-wrapper" style={{ zIndex: maxVisible - index }}>
-          {generateAvatar(member)}
-        </div>
-      ))}
-      {extraCount > 0 && (
-        <div className="avatar extra-avatar">
-          +{extraCount}
-        </div>
-      )}
-    </div>
-  );
-};
-
-  // Обработчик клика по проекту - используем navigate
+  // Обработчик клика по проекту - переход на его карточку
   const handleProjectSelect = (project) => {
-    // Если есть переданный обработчик, используем его
-    if (onProjectSelect && typeof onProjectSelect === 'function') {
-      onProjectSelect(project);
-    } else {
-      // Иначе используем navigate
-      navigate(`/projects/${project.id}`);
-    }
+    navigate(`/projects/${project.id}`);
   };
 
-  // Универсальный компонент загрузки
-  const LoadingSpinner = ({ message = "Загрузка проектов..." }) => (
+  // Компонент загрузки
+  const LoadingSpinner = () => (
     <div className="loading-container">
       <div className="loading-spinner"></div>
-      <h3 className="loading-title">{message}</h3>
-      <p className="loading-subtitle">
-        Подготавливаем список проектов...
-      </p>
+      <h3 className="loading-title">Загрузка проектов...</h3>
     </div>
   );
 
-  // Универсальный компонент ошибки
-  const ErrorMessage = ({ message, onRetry }) => (
+  // Компонент ошибки
+  const ErrorMessage = ({ message }) => (
     <div className="error-container">
       <div className="error-icon">⚠️</div>
       <h3 className="error-title">Ошибка загрузки</h3>
       <p className="error-message">{message}</p>
-      <button 
-        onClick={onRetry}
-        className="error-retry-btn"
-      >
-        Повторить попытку
-      </button>
     </div>
   );
 
@@ -373,78 +194,7 @@ const renderTeamAvatars = (team) => {
         <div className="projects-header">
           <h1 className="projects-title">Проекты</h1>
         </div>
-        <ErrorMessage 
-          message={error}
-          onRetry={loadProjects}
-        />
-      </div>
-    );
-  }
-
-  // Если проектов нет
-  if (projects.length === 0 && !searchQuery && selectedType === 'all') {
-    return (
-      <div className="projects-container">
-        <div className="projects-header">
-          <h1 className="projects-title">Проекты</h1>
-        </div>
-        
-        <div className="filters-container">
-          <div className="filters">
-            <div className="filter-group">
-              <select 
-                className="filter-select" 
-                value={selectedType}
-                onChange={(e) => setSelectedType(e.target.value)}
-              >
-                {projectTypes.map(type => (
-                  <option key={type.id} value={type.id}>
-                    {type.label} ({type.count || 0})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="filter-group search-group">
-              <input
-                type="text"
-                placeholder="Поиск проектов..."
-                className="search-input"
-                value={searchInput}
-                onChange={handleSearchChange}
-                onBlur={handleSearchBlur}
-              />
-            </div>
-          </div>
-          
-          <button 
-            className="create-project-btn"
-            onClick={() => setShowCreateModal(true)}
-          >
-            Создать проект
-          </button>
-        </div>
-
-        <div className="no-data-container">
-          <div className="no-data-icon">📋</div>
-          <h4>Проектов пока нет</h4>
-          <p>Создайте первый проект, чтобы начать работу</p>
-          <button 
-            className="create-first-project-btn"
-            onClick={() => setShowCreateModal(true)}
-          >
-            Создать проект
-          </button>
-        </div>
-
-        {/* Модальное окно создания проекта */}
-        {showCreateModal && (
-          <div className="modal-overlay123">
-            <div className="modal-content123">
-              
-            </div>
-          </div>
-        )}
+        <ErrorMessage message={error} />
       </div>
     );
   }
@@ -455,6 +205,7 @@ const renderTeamAvatars = (team) => {
         <h1 className="projects-title">Проекты</h1>
       </div>
 
+      {/* ФИЛЬТРЫ И КНОПКА СОЗДАНИЯ */}
       <div className="filters-container">
         <div className="filters">
           <div className="filter-group">
@@ -463,6 +214,7 @@ const renderTeamAvatars = (team) => {
               value={selectedType}
               onChange={(e) => setSelectedType(e.target.value)}
             >
+              <option value="all">Все проекты</option>
               {projectTypes.map(type => (
                 <option key={type.id} value={type.id}>
                   {type.label} ({type.count || 0})
@@ -483,6 +235,7 @@ const renderTeamAvatars = (team) => {
           </div>
         </div>
         
+        {/* КНОПКА СОЗДАНИЯ ПРОЕКТА */}
         <button 
           className="create-project-btn"
           onClick={() => setShowCreateModal(true)}
@@ -491,8 +244,9 @@ const renderTeamAvatars = (team) => {
         </button>
       </div>
 
+      {/* ТАБЛИЦА ПРОЕКТОВ */}
       <div className="projects-table">
-        <div className="header-cell" id="123name">Название</div>
+        <div className="header-cell">Название</div>
         <div className="header-cell">Исполнитель</div>
         <div className="header-cell">Тип</div>
         <div className="header-cell">Статус</div>
@@ -506,28 +260,26 @@ const renderTeamAvatars = (team) => {
           </div>
         ) : (
           projects.map((project) => (
-            <div className="project-row" key={project.id}>
-              <div onClick={() => handleProjectSelect(project)}>
-                <div className="project-name-text">{project.name}</div>
+            <div className="project-row" key={project.id} onClick={() => handleProjectSelect(project)}>
+              <div className="project-name-text">{project.name}</div>
+              
+              <div>
+                <span className="project-performer">Исполнители</span>
               </div>
               
-              <div onClick={() => handleProjectSelect(project)}>
-                {renderTeamAvatars(project.team)}
-              </div>
-              
-              <div onClick={() => handleProjectSelect(project)}>
+              <div>
                 <span className={`project-type ${project.type}`}>
                   {project.typeLabel || getTypeLabel(project.type)}
                 </span>
               </div>
               
-              <div onClick={() => handleProjectSelect(project)}>
+              <div>
                 <span className={`project-status ${project.status}`}>
                   {project.status_display || 'Планирование'}
                 </span>
               </div>
               
-              <div onClick={() => handleProjectSelect(project)}>
+              <div>
                 <div className="project-hours">{project.hours} ч</div>
               </div>
             </div>
@@ -535,52 +287,7 @@ const renderTeamAvatars = (team) => {
         )}
       </div>
 
-      {/* Пагинация */}
-      {totalPages > 1 && (
-        <div className="projects-pagination">
-          <div className="pagination-info">
-            <span className="pagination-highlight">
-              {startProject}-{endProject}
-            </span> из <span className="pagination-highlight">{totalProjects}</span> проектов
-          </div>
-          
-          <div className="pagination-controls">
-            <button 
-              className={`pagination-btn prev-btn ${currentPage === 1 ? 'disabled' : ''}`}
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-            >
-              ← Назад
-            </button>
-            
-            <div className="pagination-pages">
-              {getPageNumbers().map((page, index) => (
-                page === '...' ? (
-                  <span key={`ellipsis-${index}`} className="pagination-ellipsis">...</span>
-                ) : (
-                  <button
-                    key={page}
-                    className={`pagination-page ${currentPage === page ? 'active' : ''}`}
-                    onClick={() => handlePageChange(page)}
-                  >
-                    {page}
-                  </button>
-                )
-              ))}
-            </div>
-            
-            <button 
-              className={`pagination-btn next-btn ${currentPage === totalPages ? 'disabled' : ''}`}
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-            >
-              Вперед →
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Модальное окно создания проекта */}
+      {/* МОДАЛЬНОЕ ОКНО СОЗДАНИЯ ПРОЕКТА */}
       {showCreateModal && (
         <div className="modal-overlay123">
           <div className="modal-content123">

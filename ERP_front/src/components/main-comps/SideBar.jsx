@@ -1,13 +1,14 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import './SideBar.css';
 import ProjectsIcon from "../../assets/sidebar-projects.svg";
 import MyTasksIcon from "../../assets/sidebar-mytasks.svg";
 import AccountingIcon from "../../assets/sidebar-accounting.svg";
 import StaffIcon from "../../assets/sidebar-staff.svg";
 
-function SideBar({ currentPath }) {
+function SideBar() {
   const navigate = useNavigate();
+  const location = useLocation();
   
   const menuItems = [
     { id: "projects", name: "Проекты", icon: ProjectsIcon, path: "/projects" },
@@ -17,22 +18,30 @@ function SideBar({ currentPath }) {
   ];
 
   const getActivePage = () => {
-    const path = currentPath || window.location.pathname;
+    // Получаем текущий URL целиком
+    const currentUrl = window.location.href;
     
-    if (path === '/my-tasks' || path.startsWith('/tasks/')) {
+    // Извлекаем часть после домена
+    const urlPath = currentUrl.split(window.location.origin)[1] || '';
+    
+    // Проверяем каждый возможный путь
+    if (urlPath.includes('/my-tasks') || urlPath.includes('/tasks/')) {
       return 'mytasks';
     }
-    else if (path === '/projects' || path.startsWith('/projects/')) {
+    else if (urlPath.includes('/projects') || urlPath.includes('/project/')) {
       return 'projects';
     }
-    else if (path === '/staff' || path.startsWith('/staff/')) {
+    else if (urlPath.includes('/staff')) {
       return 'staff';
     }
-    else if (path === '/accounting') {
+    else if (urlPath.includes('/accounting')) {
       return 'accounting';
     }
+    else if (urlPath === '/' || urlPath === '' || urlPath === '/#' || urlPath === '#/') {
+      return 'projects';
+    }
     
-    return 'projects'; 
+    return '';
   };
 
   const handleItemClick = (path) => {
@@ -49,8 +58,12 @@ function SideBar({ currentPath }) {
           className={`sidebar-item ${activePage === item.id ? 'active' : ''}`}
           onClick={() => handleItemClick(item.path)}
         >
-          <img src={item.icon} alt={item.name} className="sidebar-icon" />
-          <span>{item.name}</span>
+          <img 
+            src={item.icon} 
+            alt={item.name} 
+            className="sidebar-icon"
+          />
+          <span className="sidebar-text">{item.name}</span>
         </button>
       ))}
     </div>

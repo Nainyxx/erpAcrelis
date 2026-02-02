@@ -99,18 +99,14 @@ const MyTasks = ({ useMockData = true }) => {
   // Инициализация - получаем текущего пользователя
   useEffect(() => {
     const user = getCurrentUser();
-    console.log('🔄 Текущий пользователь из localStorage:', user);
     setCurrentUser(user);
     
     // Сразу устанавливаем фильтр по staff_id текущего пользователя
     if (user && user.staff_id) {
-      console.log(`✅ Устанавливаем фильтр по staff_id: ${user.staff_id}`);
       setSelectedPerformer(user.staff_id.toString());
     } else if (user && user.user_id) {
-      console.log(`⚠️ Staff_id не найден, используем user_id: ${user.user_id}`);
       setSelectedPerformer(user.user_id.toString());
     } else {
-      console.warn('⚠️ Не удалось определить ID пользователя, показываем все задачи');
       setSelectedPerformer('all');
     }
     
@@ -165,13 +161,10 @@ const MyTasks = ({ useMockData = true }) => {
       // Проверяем, есть ли текущий пользователь в списке
       if (currentUser && currentUser.staff_id) {
         const userExists = performersList.find(p => p.id === currentUser.staff_id.toString());
-        if (!userExists) {
-          console.warn(`⚠️ Текущий пользователь (staff_id: ${currentUser.staff_id}) не найден в списке сотрудников`);
-        }
+
       }
       
     } catch (error) {
-      console.error('Ошибка загрузки сотрудников:', error);
     }
   };
 
@@ -222,11 +215,9 @@ const MyTasks = ({ useMockData = true }) => {
       // Фильтр по исполнителю
       if (selectedPerformer && selectedPerformer !== 'all') {
         filters.performer = selectedPerformer;
-        console.log(`🔍 Фильтр по исполнителю: ${selectedPerformer}`);
         
         // Добавляем информацию о текущем пользователе
         if (currentUser && currentUser.staff_id && selectedPerformer === currentUser.staff_id.toString()) {
-          console.log('✅ Фильтр установлен на текущего пользователя');
         }
       }
       
@@ -242,7 +233,6 @@ const MyTasks = ({ useMockData = true }) => {
       // Всегда добавляем сортировку по дедлайну
       filters.ordering = '-deadline';
       
-      console.log('📡 Фильтры для загрузки задач:', filters);
       
       // Отправляем запрос с фильтрами
       const apiResponse = await getTasks(useMockData, filters);
@@ -277,14 +267,12 @@ const MyTasks = ({ useMockData = true }) => {
         };
       });
       
-      console.log(`✅ Загружено ${formattedTasks.length} задач из ${totalCount}, страница: ${currentPage}/${calculatedTotalPages}`);
       
       setTasks(formattedTasks);
       setTotalTasks(totalCount);
       setTotalPages(calculatedTotalPages);
       
     } catch (error) {
-      console.error('❌ Ошибка загрузки задач:', error);
       setError('Не удалось загрузить задачи. Проверьте подключение.');
       setTasks([]);
       setTotalTasks(0);
@@ -301,7 +289,6 @@ const MyTasks = ({ useMockData = true }) => {
       const projectsList = projectsResult.projects || [];
       setAllProjects(projectsList);
     } catch (error) {
-      console.error('Ошибка загрузки проектов:', error);
     }
   };
 
@@ -571,9 +558,7 @@ const MyTasks = ({ useMockData = true }) => {
       await loadTasks();
       
       
-    } catch (error) {
-      console.error('❌ Ошибка создания задачи:', error);
-      
+    } catch (error) {      
       let userFriendlyError = 'Не удалось создать задачу';
       
       if (error.message.includes('API Error: 400')) {

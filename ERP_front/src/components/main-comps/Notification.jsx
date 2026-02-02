@@ -14,11 +14,9 @@ const NotificationContainer = () => {
 
   // Подключение к WebSocket при монтировании
   useEffect(() => {
-    console.log('📱 NotificationContainer mounted - subscribing to WebSocket');
     
     // Проверяем, не подписаны ли мы уже
     if (hasSubscribedRef.current) {
-      console.log('⚠️ Already subscribed, skipping duplicate subscription');
       return;
     }
     
@@ -26,7 +24,6 @@ const NotificationContainer = () => {
     
     // Подписка на уведомления
     const unsubscribeNotifications = notificationWebSocket.subscribe((notification) => {
-      console.log('🔔 New notification received:', notification);
       
       // Генерируем уникальный ID для уведомления, чтобы избежать дубликатов
       const uniqueId = `${notification.timestamp}_${Math.random()}`;
@@ -40,7 +37,6 @@ const NotificationContainer = () => {
         );
         
         if (exists) {
-          console.log('⚠️ Duplicate notification detected, skipping');
           return prev;
         }
         
@@ -73,7 +69,7 @@ const NotificationContainer = () => {
     };
     
     if (shouldConnect()) {
-      console.log('🚀 Starting WebSocket connection...');
+
       setTimeout(() => {
         notificationWebSocket.connect();
       }, 1000);
@@ -81,7 +77,6 @@ const NotificationContainer = () => {
 
     // Очистка при размонтировании
     return () => {
-      console.log('📱 NotificationContainer unmounting - unsubscribing');
       unsubscribeNotifications();
       hasSubscribedRef.current = false;
     };

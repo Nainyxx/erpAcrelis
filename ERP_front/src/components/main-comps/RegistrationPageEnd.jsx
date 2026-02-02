@@ -28,7 +28,6 @@ function RegistrationPageEnd() {
         const { username } = JSON.parse(savedData);
         setFormData(prev => ({ ...prev, username }));
       } catch (err) {
-        console.error('Ошибка загрузки данных из первого шага:', err);
         // Если нет данных, возвращаем на первый шаг
         navigate('/register');
       }

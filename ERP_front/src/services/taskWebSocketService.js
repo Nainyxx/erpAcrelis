@@ -47,15 +47,12 @@ class TaskWebSocketService {
             const token = localStorage.getItem('access_token');
             
             if (!token) {
-                console.warn('⚠️ Токен не найден в localStorage');
                 return null;
             }
             
-            console.log('✅ Токен получен');
             return token;
             
         } catch (error) {
-            console.error('❌ Ошибка получения токена:', error);
             return null;
         }
     }
@@ -76,7 +73,6 @@ class TaskWebSocketService {
         this.connectionAttempts++;
         this.isAuthenticated = false; // Сбрасываем флаг аутентификации
         
-        console.log(`🔄 Попытка подключения ${this.connectionAttempts}/${this.maxConnectionAttempts} для задачи ${this.taskId}`);
         
         // Уведомляем о начале переподключения
         this.callbacks.reconnecting.forEach(callback => 
@@ -86,7 +82,6 @@ class TaskWebSocketService {
         const token = this.getAuthToken();
         
         if (!token) {
-            console.error('❌ Не могу подключиться: нет токена авторизации');
             this.isConnecting = false;
             this.scheduleReconnect();
             return;
@@ -95,7 +90,6 @@ class TaskWebSocketService {
         // Формируем правильный URL
         const wsUrl = `wss://api.acrelis.ru/ws/task/${this.taskId}/comments/?token=${encodeURIComponent(token)}`;
         
-        console.log(`🔌 Подключение к WebSocket для задачи ${this.taskId}`);
         
         try {
             this.ws = new WebSocket(wsUrl);
@@ -106,13 +100,11 @@ class TaskWebSocketService {
             this.ws.onerror = this.handleError.bind(this);
             
         } catch (error) {
-            console.error('❌ Ошибка создания WebSocket:', error);
             this.handleError(error);
         }
     }
 
     handleOpen() {
-        console.log('✅ WebSocket подключен');
         
         this.isConnecting = false;
         this.connectionAttempts = 0;
@@ -127,26 +119,22 @@ class TaskWebSocketService {
     handleMessage(event) {
         try {
             const data = JSON.parse(event.data);
-            console.log('📨 WebSocket сообщение:', data.type);
             
             this.processMessage(data);
             
         } catch (error) {
-            console.error('❌ Ошибка обработки сообщения:', error, event.data);
         }
     }
 
     processMessage(data) {
         switch(data.type) {
             case 'comment_added':
-                console.log('💬 Новый комментарий:', data.comment);
                 this.callbacks.comment.forEach(callback => callback(data.comment));
                 break;
                 
             case 'auth_success':
                 this.isAuthenticated = true;
                 clearTimeout(this.authTimeout); // Очищаем таймаут аутентификации
-                console.log('🔐 Аутентификация успешна');
                 this.callbacks.auth.forEach(callback => callback());
                 
                 // Отправляем сообщения из очереди после аутентификации
@@ -156,17 +144,13 @@ class TaskWebSocketService {
             case 'auth_error':
                 this.isAuthenticated = false;
                 clearTimeout(this.authTimeout);
-                console.error('🔐 Ошибка аутентификации:', data.message);
                 this.triggerError(new Error(`Аутентификация: ${data.message}`));
                 break;
                 
             case 'error':
-                console.error('⚠️ Серверная ошибка:', data.message);
                 this.triggerError(new Error(data.message));
                 break;
                 
-            default:
-                console.warn('⚠️ Неизвестный тип сообщения:', data.type);
         }
     }
 
@@ -175,14 +159,12 @@ class TaskWebSocketService {
         clearTimeout(this.authTimeout);
         this.authTimeout = setTimeout(() => {
             if (!this.isAuthenticated && this.isConnected()) {
-                console.warn('⏰ Таймаут аутентификации, переподключаемся...');
                 this.reconnect();
             }
         }, 5000);
     }
 
     handleClose(event) {
-        console.log(`🔌 WebSocket отключен: код=${event.code}, причина=${event.reason || 'нет'}`);
         
         this.isConnecting = false;
         this.isAuthenticated = false;
@@ -199,7 +181,6 @@ class TaskWebSocketService {
     }
 
     handleError(error) {
-        console.error('❌ WebSocket ошибка:', error);
         
         this.isConnecting = false;
         this.isAuthenticated = false;
@@ -224,14 +205,12 @@ class TaskWebSocketService {
             return;
         }
         
-        console.log(`📤 Обработка очереди сообщений: ${this.messageQueue.length} сообщений`);
         
         while (this.messageQueue.length > 0) {
             const message = this.messageQueue.shift();
             try {
                 this.sendMessage(message);
             } catch (error) {
-                console.error('❌ Ошибка отправки сообщения из очереди:', error);
                 // Можно добавить сообщение обратно в очередь или обработать ошибку
             }
         }
@@ -258,7 +237,6 @@ class TaskWebSocketService {
         
         const delay = this.getReconnectDelay();
         
-        console.log(`🔄 Переподключение через ${Math.round(delay/1000)}с...`);
         
         this.reconnectTimer = setTimeout(() => {
             if (this.shouldReconnect && !this.isConnected()) {
@@ -268,7 +246,6 @@ class TaskWebSocketService {
     }
 
     reconnect() {
-        console.log('🔄 Принудительное переподключение');
         this.disconnect();
         setTimeout(() => this.connect(), 1000);
     }
@@ -283,10 +260,8 @@ class TaskWebSocketService {
         try {
             const message = typeof data === 'string' ? data : JSON.stringify(data);
             this.ws.send(message);
-            console.log('📤 Отправлено:', data.type);
             return true;
         } catch (error) {
-            console.error('❌ Ошибка отправки:', error);
             throw error;
         }
     }
@@ -294,7 +269,6 @@ class TaskWebSocketService {
     sendComment(content) {
         // Проверяем аутентификацию
         if (!this.isAuthenticated) {
-            console.log('⏳ Комментарий добавлен в очередь, ожидание аутентификации...');
             
             // Добавляем в очередь и ждем аутентификации
             this.addToMessageQueue({
@@ -343,7 +317,6 @@ class TaskWebSocketService {
     }
 
     triggerError(error) {
-        console.error('🔥 Ошибка:', error.message);
         this.callbacks.error.forEach(callback => callback(error));
     }
 
@@ -360,7 +333,6 @@ class TaskWebSocketService {
             
             // Проверяем, не потеряли ли мы соединение
             if (this.lastHeartbeat && Date.now() - this.lastHeartbeat > this.heartbeatTimeout) {
-                console.warn('⚠️ Нет ответа от сервера, переподключаемся...');
                 this.reconnect();
                 return;
             }
@@ -368,7 +340,6 @@ class TaskWebSocketService {
             // Отправляем ping только если аутентифицированы
             if (this.isAuthenticated) {
                 this.sendMessage({ type: 'ping' });
-                console.debug('🏓 Отправлен ping');
             }
         }, this.heartbeatInterval);
     }
@@ -427,7 +398,6 @@ class TaskWebSocketService {
     // ==================== ОЧИСТКА ====================
 
     disconnect() {
-        console.log('👋 Отключение WebSocket сервиса');
         
         this.shouldReconnect = false;
         this.isAuthenticated = false;
