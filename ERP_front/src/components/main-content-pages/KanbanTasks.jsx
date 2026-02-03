@@ -284,7 +284,6 @@ const KanbanTasks = ({ useMockData = true }) => {
       const staffData = staffResult.employees || [];
       setAllStaff(staffData);
     } catch (error) {
-      console.error('Ошибка загрузки списка сотрудников:', error);
     }
   };
 
@@ -300,7 +299,6 @@ const KanbanTasks = ({ useMockData = true }) => {
     try {
       await loadStaffList(); // Загружаем список сотрудников перед открытием модалки
     } catch (error) {
-      console.error('Не удалось загрузить список сотрудников:', error);
     }
     
     setShowCreateModal(true);

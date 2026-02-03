@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom'; // Добавляем useNavigate
 import notificationWebSocket from '../../services/notificationWebSocket';
 import './Notification.css';
 
@@ -6,6 +7,7 @@ const NotificationContainer = () => {
   const [notifications, setNotifications] = useState([]);
   const notificationsRef = useRef([]);
   const hasSubscribedRef = useRef(false); // Новый ref для отслеживания подписки
+  const navigate = useNavigate(); // Хук для навигации
   
   // Обновляем ref при изменении notifications
   useEffect(() => {
@@ -69,7 +71,6 @@ const NotificationContainer = () => {
     };
     
     if (shouldConnect()) {
-
       setTimeout(() => {
         notificationWebSocket.connect();
       }, 1000);
@@ -128,7 +129,17 @@ const NotificationContainer = () => {
 
     const handleClick = () => {
       if (url) {
-        window.open(url, '_blank');
+        // Закрываем уведомление перед навигацией
+        handleClose();
+        
+        // Проверяем, является ли URL относительным путем
+        if (url.startsWith('/')) {
+          // Относительный путь - используем навигацию React Router
+          navigate(url);
+        } else {
+          // Внешний URL - открываем в текущем окне
+          window.location.href = url;
+        }
       }
     };
 
@@ -195,7 +206,7 @@ const NotificationContainer = () => {
             <div className="notification-message">{message}</div>
             {url && (
               <div className="notification-url">
-                <small>Нажмите, чтобы открыть</small>
+                <small>Нажмите, чтобы перейти</small>
               </div>
             )}
           </div>

@@ -194,11 +194,11 @@ function App() {
       
       <Routes>
         {/* Публичные маршруты */}
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegistrationPageStart />} />
-        <Route path="/register/step2" element={<RegistrationPageEnd />} />
-        <Route path="/staff/register/invite/:token" element={<InviteRegistrationStart />} />
-        <Route path="/staff/register/invite/:token/step2" element={<InviteRegistrationEnd />} />
+        <Route path="#/login" element={<LoginPage />} />
+        <Route path="#/register" element={<RegistrationPageStart />} />
+        <Route path="#/register/step2" element={<RegistrationPageEnd />} />
+        <Route path="#/staff/register/invite/:token" element={<InviteRegistrationStart />} />
+        <Route path="#/staff/register/invite/:token/step2" element={<InviteRegistrationEnd />} />
         
         {/* Защищённые маршруты */}
         <Route path="/*" element={

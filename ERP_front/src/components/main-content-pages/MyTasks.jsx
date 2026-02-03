@@ -161,7 +161,6 @@ const MyTasks = ({ useMockData = true }) => {
       setAllStaff(staffData);
       
     } catch (error) {
-      console.error('Ошибка загрузки списка сотрудников:', error);
     }
   };
 
@@ -280,7 +279,6 @@ const MyTasks = ({ useMockData = true }) => {
       const projectsList = projectsResult.projects || [];
       setAllProjects(projectsList);
     } catch (error) {
-      console.error('Ошибка загрузки проектов:', error);
     }
   };
 

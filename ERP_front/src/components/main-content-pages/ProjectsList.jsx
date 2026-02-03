@@ -1,17 +1,28 @@
 // ERP_front/src/components/main-content-pages/ProjectsList.jsx
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom'; // Добавляем useNavigate
+import { useNavigate } from 'react-router-dom';
 import { getProjects, createProject } from '../../services/api/api';
 import './ProjectsList.css';
 
 const PROJECTS_PER_PAGE = 20;
 
+const PROJECT_STATUS = [
+  { id: 'all', label: 'Все статусы' },
+  { id: 'draft', label: 'Черновик' },
+  { id: 'active', label: 'В работе' },
+  { id: 'paused', label: 'Приостановлен' },
+  { id: 'tests', label: 'Тестируется' },
+  { id: 'completed', label: 'Завершен' },
+  { id: 'cancelled', label: 'Отменен' },
+];
+
 const ProjectsList = ({ useMockData = true, showNotification }) => {
-  const navigate = useNavigate(); // Добавляем navigate
+  const navigate = useNavigate();
   
   const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState('all');
+  const [selectedStatus, setSelectedStatus] = useState('all'); // Новый фильтр по статусу
   const [projects, setProjects] = useState([]);
   const [projectTypes, setProjectTypes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,6 +55,11 @@ const ProjectsList = ({ useMockData = true, showNotification }) => {
       
       if (selectedType !== 'all') {
         filters.type = selectedType;
+      }
+      
+      // Добавляем фильтр по статусу для передачи на бэкенд
+      if (selectedStatus !== 'all') {
+        filters.status = selectedStatus;
       }
       
       if (searchQuery.trim()) {
@@ -94,7 +110,7 @@ const ProjectsList = ({ useMockData = true, showNotification }) => {
   // Загрузка проектов при изменении фильтров
   useEffect(() => {
     loadProjects();
-  }, [useMockData, selectedType, searchQuery]);
+  }, [useMockData, selectedType, selectedStatus, searchQuery]);
 
   const getTypeLabel = (type) => {
     const typeMap = {
@@ -106,6 +122,12 @@ const ProjectsList = ({ useMockData = true, showNotification }) => {
       'other': 'Другой'
     };
     return typeMap[type] || 'Проект';
+  };
+
+  // Функция для получения отображаемого названия статуса
+  const getStatusLabel = (status) => {
+    const statusObj = PROJECT_STATUS.find(s => s.id === status);
+    return statusObj ? statusObj.label : status;
   };
 
   // ОБРАБОТЧИК СОЗДАНИЯ ПРОЕКТА
@@ -161,7 +183,6 @@ const ProjectsList = ({ useMockData = true, showNotification }) => {
   // Функция для генерации аватарки
   const generateAvatar = (member) => {
     const name = member?.staff_name || member?.name || 'Исполнитель';
-    // Формируем правильный URL для изображения
     const imageUrl = member?.staff_image ? 
       `https://api.acrelis.ru/media/${member.staff_image}` : 
       member?.image_url || null;
@@ -284,6 +305,7 @@ const ProjectsList = ({ useMockData = true, showNotification }) => {
       {/* ФИЛЬТРЫ И КНОПКА СОЗДАНИЯ */}
       <div className="filters-container">
         <div className="filters">
+          {/* Фильтр по типу проекта */}
           <div className="filter-group">
             <select 
               className="filter-select" 
@@ -299,6 +321,22 @@ const ProjectsList = ({ useMockData = true, showNotification }) => {
             </select>
           </div>
 
+          {/* Фильтр по статусу проекта */}
+          <div className="filter-group">
+            <select 
+              className="filter-select" 
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+            >
+              {PROJECT_STATUS.map(status => (
+                <option key={status.id} value={status.id}>
+                  {status.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Поиск */}
           <div className="filter-group search-group">
             <input
               type="text"
@@ -330,7 +368,7 @@ const ProjectsList = ({ useMockData = true, showNotification }) => {
 
         {projects.length === 0 ? (
           <div className="no-projects">
-            {searchQuery || selectedType !== 'all' 
+            {searchQuery || selectedType !== 'all' || selectedStatus !== 'all'
               ? 'Проекты не найдены по заданным фильтрам' 
               : 'Нет доступных проектов'}
           </div>
@@ -353,7 +391,7 @@ const ProjectsList = ({ useMockData = true, showNotification }) => {
               
               <div>
                 <span className={`project-status ${project.status}`}>
-                  {project.status_display || 'Планирование'}
+                  {project.status_display || getStatusLabel(project.status)}
                 </span>
               </div>
               
