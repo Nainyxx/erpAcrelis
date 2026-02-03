@@ -261,6 +261,21 @@ function App() {
                   />
                 } />
                 
+                {/* Карточка задачи через канбан */}
+<Route path="/kanban/:projectId/:taskId" element={
+  <TaskCard 
+    useMockData={useMockData}
+    showNotification={() => {}}
+  />
+} />
+
+{/* Карточка задачи через Гант */}
+<Route path="/gantt/:projectId/:taskId" element={
+  <TaskCard 
+    useMockData={useMockData}
+    showNotification={() => {}}
+  />
+} />
                 {/* Бухгалтерия */}
                 <Route path="/accounting" element={
                   <AccountingPage showNotification={() => {}} />

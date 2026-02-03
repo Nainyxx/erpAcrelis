@@ -37,7 +37,7 @@ body {
 }
 
 .content {
-  width: calc(100% - 25vh);
+  width: calc(100%);
   min-width: 0;
   box-sizing: border-box;
   height: 100%;

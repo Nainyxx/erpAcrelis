@@ -1,3 +1,5 @@
+// MyTasks.jsx
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
@@ -158,13 +160,8 @@ const MyTasks = ({ useMockData = true }) => {
       setPerformers(performersList);
       setAllStaff(staffData);
       
-      // Проверяем, есть ли текущий пользователь в списке
-      if (currentUser && currentUser.staff_id) {
-        const userExists = performersList.find(p => p.id === currentUser.staff_id.toString());
-
-      }
-      
     } catch (error) {
+      console.error('Ошибка загрузки списка сотрудников:', error);
     }
   };
 
@@ -215,10 +212,6 @@ const MyTasks = ({ useMockData = true }) => {
       // Фильтр по исполнителю
       if (selectedPerformer && selectedPerformer !== 'all') {
         filters.performer = selectedPerformer;
-        
-        // Добавляем информацию о текущем пользователе
-        if (currentUser && currentUser.staff_id && selectedPerformer === currentUser.staff_id.toString()) {
-        }
       }
       
       if (searchQuery) {
@@ -232,7 +225,6 @@ const MyTasks = ({ useMockData = true }) => {
       
       // Всегда добавляем сортировку по дедлайну
       filters.ordering = '-deadline';
-      
       
       // Отправляем запрос с фильтрами
       const apiResponse = await getTasks(useMockData, filters);
@@ -267,7 +259,6 @@ const MyTasks = ({ useMockData = true }) => {
         };
       });
       
-      
       setTasks(formattedTasks);
       setTotalTasks(totalCount);
       setTotalPages(calculatedTotalPages);
@@ -289,6 +280,7 @@ const MyTasks = ({ useMockData = true }) => {
       const projectsList = projectsResult.projects || [];
       setAllProjects(projectsList);
     } catch (error) {
+      console.error('Ошибка загрузки проектов:', error);
     }
   };
 
@@ -305,7 +297,7 @@ const MyTasks = ({ useMockData = true }) => {
     navigate(`/tasks/${task.id}`);
   };
 
-  // Пагинация - простой вариант через localStorage
+  // Пагинация
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
       setCurrentPage(newPage);
@@ -557,7 +549,6 @@ const MyTasks = ({ useMockData = true }) => {
       setCurrentPage(1);
       await loadTasks();
       
-      
     } catch (error) {      
       let userFriendlyError = 'Не удалось создать задачу';
       
@@ -594,6 +585,20 @@ const MyTasks = ({ useMockData = true }) => {
     } finally {
       setCreating(false);
     }
+  };
+
+  // Функция для получения класса статуса
+  const getStatusClass = (status) => {
+    const statusClassMap = {
+      'draft': 'draft',
+      'new': 'new',
+      'active': 'active',
+      'paused': 'paused',
+      'completed': 'completed',
+      'failed': 'failed'
+    };
+    
+    return statusClassMap[status] || 'new';
   };
 
   // ЗАГРУЗКА
@@ -711,10 +716,6 @@ const MyTasks = ({ useMockData = true }) => {
     );
   }
 
-  // Рассчитываем отображаемый диапазон задач
-  const startTask = (currentPage - 1) * TASKS_PER_PAGE + 1;
-  const endTask = Math.min(currentPage * TASKS_PER_PAGE, totalTasks);
-
   return (
     <div className="mytasks-container">
       <h1 className="mytasks-title">Мои задачи</h1>
@@ -774,8 +775,10 @@ const MyTasks = ({ useMockData = true }) => {
       </div>
 
       <div className="tasks-table">
+        {/* Заголовки таблицы */}
         <div className="header-cell">Название задачи</div>
         <div className="header-cell">Дедлайн</div>
+        <div className="header-cell">Статус</div>
         <div className="header-cell">Проект</div>
         <div className="header-cell">Руководитель</div>
 
@@ -788,6 +791,7 @@ const MyTasks = ({ useMockData = true }) => {
         ) : (
           tasks.map((task) => (
             <React.Fragment key={task.id}>
+              {/* Название задачи */}
               <div 
                 className="task-cell task-name"
                 onClick={() => handleTaskClick(task)}
@@ -795,6 +799,7 @@ const MyTasks = ({ useMockData = true }) => {
                 <div className="task-name-text">{task.taskName}</div>
               </div>
 
+              {/* Дедлайн */}
               <div 
                 className="task-cell"
                 onClick={() => handleTaskClick(task)}
@@ -804,6 +809,17 @@ const MyTasks = ({ useMockData = true }) => {
                 </div>
               </div>
 
+              {/* Статус */}
+              <div 
+                className="task-cell"
+                onClick={() => handleTaskClick(task)}
+              >
+                <div className={`task-status-badge ${getStatusClass(task.status)}`}>
+                  {task.status_display}
+                </div>
+              </div>
+
+              {/* Проект */}
               <div 
                 className="task-cell"
                 onClick={() => handleTaskClick(task)}
@@ -813,6 +829,7 @@ const MyTasks = ({ useMockData = true }) => {
                 </div>
               </div>
 
+              {/* Руководитель */}
               <div 
                 className="task-cell"
                 onClick={() => handleTaskClick(task)}
@@ -826,11 +843,12 @@ const MyTasks = ({ useMockData = true }) => {
         )}
       </div>
 
-      {/* Пагинация - расположена снизу */}
+      {/* Пагинация */}
       {totalPages > 1 && (
         <div className="tasks-pagination">
           <div className="pagination-info">
             <span style={{ marginLeft: '10px', color: '#666', fontSize: '14px' }}>
+              Задачи {(currentPage - 1) * TASKS_PER_PAGE + 1} - {Math.min(currentPage * TASKS_PER_PAGE, totalTasks)} из {totalTasks}
             </span>
           </div>
           

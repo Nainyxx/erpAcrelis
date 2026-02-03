@@ -158,6 +158,82 @@ const ProjectsList = ({ useMockData = true, showNotification }) => {
     navigate(`/projects/${project.id}`);
   };
 
+  // Функция для генерации аватарки
+  const generateAvatar = (member) => {
+    const name = member?.staff_name || member?.name || 'Исполнитель';
+    // Формируем правильный URL для изображения
+    const imageUrl = member?.staff_image ? 
+      `https://api.acrelis.ru/media/${member.staff_image}` : 
+      member?.image_url || null;
+    
+    const colors = ['#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0', '#118AB2', '#EF476F'];
+    
+    const words = name.split(' ').filter(word => word.length > 0);
+    let initials = '';
+    
+    if (words.length >= 2) {
+      initials = words[0][0] + words[1][0];
+    } else if (words.length === 1) {
+      initials = words[0][0];
+    } else {
+      initials = 'И';
+    }
+    
+    const colorIndex = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length;
+    
+    if (imageUrl) {
+      return (
+        <div className="avatar" style={{ backgroundColor: colors[colorIndex] }}>
+          <img 
+            src={imageUrl} 
+            alt={name}
+            onError={(e) => {
+              e.target.style.display = 'none';
+              const span = e.target.parentElement.querySelector('.avatar-initials');
+              if (span) span.style.display = 'block';
+            }}
+            className="avatar-image"
+          />
+          <span className="avatar-initials" style={{ display: 'none' }}>
+            {initials.toUpperCase()}
+          </span>
+        </div>
+      );
+    }
+    
+    return (
+      <div className="avatar" style={{ backgroundColor: colors[colorIndex] }}>
+        {initials.toUpperCase()}
+      </div>
+    );
+  };
+
+  // Функция для отображения аватарок команды
+  const renderTeamAvatars = (team) => {
+    if (!team || team.length === 0) {
+      return <div className="team-avatars">Нет исполнителей</div>;
+    }
+    
+    const maxVisible = 4;
+    const visibleTeam = team.slice(0, maxVisible);
+    const extraCount = team.length > maxVisible ? team.length - maxVisible : 0;
+
+    return (
+      <div className="team-avatars">
+        {visibleTeam.map((member, index) => (
+          <div key={member?.id || index} className="avatar-wrapper" style={{ zIndex: maxVisible - index }}>
+            {generateAvatar(member)}
+          </div>
+        ))}
+        {extraCount > 0 && (
+          <div className="avatar extra-avatar">
+            +{extraCount}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // Компонент загрузки
   const LoadingSpinner = () => (
     <div className="loading-container">
@@ -261,10 +337,12 @@ const ProjectsList = ({ useMockData = true, showNotification }) => {
         ) : (
           projects.map((project) => (
             <div className="project-row" key={project.id} onClick={() => handleProjectSelect(project)}>
-              <div className="project-name-text">{project.name}</div>
+              <div>
+                <div className="project-name-text">{project.name}</div>
+              </div>
               
               <div>
-                <span className="project-performer">Исполнители</span>
+                {renderTeamAvatars(project.team || project.performers || [])}
               </div>
               
               <div>

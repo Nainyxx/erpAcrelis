@@ -242,7 +242,7 @@ const EmployeeCard = ({ useMockData = false }) => {
     return (
       <div className="employee-page_employee_card">
         <h1 className="page-title_employee_card">
-          <span className="clickable_employee_card" onClick={() => navigate('/staff')}>Сотрудники</span> — Карточка сотрудника
+          <span className="clickable_employee_card" onClick={() => navigate('/staff')}>Сотрудники</span> — Загрузка...
         </h1>
         <div className="gantt-loading_gantt_class">
           <div className="loading-spinner_gantt_class"></div>
@@ -307,10 +307,14 @@ const EmployeeCard = ({ useMockData = false }) => {
   const telegramLink = getTelegramLink(employee.telegram_original || employee.telegram);
   const telegramDisplay = formatTelegramForDisplay(employee.telegram) || '@acrelis';
 
+  // Получаем имя сотрудника для заголовка, обрезаем если слишком длинное
+  const employeeName = employee.name || 'Сотрудник';
+  const displayName = employeeName.length > 30 ? employeeName.substring(0, 30) + '...' : employeeName;
+
   return (
     <div className="employee-page_employee_card">
       <h1 className="page-title_employee_card">
-        <span className="clickable_employee_card" onClick={() => navigate('/staff')}>Сотрудники</span> — Карточка сотрудника
+        <span className="clickable_employee_card" onClick={() => navigate('/staff')}>Сотрудники</span> — {displayName}
       </h1>
 
       <div className="main-card_employee_card">

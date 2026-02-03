@@ -7,17 +7,20 @@ import {
     updateTask, 
     uploadFileToTask, 
     addCommentToTask,
+    getProjectById
 } from '../../services/api/api';
 import TaskWebSocketService from '../../services/taskWebSocketService';
 import './TaskCard.css';
 
 // Константы для ограничения длины названий файлов
-const MAX_FILENAME_LENGTH = 15; // Максимальная длина названия файла до обрезания
-const MAX_FILENAME_EXTENSION_LENGTH = 5; // Максимальная длина расширения (например .png, .webm)
+const MAX_FILENAME_LENGTH = 15;
+const MAX_FILENAME_EXTENSION_LENGTH = 5;
 
 const TaskCard = ({ useMockData = false }) => {
     const navigate = useNavigate();
-    const { taskId, taskName } = useParams();
+    const params = useParams();
+    const { taskId, projectId } = params;
+    
     const chatContainerRef_task_card = useRef(null);
     const fileInputRef_task_card = useRef(null);
     const patchTimeoutRef_task_card = useRef(null);
@@ -30,7 +33,9 @@ const TaskCard = ({ useMockData = false }) => {
     
     // Данные задачи
     const [task, setTask] = useState(null);
+    const [project, setProject] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [loadingProject, setLoadingProject] = useState(false);
     const [error, setError] = useState(null);
     
     // WebSocket состояния
@@ -76,17 +81,168 @@ const TaskCard = ({ useMockData = false }) => {
         { value: 'draft', label: 'Черновик', progress: 10, apiValue: 'draft' }
     ];
 
+    // ==================== Определение источника перехода ====================
+    const getSourceContext = useCallback(() => {
+        const path = window.location.pathname || window.location.hash;
+        if (path.includes('/kanban/') && path.split('/').filter(Boolean).length === 3) {
+            return 'kanban';
+        } else if (path.includes('/gantt/') && path.split('/').filter(Boolean).length === 3) {
+            return 'gantt';
+        } else if (path.includes('/tasks/')) {
+            return 'tasks';
+        }
+        return 'unknown';
+    }, []);
+
+    // ==================== Функция загрузки проекта ====================
+    const loadProject = useCallback(async () => {
+        if (!projectId || loadingProject) return;
+        
+        setLoadingProject(true);
+        try {
+            const projectData = await getProjectById(projectId, useMockData);
+            setProject(projectData);
+        } catch (error) {
+        } finally {
+            setLoadingProject(false);
+        }
+    }, [projectId, useMockData, loadingProject]);
+
+    // ==================== Рендеринг заголовка в зависимости от контекста ====================
+// В TaskCard.jsx обновите функцию renderHeader:
+
+// ==================== Рендеринг заголовка в зависимости от контекста ====================
+const renderHeader = () => {
+    // Используем window.location.hash для HashRouter
+    const hashPath = window.location.hash || '';
+    
+    // Убираем # из начала
+    const path = hashPath.startsWith('#') ? hashPath.substring(1) : hashPath;
+    
+    // Разбиваем путь на части
+    const pathParts = path.split('/').filter(part => part !== '');
+    
+    
+    // Проверяем структуру пути
+    const isFromKanban = pathParts[0] === 'kanban' && pathParts.length === 3;
+    const isFromGantt = pathParts[0] === 'gantt' && pathParts.length === 3;
+    const isFromTasks = pathParts[0] === 'tasks' && pathParts.length === 2;
+    
+    // Если пришли из канбана
+    if (isFromKanban) {
+        return (
+            <div className="taskcard-header_task_card">
+                <h1 className="taskcard-title_task_card">
+                    <span 
+                        className="mytasks-link_task_card" 
+                        onClick={() => navigate('/projects')}
+                        style={{ cursor: 'pointer'}}
+                    >
+                        Проекты
+                    </span>
+                    {' — '}
+                    <span 
+                        className="mytasks-link_task_card" 
+                        onClick={() => navigate(`/projects/${projectId}`)}
+                        style={{ cursor: 'pointer'}}
+                    >
+                        {project?.name || 'ERP Front'}
+                    </span>
+                    {' — '}
+                    <span 
+                        className="mytasks-link_task_card" 
+                        onClick={() => navigate(`/kanban/${projectId}`)}
+                        style={{ cursor: 'pointer'}}
+                    >
+                        Канбан задач
+                    </span>
+                    {' — '}
+                    <span className="task-name_task_card">{task?.name || 'Задача'}</span>
+                </h1>
+            </div>
+        );
+    }
+    
+    // Если пришли из ганта
+    if (isFromGantt) {
+        return (
+            <div className="taskcard-header_task_card">
+                <h1 className="taskcard-title_task_card">
+                    <span 
+                        className="mytasks-link_task_card" 
+                        onClick={() => navigate('/projects')}
+                        style={{ cursor: 'pointer'}}
+                    >
+                        Проекты
+                    </span>
+                    {' — '}
+                    <span 
+                        className="mytasks-link_task_card" 
+                        onClick={() => navigate(`/projects/${projectId}`)}
+                        style={{ cursor: 'pointer'}}
+                    >
+                        {project?.name || 'ERP Front'}
+                    </span>
+                    {' — '}
+                    <span 
+                        className="mytasks-link_task_card" 
+                        onClick={() => navigate(`/gantt/${projectId}`)}
+                        style={{ cursor: 'pointer'}}
+                    >
+                        Диаграмма Ганта
+                    </span>
+                    {' — '}
+                    <span className="task-name_task_card">{task?.name || 'Задача'}</span>
+                </h1>
+            </div>
+        );
+    }
+    
+    // Если пришли из списка задач
+    if (isFromTasks) {
+        return (
+            <div className="taskcard-header_task_card">
+                <h1 className="taskcard-title_task_card">
+                    <span 
+                        className="mytasks-link_task_card" 
+                        onClick={() => navigate('/my-tasks')}
+                        style={{ cursor: 'pointer' }}
+                    >
+                        Мои задачи
+                    </span>
+                    {' — '}
+                    <span className="task-name_task_card">{task?.name || 'Задача'}</span>
+                </h1>
+            </div>
+        );
+    }
+    
+    // По умолчанию
+    return (
+        <div className="taskcard-header_task_card">
+            <h1 className="taskcard-title_task_card">
+                <span 
+                    className="mytasks-link_task_card" 
+                    onClick={() => navigate('/my-tasks')}
+                    style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                >
+                    Мои задачи
+                </span>
+                {' — '}
+                <span className="task-name_task_card">{task?.name || 'Задача'}</span>
+            </h1>
+        </div>
+    );
+};
+
     // ==================== Функции для обработки названий файлов ====================
     
-    // Функция для обрезки длинного названия файла
     const truncateFilename = (filename) => {
         if (!filename) return 'Файл';
         
-        // Разделяем имя файла и расширение
         const lastDotIndex = filename.lastIndexOf('.');
         
         if (lastDotIndex === -1) {
-            // Если нет расширения
             if (filename.length <= MAX_FILENAME_LENGTH) {
                 return filename;
             }
@@ -96,13 +252,11 @@ const TaskCard = ({ useMockData = false }) => {
         const name = filename.substring(0, lastDotIndex);
         const extension = filename.substring(lastDotIndex + 1);
         
-        // Обрезаем расширение если оно слишком длинное
         let truncatedExtension = extension;
         if (extension.length > MAX_FILENAME_EXTENSION_LENGTH) {
             truncatedExtension = extension.substring(0, MAX_FILENAME_EXTENSION_LENGTH) + '...';
         }
         
-        // Обрезаем имя если оно слишком длинное
         if (name.length <= MAX_FILENAME_LENGTH) {
             return `${name}.${truncatedExtension}`;
         }
@@ -110,13 +264,6 @@ const TaskCard = ({ useMockData = false }) => {
         return `${name.substring(0, MAX_FILENAME_LENGTH)}....${truncatedExtension}`;
     };
     
-    // Функция для получения полного названия файла (для title атрибута)
-    const getFullFilename = (filename) => {
-        if (!filename) return 'Файл';
-        return filename;
-    };
-    
-    // Функция для получения расширения файла
     const getFileExtension = (filename) => {
         if (!filename) return '';
         const lastDotIndex = filename.lastIndexOf('.');
@@ -124,46 +271,22 @@ const TaskCard = ({ useMockData = false }) => {
         return filename.substring(lastDotIndex + 1).toLowerCase();
     };
     
-    // Функция для получения иконки в зависимости от типа файла
     const getFileIcon = (filename) => {
         const extension = getFileExtension(filename);
         
         switch(extension) {
-            case 'pdf':
-                return '📄';
-            case 'doc':
-            case 'docx':
-                return '📝';
-            case 'xls':
-            case 'xlsx':
-                return '📊';
-            case 'jpg':
-            case 'jpeg':
-            case 'png':
-            case 'gif':
-            case 'svg':
-                return '🖼️';
-            case 'zip':
-            case 'rar':
-            case '7z':
-                return '📦';
-            case 'mp4':
-            case 'avi':
-            case 'mov':
-            case 'webm':
-                return '🎬';
-            case 'mp3':
-            case 'wav':
-            case 'ogg':
-                return '🎵';
-            case 'txt':
-                return '📃';
-            default:
-                return '📎';
+            case 'pdf': return '📄';
+            case 'doc': case 'docx': return '📝';
+            case 'xls': case 'xlsx': return '📊';
+            case 'jpg': case 'jpeg': case 'png': case 'gif': case 'svg': return '🖼️';
+            case 'zip': case 'rar': case '7z': return '📦';
+            case 'mp4': case 'avi': case 'mov': case 'webm': return '🎬';
+            case 'mp3': case 'wav': case 'ogg': return '🎵';
+            case 'txt': return '📃';
+            default: return '📎';
         }
     };
     
-    // Функция для форматирования размера файла
     const formatFileSize = (bytes) => {
         if (!bytes) return 'Неизвестно';
         if (bytes < 1024) return bytes + ' Б';
@@ -173,7 +296,6 @@ const TaskCard = ({ useMockData = false }) => {
 
     // ==================== Функции для комментариев ====================
 
-    // Форматирование комментария
     const formatComment = (commentData) => {
         
         const commentDate = new Date(commentData.created || commentData.createdAt || new Date());
@@ -188,7 +310,7 @@ const TaskCard = ({ useMockData = false }) => {
             userInitials = nameParts.map(n => n[0]).join('').toUpperCase().slice(0, 2);
         }
         
-        const formatted = {
+        return {
             id: commentData.id || `temp_${Date.now()}_${Math.random()}`,
             userId: commentData.author_id || `comment_${commentData.id}`,
             userName: userName,
@@ -203,18 +325,14 @@ const TaskCard = ({ useMockData = false }) => {
             isPending: commentData.isPending || false,
             tempId: commentData.tempId || commentData.temp_id
         };
-        
-        return formatted;
     };
 
     // ==================== WebSocket функции ====================
 
-    // Инициализация WebSocket
     const initWebSocket = useCallback(() => {
         if (!taskId || wsServiceRef.current) {
             return;
         }
-        
         
         try {
             wsServiceRef.current = new TaskWebSocketService(taskId, {
@@ -224,16 +342,12 @@ const TaskCard = ({ useMockData = false }) => {
                 pingTimeout: 10000
             });
             
-            
-            // Подписка на события WebSocket
             const unsubscribeComment = wsServiceRef.current.onComment((newCommentData) => {
-
                 
                 if (!newCommentData) {
                     return;
                 }
                 
-                // Проверяем, что это комментарий для этой задачи
                 if (newCommentData.task_id && newCommentData.task_id !== parseInt(taskId)) {
                     return;
                 }
@@ -261,7 +375,6 @@ const TaskCard = ({ useMockData = false }) => {
                 setReconnectAttempt(attempt);
             });
             
-            // Сохраняем функции отписки для очистки
             wsServiceRef.current.unsubscribeFunctions = {
                 comment: unsubscribeComment,
                 connect: unsubscribeConnect,
@@ -270,49 +383,38 @@ const TaskCard = ({ useMockData = false }) => {
                 reconnecting: unsubscribeReconnecting
             };
             
-            
         } catch (error) {
             setWsError(error.message);
         }
     }, [taskId]);
 
-    // Обработка нового комментария из WebSocket
     const handleNewCommentFromWebSocket = useCallback((commentData) => {
         
         if (!commentData) {
             return;
         }
         
-
-        
         const formattedComment = formatComment(commentData);
         formattedComment.isFromWebSocket = true;
         
-        
         setCommentsList(prev => {
             
-            // Ищем дубликаты
             const tempId = commentData.tempId || commentData.temp_id;
             const realId = commentData.id;
             
-            // Проверяем по реальному ID и tempId
             const existingIndex = prev.findIndex(c => 
                 c.id === realId || c.tempId === tempId
             );
             
-            
             if (existingIndex !== -1) {
-                // Обновляем существующий комментарий
                 const newComments = [...prev];
                 newComments[existingIndex] = formattedComment;
                 return newComments;
             }
             
-            // Добавляем новый комментарий в конец (самые новые внизу)
             return [...prev, formattedComment];
         });
         
-        // Удаляем из pending, если это подтверждение нашего сообщения
         const tempId = commentData.tempId || commentData.temp_id;
         if (tempId) {
             setPendingComments(prev => {
@@ -321,7 +423,6 @@ const TaskCard = ({ useMockData = false }) => {
             });
         }
         
-        // Прокрутка к новому сообщению
         setTimeout(() => {
             if (chatContainerRef_task_card.current) {
                 chatContainerRef_task_card.current.scrollTop = 
@@ -330,7 +431,6 @@ const TaskCard = ({ useMockData = false }) => {
         }, 100);
     }, []);
 
-    // Отправка комментария через WebSocket с оптимистичным обновлением
     const sendCommentViaWebSocket = async (commentText) => {
         if (!commentText.trim()) {
             throw new Error('Комментарий не может быть пустым');
@@ -342,8 +442,6 @@ const TaskCard = ({ useMockData = false }) => {
         
         const tempId = `temp_${Date.now()}_${Math.random()}`;
         
-        
-        // ОПТИМИСТИЧНОЕ ОБНОВЛЕНИЕ: сразу показываем сообщение
         const optimisticComment = {
             id: tempId,
             tempId: tempId,
@@ -358,16 +456,13 @@ const TaskCard = ({ useMockData = false }) => {
         setCommentsList(prev => [...prev, formattedOptimisticComment]);
         setPendingComments(prev => [...prev, tempId]);
         
-        // Прокручиваем к новому сообщению
         scrollToBottom();
         
         try {
-            // Отправляем через WebSocket
             const result = wsServiceRef.current.sendComment(commentText, tempId);
             return tempId;
         } catch (error) {
             
-            // Откатываем оптимистичное обновление при ошибке
             setCommentsList(prev => prev.filter(c => c.tempId !== tempId));
             setPendingComments(prev => prev.filter(id => id !== tempId));
             
@@ -375,7 +470,6 @@ const TaskCard = ({ useMockData = false }) => {
         }
     };
 
-    // Отправка комментария через API (fallback)
     const sendCommentViaAPI = async (commentText) => {
         if (!commentText.trim() || !taskId) {
             throw new Error('Комментарий не может быть пустым');
@@ -389,7 +483,6 @@ const TaskCard = ({ useMockData = false }) => {
         }
     };
 
-    // Прокрутка чата к последнему сообщению
     const scrollToBottom = useCallback(() => {
         setTimeout(() => {
             if (chatContainerRef_task_card.current) {
@@ -436,7 +529,6 @@ const TaskCard = ({ useMockData = false }) => {
                 setProgress(statusOption ? statusOption.progress : 50);
             }
             
-            // Обновляем исполнителя с аватаркой
             if (taskData.performer_name) {
                 const initials = taskData.performer_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
                 setAssignee({
@@ -447,7 +539,6 @@ const TaskCard = ({ useMockData = false }) => {
                 });
             }
             
-            // Обновляем руководителя с аватаркой
             if (taskData.director_name) {
                 const initials = taskData.director_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
                 setManager({
@@ -458,7 +549,6 @@ const TaskCard = ({ useMockData = false }) => {
                 });
             }
             
-            // Файлы (только при первой загрузке) - ОБНОВЛЕНО
             if (taskData.files && taskData.files.length > 0) {
                 const formattedFiles = taskData.files.map(file => ({
                     id: file.id,
@@ -474,14 +564,10 @@ const TaskCard = ({ useMockData = false }) => {
                 setFiles([]);
             }
             
-            // КОММЕНТАРИИ: загружаем ТОЛЬКО при открытии страницы
-            
             if (taskData.comments && taskData.comments.length > 0) {
-                // Сортируем комментарии по дате создания (самые новые внизу)
                 const sortedComments = [...taskData.comments].sort((a, b) => 
                     new Date(a.created) - new Date(b.created)
                 );
-                
                 
                 const formattedComments = sortedComments.map(comment => formatComment(comment));
                 setCommentsList(formattedComments);
@@ -489,15 +575,14 @@ const TaskCard = ({ useMockData = false }) => {
                 setCommentsList([]);
             }
             
-            // Помечаем, что первая загрузка выполнена
             initialLoadDone.current = true;
             
-            // Прокручиваем к последнему сообщению после загрузки
             scrollToBottom();
             
-            // ТОЛЬКО ПОСЛЕ ЗАГРУЗКИ ДАННЫХ инициализируем WebSocket
+            if (projectId) {
+                loadProject();
+            }
             
-            // Небольшая задержка для стабильности
             setTimeout(() => {
                 initWebSocket();
             }, 100);
@@ -517,7 +602,6 @@ const TaskCard = ({ useMockData = false }) => {
         
         if (!textToSend) return;
         
-        // Блокируем повторную отправку
         if (isSending) {
             return;
         }
@@ -525,20 +609,15 @@ const TaskCard = ({ useMockData = false }) => {
         setIsSending(true);
         const commentToSend = textToSend;
         
-        
-        // Очищаем поле ввода сразу (оптимистично)
         setNewComment('');
         setReplyToCommentId(null);
         
         try {
-            // Пытаемся отправить через WebSocket
             if (isWebSocketConnected && wsServiceRef.current) {
                 await sendCommentViaWebSocket(commentToSend);
             } else {
-                // Если WebSocket не подключен, используем API
                 const response = await sendCommentViaAPI(commentToSend);
                 
-                // После успешной отправки через API, сразу добавляем комментарий в список
                 const tempId = `temp_${Date.now()}_${Math.random()}`;
                 const optimisticComment = {
                     id: tempId,
@@ -724,7 +803,6 @@ const TaskCard = ({ useMockData = false }) => {
         e.target.value = null;
     };
 
-    // Обновленная функция загрузки файла
     const postFileUpload_task_card = async (file) => {
         if (!file || !task) return;
         
@@ -765,11 +843,9 @@ const TaskCard = ({ useMockData = false }) => {
         }, 10);
     };
 
-    // Группировка комментариев по дате
     const groupCommentsByDate_task_card = () => {
         const grouped = {};
         
-        // Сортируем комментарии по дате создания (старые сверху, новые снизу)
         const sortedComments = [...commentsList].sort((a, b) => {
             const dateA = a.createdAt ? new Date(a.createdAt) : new Date();
             const dateB = b.createdAt ? new Date(b.createdAt) : new Date();
@@ -793,7 +869,6 @@ const TaskCard = ({ useMockData = false }) => {
         return new Date(dateA).getTime() - new Date(dateB).getTime();
     });
 
-    // Прокрутка чата при изменении комментариев
     useEffect(() => {
         scrollToBottom();
     }, [commentsList, scrollToBottom]);
@@ -804,14 +879,11 @@ const TaskCard = ({ useMockData = false }) => {
             loadTask_task_card();
         }
         
-        // Очистка при размонтировании
         return () => {
             clearTimeout(patchTimeoutRef_task_card.current);
             
-            // Очистка WebSocket
             if (wsServiceRef.current) {
                 
-                // Отписываемся от всех событий
                 if (wsServiceRef.current.unsubscribeFunctions) {
                     Object.values(wsServiceRef.current.unsubscribeFunctions).forEach(unsubscribe => {
                         if (typeof unsubscribe === 'function') {
@@ -820,7 +892,6 @@ const TaskCard = ({ useMockData = false }) => {
                     });
                 }
                 
-                // Отключаем WebSocket
                 if (wsServiceRef.current.disconnect && typeof wsServiceRef.current.disconnect === 'function') {
                     wsServiceRef.current.disconnect();
                 }
@@ -876,11 +947,20 @@ const TaskCard = ({ useMockData = false }) => {
                         <h4>Задача не найдена</h4>
                         <p>Запрошенная задача не существует или была удалена</p>
                         <button 
-                            onClick={() => navigate('/my-tasks')}
+                            onClick={() => {
+                                const sourceContext = getSourceContext();
+                                if (sourceContext === 'kanban' && projectId) {
+                                    navigate(`/kanban/${projectId}`);
+                                } else if (sourceContext === 'gantt' && projectId) {
+                                    navigate(`/gantt/${projectId}`);
+                                } else {
+                                    navigate('/my-tasks');
+                                }
+                            }}
                             className="gantt-back-btn_gantt_class"
                             style={{ marginTop: '2vh' }}
                         >
-                            Вернуться к моим задачам
+                            Вернуться назад
                         </button>
                     </div>
                 </div>
@@ -890,19 +970,8 @@ const TaskCard = ({ useMockData = false }) => {
 
     return (
         <div className="taskcard-container_task_card">
-            {/* Заголовок - показываем название задачи вместо ID */}
-            <div className="taskcard-header_task_card">
-                <h1 className="taskcard-title_task_card">
-                    <span 
-                        className="mytasks-link_task_card" 
-                        onClick={() => navigate('/my-tasks')}
-                    >
-                        Мои задачи
-                    </span>
-                    {' — '}
-                    <span className="task-name_task_card">{task.name || taskName || 'Задача'}</span>
-                </h1>
-            </div>
+            {/* Рендерим заголовок в зависимости от контекста */}
+            {renderHeader()}
 
             {/* Форма ввода описания задачи */}
             <div className="comment-form-container_task_card">
@@ -1034,7 +1103,6 @@ const TaskCard = ({ useMockData = false }) => {
                                             </span>
                                         </div>
                                         <div className="file-info_task_card">
-                                            <span className="file-size_task_card">{file.size}</span>
                                             <button 
                                                 className="file-download_task_card" 
                                                 onClick={() => handleFileDownload_task_card(file)}

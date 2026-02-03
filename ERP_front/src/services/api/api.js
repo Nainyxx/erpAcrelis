@@ -429,6 +429,7 @@ export async function getProjects(USE_MOCK_DATA, filters = {}) {
 }
 
 // Получение проекта по ID
+// Получение проекта по ID
 export async function getProjectById(projectId, USE_MOCK_DATA) {
   if (USE_MOCK_DATA) {
     const mockModule = await import('../../MockData/projects.js');
@@ -465,13 +466,18 @@ export async function updateProject(projectId, updateData, USE_MOCK_DATA) {
     if (updateData.status) {
       const statusMap = {
         'draft': 'Черновик',
-        'active': 'Активный',
+        'active': 'В работе',
         'paused': 'Приостановлен',
-        'tests': 'Тестирование',
+        'tests': 'Тестируется',
         'completed': 'Завершен',
         'cancelled': 'Отменен'
       };
       updated.status_display = statusMap[updateData.status] || 'Черновик';
+    }
+    
+    // Обновляем часы
+    if (updateData.hours !== undefined) {
+      updated.hours = updateData.hours;
     }
     
     return formatProjectData(updated);
@@ -493,9 +499,29 @@ export async function updateProject(projectId, updateData, USE_MOCK_DATA) {
   }
   
   if (updateData.type !== undefined) {
+    // Типы проекта должны быть: website, bot, app, miniapp, design, other
+    const validTypes = ['website', 'bot', 'app', 'miniapp', 'design', 'other'];
     const inputType = updateData.type.toLowerCase().trim();
-    const apiType = PROJECT_TYPE_MAP[inputType] || inputType;
-    formData.append('type', apiType);
+    
+    // Если тип уже в правильном формате, используем его
+    if (validTypes.includes(inputType)) {
+      formData.append('type', inputType);
+    } else {
+      // Иначе преобразуем русское название в английский формат
+      const typeMap = {
+        'сайт': 'website',
+        'бот': 'bot',
+        'приложение': 'app',
+        'мини-приложение': 'miniapp',
+        'миниприложение': 'miniapp',
+        'дизайн': 'design',
+        'другое': 'other',
+        'прочее': 'other'
+      };
+      
+      const mappedType = typeMap[inputType] || 'other';
+      formData.append('type', mappedType);
+    }
   }
   
   if (updateData.price !== undefined) {
@@ -507,6 +533,10 @@ export async function updateProject(projectId, updateData, USE_MOCK_DATA) {
     formData.append('customer', updateData.customer);
   }
   
+  // Добавляем часы
+  if (updateData.hours !== undefined) {
+    formData.append('hours', updateData.hours.toString());
+  }
   
   try {
     const response = await authFetch(`${API_CONFIG.BASE_URL}projects/${projectId}/`, {
@@ -863,7 +893,7 @@ export async function createTask(taskData, USE_MOCK_DATA) {
       director_name: taskData.director_name || null,
       performer: taskData.performer || null,
       performer_name: taskData.performer_name || null,
-      deadline: taskData.deadline + 'T00:00:00+03:00',
+      deadline: taskData.deadline, // Просто дата
       hours: taskData.hours || 0,
       is_overdue: false,
       created: new Date().toISOString(),
@@ -880,16 +910,26 @@ export async function createTask(taskData, USE_MOCK_DATA) {
   formData.append('name', taskData.name);
   formData.append('description', taskData.description || taskData.name);
   
-  let deadlineFormatted = taskData.deadline;
-  
-  if (taskData.deadline && taskData.deadline.includes('.')) {
-    const [day, month, year] = taskData.deadline.split('.');
-    deadlineFormatted = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T00:00:00+03:00`;
-  } else if (taskData.deadline && !taskData.deadline.includes('T')) {
-    deadlineFormatted = taskData.deadline + 'T00:00:00+03:00';
+  // ФОРМАТИРОВАНИЕ ДАТЫ - только YYYY-MM-DD без времени
+  if (taskData.deadline) {
+    let deadlineFormatted = taskData.deadline;
+    
+    // Если есть время (T), обрезаем его
+    if (taskData.deadline.includes('T')) {
+      deadlineFormatted = taskData.deadline.split('T')[0];
+    }
+    // Если формат DD.MM.YYYY, конвертируем
+    else if (taskData.deadline.includes('.')) {
+      const parts = taskData.deadline.split('.');
+      if (parts.length === 3) {
+        const [day, month, year] = parts;
+        deadlineFormatted = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      }
+    }
+    
+    // Проверяем, что осталась только дата
+    formData.append('deadline', deadlineFormatted);
   }
-  
-  formData.append('deadline', deadlineFormatted);
   
   if (taskData.project) {
     formData.append('project', taskData.project.toString());
@@ -897,6 +937,8 @@ export async function createTask(taskData, USE_MOCK_DATA) {
   
   if (taskData.status) {
     formData.append('status', taskData.status);
+  } else {
+    formData.append('status', 'new');
   }
   
   if (taskData.performer) {
@@ -992,6 +1034,92 @@ export async function getTaskById(taskId, USE_MOCK_DATA) {
 }
 
 // Обновление задачи
+// Функция для создания записи о начислении зарплаты при закрытии задачи
+export async function createSalaryRecord(taskId, completionDate, USE_MOCK_DATA) {
+  if (USE_MOCK_DATA) {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    const mockSalaryRecord = {
+      id: Math.floor(Math.random() * 1000),
+      user: 1,
+      user_name: 'Иван Иванов',
+      task: taskId,
+      task_name: 'Тестовая задача',
+      hours: 8,
+      hourly_rate: 1000,
+      salary: 8000,
+      status: 'pending',
+      status_display: 'Ожидает выплаты',
+      completion_date: completionDate,
+      deadline_date: '2025-12-25',
+      created: new Date().toISOString()
+    };
+    
+    return [mockSalaryRecord];
+  }
+  
+  try {
+    // Форматируем дату в YYYY-MM-DD
+    let formattedDate = completionDate;
+    
+    // Если дата содержит время, обрезаем его
+    if (formattedDate.includes('T')) {
+      formattedDate = formattedDate.split('T')[0];
+    }
+    
+    // Если дата в формате DD.MM.YYYY, конвертируем
+    if (formattedDate.includes('.')) {
+      const parts = formattedDate.split('.');
+      if (parts.length === 3) {
+        const [day, month, year] = parts;
+        formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      }
+    }
+    
+
+    
+    const response = await authFetch(`${API_CONFIG.BASE_URL}salary/create/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        task_id: taskId,
+        completion_date: formattedDate
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      
+      // Проверяем, может запись уже существует
+      if (response.status === 400) {
+        try {
+          const errorData = JSON.parse(errorText);
+          if (errorData.detail && errorData.detail.includes('уже существует')) {
+            return null;
+          }
+        } catch {
+          // Игнорируем ошибки парсинга
+        }
+      }
+      
+      if (response.status === 404) {
+        return null;
+      }
+      
+      throw new Error(`Ошибка создания записи о зарплате: ${response.status}`);
+    }
+
+    const responseData = await response.json();
+    return responseData;
+    
+  } catch (error) {
+    return null; // Возвращаем null вместо throw, чтобы не ломать основной flow
+  }
+}
+
+// Обновленная функция updateTask с интеграцией начисления зарплаты
 export async function updateTask(taskId, updateData, USE_MOCK_DATA) {
   if (USE_MOCK_DATA) {
     await new Promise(resolve => setTimeout(resolve, 300));
@@ -1005,9 +1133,20 @@ export async function updateTask(taskId, updateData, USE_MOCK_DATA) {
         'new': 'Новая',
         'active': 'В работе',
         'paused': 'Приостановлена',
-        'completed': 'Завершена'
+        'completed': 'Завершена',
+        'failed': 'Провалена'
       };
       updated.status_display = statusMap[updateData.status] || 'Новая';
+    }
+    
+    // Если статус изменился на "completed", создаем запись о зарплате
+    if (updateData.status === 'completed' && currentTask.status !== 'completed') {
+      try {
+        // Для мок данных используем текущую дату в формате YYYY-MM-DD
+        const today = new Date().toISOString().split('T')[0];
+        await createSalaryRecord(taskId, today, USE_MOCK_DATA);
+      } catch (error) {
+      }
     }
     
     return updated;
@@ -1032,7 +1171,12 @@ export async function updateTask(taskId, updateData, USE_MOCK_DATA) {
   }
   
   if (updateData.deadline !== undefined) {
-    formData.append('deadline', updateData.deadline || '');
+    // Убеждаемся, что дата отправляется без времени
+    let deadlineToSend = updateData.deadline;
+    if (deadlineToSend && deadlineToSend.includes('T')) {
+      deadlineToSend = deadlineToSend.split('T')[0];
+    }
+    formData.append('deadline', deadlineToSend || '');
   }
   
   if (updateData.performer !== undefined) {
@@ -1048,6 +1192,15 @@ export async function updateTask(taskId, updateData, USE_MOCK_DATA) {
   }
   
   try {
+    // Сначала получаем текущую задачу, чтобы проверить статус
+    let oldStatus = null;
+    try {
+      const currentTask = await getTaskById(taskId, USE_MOCK_DATA);
+      oldStatus = currentTask.status;
+    } catch {
+      // Если не удалось получить задачу, продолжаем без проверки старого статуса
+    }
+    
     const response = await authFetch(`${API_CONFIG.BASE_URL}tasks/${taskId}/`, {
       method: 'PATCH',
       body: formData
@@ -1059,9 +1212,37 @@ export async function updateTask(taskId, updateData, USE_MOCK_DATA) {
     }
 
     const responseData = await response.json();
+    
+    // Если статус изменился на "completed" (был не completed, стал completed)
+    if (updateData.status === 'completed' && oldStatus !== 'completed') {
+      // Создаем запись о зарплате асинхронно (не ждем завершения)
+      setTimeout(async () => {
+        try {
+          // Используем текущую дату в формате YYYY-MM-DD
+          const today = new Date().toISOString().split('T')[0];
+          const salaryResult = await createSalaryRecord(taskId, today, USE_MOCK_DATA);
+          
+          if (salaryResult) {
+          }
+        } catch (salaryError) {
+        }
+      }, 1000); // Задержка 1 секунда, чтобы дать время на сохранение задачи
+    }
+    
     return responseData;
   } catch (error) {
     throw error;
+  }
+}
+
+// Вспомогательная функция для проверки существования записи о зарплате
+export async function checkSalaryExists(taskId, USE_MOCK_DATA) {
+  try {
+    // Эта функция зависит от того, есть ли у вас endpoint для проверки
+    // Если нет, можно просто вернуть false или сделать проверку по-другому
+    return false;
+  } catch {
+    return false;
   }
 }
 
@@ -1356,6 +1537,7 @@ export async function getEmployeeById(employeeId, USE_MOCK_DATA) {
 
 // Форматирование данных проекта
 // Форматирование данных проекта
+// Форматирование данных проекта
 function formatProjectData(project) {
   return {
     id: project.id,
@@ -1367,7 +1549,7 @@ function formatProjectData(project) {
     status: project.status || 'draft',
     status_display: project.status_display || getStatusDisplay(project.status),
     price: project.price || "0.00",
-    hours: project.hours || 0,
+    hours: project.hours || 0, // Добавляем часы
     customer: project.customer || 'Не указан',
     
     startDate: project.start_date || project.created || '',
@@ -1376,15 +1558,13 @@ function formatProjectData(project) {
     startDateFormatted: formatDateForDisplay(project.start_date || project.created),
     deadlineFormatted: formatDateForDisplay(project.deadline),
     
-    // ВАЖНО: Сохраняем оригинальные performers для использования в компоненте
     performers: project.performers || [],
     
-    // И преобразуем их в team для обратной совместимости
     team: (project.performers || []).map(p => ({
       id: p.id,
       name: p.staff_name || 'Исполнитель',
-      staff_name: p.staff_name || 'Исполнитель', // Добавляем staff_name
-      staff_image: p.staff_image, // Сохраняем staff_image
+      staff_name: p.staff_name || 'Исполнитель',
+      staff_image: p.staff_image,
       role: p.staff_post || 'Участник',
       assigned_at: p.assigned_at
     })),
@@ -1398,6 +1578,7 @@ function formatProjectData(project) {
       size: file.size || file.file_size || 0
     })),
     
+    logs: project.logs || [],
     ganttTasks: []
   };
 }
@@ -1513,9 +1694,9 @@ function formatDateTime(dateTimeString) {
 function getStatusDisplay(status) {
   const statusMap = {
     'draft': 'Черновик',
-    'active': 'Активный',
+    'active': 'В работе',
     'paused': 'Приостановлен',
-    'tests': 'Тестирование',
+    'tests': 'Тестируется',
     'completed': 'Завершен',
     'cancelled': 'Отменен'
   };

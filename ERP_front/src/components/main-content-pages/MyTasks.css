@@ -1,3 +1,5 @@
+/* MyTasks.css */
+
 .mytasks-container {
     padding: 3vh;
     width: 100%;
@@ -90,19 +92,7 @@
     box-sizing: border-box;
     min-width: 90vh;
     display: grid;
-    grid-template-columns: 2.5fr 2.5fr 2.5fr 2.5fr;
-}
-
-.table-header {
-    display: contents;
-}
-
-.header-row {
-    display: contents;
-}
-
-.task-row {
-    display: contents;
+    grid-template-columns: 2fr 1.5fr 1.5fr 2fr 2fr;
 }
 
 .header-cell {
@@ -130,10 +120,12 @@
     grid-column: span 1;
 }
 
+
+
 .task-row:hover .task-cell {
     font-weight: 500;
     background-color: rgba(0,0,0,0.02);
-    transform: scale(1.002);
+    transform: scale(1.05);
 }
 
 .task-name {
@@ -159,6 +151,20 @@
 }
 
 .deadline.completed {
+    color: #333;
+}
+
+/* Стили для статусов задач */
+/* Обновленные стили для статусов задач */
+.task-status-badge {
+    display: inline-block;
+    font-size: clamp(1.2vh, 0.9vw, 1.4vh);
+    font-weight: 500;
+    white-space: nowrap;
+    min-width: 8vh;
+    max-width: 15vh;
+    overflow: hidden;
+    text-overflow: ellipsis;
     color: #333;
 }
 
@@ -200,74 +206,12 @@
     font-size: inherit;
 }
 
-.task-status {
-    display: inline-block;
-    padding: 0.8vh 1.6vh;
-    border-radius: 2vh;
-    font-size: clamp(1.2vh, 0.9vw, 1.4vh);
-    font-weight: 500;
-    white-space: nowrap;
-    text-align: center;
-}
-
-.task-status.ready {
-    background: #DCFCE7;
-    color: #166534;
-}
-
-.task-status.in-progress {
-    background: #FEF3C7;
-    color: #92400E;
-}
-
-.task-status.planning {
-    background: #E0F2FE;
-    color: #075985;
-}
-
 .no-tasks {
     grid-column: 1 / -1;
     padding: 6vh 2vh;
     text-align: center;
     color: #666;
     font-size: clamp(1.6vh, 1.2vw, 1.8vh);
-}
-
-.loading {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 20vh;
-    font-size: clamp(1.6vh, 1.5vw, 2vh);
-    color: #666;
-    width: 100%;
-}
-
-.error-message {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 20vh;
-    color: #DC2626;
-    font-size: clamp(1.6vh, 1.2vw, 1.8vh);
-    gap: 2vh;
-}
-
-.retry-btn {
-    padding: 1vh 2vh;
-    background: #4ECDC4;
-    color: white;
-    border: none;
-    border-radius: 0.8vh;
-    font-size: 1.4vh;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.3s;
-}
-
-.retry-btn:hover {
-    background: #3db8af;
 }
 
 .filter-select {
@@ -433,123 +377,320 @@
 
 /* Стили для пагинации задач */
 .tasks-pagination {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2vh;
-  margin-top: 3vh;
-  padding: 2vh 0;
-  border-top: 0.1vh solid #E7F6F6;
-  width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2vh;
+    margin-top: 3vh;
+    padding: 2vh 0;
+    border-top: 0.1vh solid #E7F6F6;
+    width: 100%;
 }
 
 .pagination-info {
-  color: #666;
-  font-size: clamp(1.4vh, 1.1vw, 1.7vh);
-  text-align: center;
+    color: #666;
+    font-size: clamp(1.4vh, 1.1vw, 1.7vh);
+    text-align: center;
 }
 
 .pagination-highlight {
-  font-weight: 600;
-  color: #333;
+    font-weight: 600;
+    color: #333;
 }
 
 .pagination-controls {
-  display: flex;
-  align-items: center;
-  gap: 1.5vh;
+    display: flex;
+    align-items: center;
+    gap: 1.5vh;
 }
 
 .pagination-btn {
-  background: #FFFFFF;
-  color: #333;
-  border: 0.1vh solid #ddd;
-  border-radius: 1vh;
-  padding: 1vh 2.5vh;
-  font-size: clamp(1.3vh, 1vw, 1.6vh);
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 10vh;
-  height: 4.5vh;
+    background: #FFFFFF;
+    color: #333;
+    border: 0.1vh solid #ddd;
+    border-radius: 1vh;
+    padding: 1vh 2.5vh;
+    font-size: clamp(1.3vh, 1vw, 1.6vh);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 10vh;
+    height: 4.5vh;
 }
 
 .pagination-btn:hover:not(.disabled) {
-  background: #f5f5f5;
-  border-color: #4ECDC4;
+    background: #f5f5f5;
+    border-color: #4ECDC4;
 }
 
 .pagination-btn.disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
+    opacity: 0.4;
+    cursor: not-allowed;
 }
 
 .prev-btn {
-  order: 1;
+    order: 1;
 }
 
 .next-btn {
-  order: 3;
+    order: 3;
 }
 
 .pagination-pages {
-  order: 2;
-  display: flex;
-  gap: 0.8vh;
-  align-items: center;
+    order: 2;
+    display: flex;
+    gap: 0.8vh;
+    align-items: center;
 }
 
 .pagination-page {
-  background: #E7F6F6;
-  color: #333;
-  border: 0.1vh solid #D1ECEC;
-  border-radius: 1vh;
-  width: 4.5vh;
-  height: 4.5vh;
-  font-size: clamp(1.3vh, 1vw, 1.6vh);
-  cursor: pointer;
-  transition: all 0.3s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+    background: #E7F6F6;
+    color: #333;
+    border: 0.1vh solid #D1ECEC;
+    border-radius: 1vh;
+    width: 4.5vh;
+    height: 4.5vh;
+    font-size: clamp(1.3vh, 1vw, 1.6vh);
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .pagination-page:hover {
-  background: #D1ECEC;
+    background: #D1ECEC;
 }
 
 .pagination-page.active {
-  background: #4ECDC4;
-  color: white;
-  border-color: #4ECDC4;
-  font-weight: 600;
+    background: #4ECDC4;
+    color: white;
+    border-color: #4ECDC4;
+    font-weight: 600;
 }
 
 .pagination-ellipsis {
-  color: #999;
-  font-size: clamp(1.4vh, 1.1vw, 1.7vh);
-  padding: 0 1vh;
+    color: #999;
+    font-size: clamp(1.4vh, 1.1vw, 1.7vh);
+    padding: 0 1vh;
 }
 
-/* Адаптивность для пагинации */
+/* Стили для выпадающих списков автодополнения */
+.suggestions-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 0.1vh solid #ddd;
+    border-radius: 1vh;
+    margin-top: 0.5vh;
+    max-height: 30vh;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 0 0.4vh 1.2vh rgba(0,0,0,0.1);
+}
+
+.suggestion-item {
+    padding: 1.2vh 1.5vh;
+    cursor: pointer;
+    transition: background 0.2s;
+    border-bottom: 0.1vh solid #f5f5f5;
+}
+
+.suggestion-item:hover {
+    background: #f5f5f5;
+}
+
+.suggestion-name {
+    font-weight: 500;
+    color: #333;
+    font-size: 1.4vh;
+}
+
+.suggestion-details {
+    font-size: 1.2vh;
+    color: #666;
+    margin-top: 0.3vh;
+}
+
+.form-group123 small {
+    display: block;
+    color: #666;
+    font-size: 1.2vh;
+    margin-top: 0.5vh;
+}
+
+/* Адаптивность для таблицы */
+@media (max-width: 1200px) {
+    .tasks-table {
+        grid-template-columns: 2fr 1.2fr 1.2fr 1.5fr 1.5fr;
+    }
+}
+
+@media (max-width: 900px) {
+    .tasks-table {
+        grid-template-columns: 2fr 1fr 1fr 1.5fr 1.5fr;
+        min-width: 70vh;
+    }
+    
+    .search-input {
+        width: clamp(20vh, 30vw, 40vh);
+    }
+}
+
 @media (max-width: 768px) {
-  .pagination-controls {
-    flex-wrap: wrap;
+    .tasks-table {
+        grid-template-columns: 1fr;
+        min-width: auto;
+    }
+    
+    .header-cell {
+        display: none;
+    }
+    
+    .task-cell {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.5vh 2vh;
+        border-bottom: 0.1vh solid #E7F6F6;
+        grid-column: 1;
+    }
+    
+    .task-cell::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #333;
+        margin-right: 2vh;
+        font-size: 1.4vh;
+        min-width: 12vh;
+    }
+    
+    .task-cell.task-name {
+        background: #f9f9f9;
+        font-weight: 600;
+        border-bottom: 0.2vh solid #E7F6F6;
+    }
+    
+    .task-cell.task-name::before {
+        content: 'Название задачи:';
+    }
+    
+    .task-cell:nth-child(5n+2)::before {
+        content: 'Дедлайн:';
+    }
+    
+    .task-cell:nth-child(5n+3)::before {
+        content: 'Статус:';
+    }
+    
+    .task-cell:nth-child(5n+4)::before {
+        content: 'Проект:';
+    }
+    
+    .task-cell:nth-child(5n+5)::before {
+        content: 'Руководитель:';
+    }
+    
+    .filters {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .filter-group {
+        width: 100%;
+    }
+    
+    .search-input {
+        width: 100%;
+    }
+    
+    .create-task-btn {
+        width: 100%;
+        margin-top: 1vh;
+    }
+    
+    .pagination-controls {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .pagination-btn {
+        min-width: 8vh;
+        padding: 1vh 1.5vh;
+        font-size: 1.3vh;
+    }
+    
+    .pagination-page {
+        width: 4vh;
+        height: 4vh;
+        font-size: 1.3vh;
+    }
+}
+
+/* Стили для загрузки и ошибок */
+.gantt-loading_gantt_class {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     justify-content: center;
-  }
-  
-  .pagination-btn {
-    min-width: 8vh;
-    padding: 1vh 1.5vh;
-    font-size: 1.3vh;
-  }
-  
-  .pagination-page {
+    height: 40vh;
+    gap: 2vh;
+}
+
+.loading-spinner_gantt_class {
     width: 4vh;
     height: 4vh;
-    font-size: 1.3vh;
-  }
+    border: 0.4vh solid #e1e1e1;
+    border-top-color: #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.no-tasks-message_gantt_class {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 30vh;
+    background: #ffffff;
+    border-radius: 2vh;
+    margin-top: 2vh;
+}
+
+.no-tasks-content_gantt_class {
+    text-align: center;
+    padding: 3vh;
+}
+
+.no-tasks-icon_gantt_class {
+    font-size: 4vh;
+    margin-bottom: 1.5vh;
+    display: block;
+}
+
+.gantt-back-btn_gantt_class {
+    padding: 1vh 2vh;
+    background: #4ECDC4;
+    color: white;
+    border: none;
+    border-radius: 0.8vh;
+    font-size: clamp(1.3vh, 1vw, 1.6vh);
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.gantt-back-btn_gantt_class:hover {
+    background: #3db8af;
 }

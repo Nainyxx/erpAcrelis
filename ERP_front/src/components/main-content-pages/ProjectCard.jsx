@@ -18,6 +18,7 @@ const ProjectCard = ({ useMockData = false }) => {
   const [projectType, setProjectType] = useState('');
   const [price, setPrice] = useState('');
   const [customer, setCustomer] = useState('');
+  const [projectHours, setProjectHours] = useState('');
   const [projectStatus, setProjectStatus] = useState('');
   const [changes, setChanges] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,11 +38,12 @@ const ProjectCard = ({ useMockData = false }) => {
   const fileInputRef = useRef(null);
   const suggestionsRef = useRef(null);
 
+  // Обновленные статусы согласно требованиям
   const statusOptions = [
     { value: 'draft', label: 'Черновик', apiValue: 'draft' },
-    { value: 'active', label: 'Активный', apiValue: 'active' },
+    { value: 'active', label: 'В работе', apiValue: 'active' },
     { value: 'paused', label: 'Приостановлен', apiValue: 'paused' },
-    { value: 'tests', label: 'Тестирование', apiValue: 'tests' },
+    { value: 'tests', label: 'Тестируется', apiValue: 'tests' },
     { value: 'completed', label: 'Завершен', apiValue: 'completed' },
     { value: 'cancelled', label: 'Отменен', apiValue: 'cancelled' }
   ];
@@ -74,6 +76,7 @@ const ProjectCard = ({ useMockData = false }) => {
   const generateAvatar = (member) => {
     // Получаем данные из API формата
     const name = member?.staff_name || member?.name || 'Исполнитель';
+    const staffId = member?.staff || member?.id; // Получаем ID сотрудника
     
     // Получаем изображение из staff_image (поле из API)
     let imageUrl = null;
@@ -101,68 +104,86 @@ const ProjectCard = ({ useMockData = false }) => {
     
     const colorIndex = name.split('').reduce((acc, char) => acc + (char.charCodeAt(0) || 0), 0) % colors.length;
     
-    if (imageUrl) {
-      return (
-        <div className="projectcard-avatar" style={{ 
+    // Обработчик клика по аватарке
+    const handleAvatarClick = (e) => {
+      e.stopPropagation(); // Предотвращаем всплытие клика
+      if (staffId) {
+        navigate(`/staff/${staffId}`);
+      }
+    };
+    
+    const avatarContent = () => {
+      if (imageUrl) {
+        return (
+          <>
+            <img 
+              src={imageUrl} 
+              alt={name}
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                position: 'absolute',
+                top: 0,
+                left: 0
+              }}
+              onError={(e) => {
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'flex';
+              }}
+            />
+            <div 
+              className="avatar-initials"
+              style={{
+                display: 'none',
+                width: '100%',
+                height: '100%',
+                color: 'white',
+                fontWeight: 600,
+                fontSize: '1.4vh',
+                position: 'absolute',
+                top: 0,
+                left: 0
+              }}
+            >
+              {initials}
+            </div>
+          </>
+        );
+      }
+      
+      return initials.toUpperCase();
+    };
+    
+    return (
+      <div 
+        className="projectcard-avatar_project_card" 
+        style={{ 
           backgroundColor: colors[colorIndex], 
           position: 'relative',
           width: '4vh',
           height: '4vh',
           borderRadius: '50%',
-          overflow: 'hidden'
-        }}>
-          <img 
-            src={imageUrl} 
-            alt={name}
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              position: 'absolute',
-              top: 0,
-              left: 0
-            }}
-            onError={(e) => {
-              e.target.style.display = 'none';
-              e.target.nextSibling.style.display = 'flex';
-            }}
-          />
-          <div 
-            className="avatar-initials"
-            style={{
-              display: 'none',
-              width: '100%',
-              height: '100%',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'white',
-              fontWeight: 600,
-              fontSize: '1.4vh',
-              position: 'absolute',
-              top: 0,
-              left: 0
-            }}
-          >
-            {initials}
-          </div>
-        </div>
-      );
-    }
-    
-    return (
-      <div className="projectcard-avatar" style={{ 
-        backgroundColor: colors[colorIndex],
-        width: '4vh',
-        height: '4vh',
-        borderRadius: '50%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'white',
-        fontWeight: 600,
-        fontSize: '1.4vh'
-      }}>
-        {initials}
+          overflow: 'hidden',
+          cursor: staffId ? 'pointer' : 'default',
+          transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+        }}
+        onClick={handleAvatarClick}
+        onMouseEnter={(e) => {
+          if (staffId) {
+            e.currentTarget.style.transform = 'scale(1.1)';
+            e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (staffId) {
+            e.currentTarget.style.transform = 'scale(1)';
+            e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+          }
+        }}
+        title={staffId ? `Перейти к ${name}` : name}
+      >
+        {avatarContent()}
       </div>
     );
   };
@@ -287,7 +308,7 @@ const ProjectCard = ({ useMockData = false }) => {
         }
       }
       
-      if (projectType !== project.typeLabel && projectType !== project.type_display) {
+      if (projectType !== project.type_display && projectType.trim() !== '') {
         const typeMap = {
           'Сайт': 'website',
           'Бот': 'bot',
@@ -308,11 +329,18 @@ const ProjectCard = ({ useMockData = false }) => {
         updateData.customer = customer;
       }
       
+      if (projectHours !== project.hours && projectHours.trim() !== '') {
+        const hoursNum = parseInt(projectHours);
+        if (!isNaN(hoursNum)) {
+          updateData.hours = hoursNum;
+        }
+      }
+      
       
       if (Object.keys(updateData).length > 0) {
         await updateProject(project.id, updateData, useMockData);
         
-        // После сохранения делаем новый GET запрос для обновления данных
+        // После сохранения делаем новый GET запрос
         await loadProjectAndLogs();
         
       } else {
@@ -464,7 +492,16 @@ const ProjectCard = ({ useMockData = false }) => {
 
   const renderTeamAvatars = (team) => {
     if (!team || team.length === 0) {
-      return <div className="team-avatars">Нет исполнителей</div>;
+      return (
+        <div className="team-avatars_project_card" style={{ 
+          color: '#888', 
+          fontSize: '14px',
+          textAlign: 'center',
+          padding: '10px'
+        }}>
+          Нет исполнителей
+        </div>
+      );
     }
     
     const maxVisible = 6;
@@ -472,14 +509,46 @@ const ProjectCard = ({ useMockData = false }) => {
     const extraCount = team.length > maxVisible ? team.length - maxVisible : 0;
 
     return (
-      <div className="team-avatars">
+      <div className="team-avatars_project_card" style={{ 
+        display: 'flex', 
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: '-12px',
+        flexWrap: 'wrap'
+      }}>
         {visibleTeam.map((member, index) => (
-          <div key={member.id || index} className="avatar-wrapper" style={{ zIndex: maxVisible - index }}>
+          <div 
+            key={member.id || index} 
+            className="avatar-wrapper_project_card" 
+            style={{ 
+              zIndex: maxVisible - index,
+              position: 'relative'
+            }}
+          >
             {generateAvatar(member)}
           </div>
         ))}
         {extraCount > 0 && (
-          <div className="avatar extra-avatar">
+          <div 
+            className="avatar extra-avatar_project_card" 
+            style={{
+              width: '4vh',
+              height: '4vh',
+              borderRadius: '50%',
+              backgroundColor: '#6C757D',
+              color: 'white',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '1.4vh',
+              fontWeight: 600,
+              border: '2px solid white',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+              marginLeft: '-8px',
+              cursor: 'default'
+            }}
+            title={`Ещё ${extraCount} исполнителей`}
+          >
             +{extraCount}
           </div>
         )}
@@ -516,6 +585,7 @@ const ProjectCard = ({ useMockData = false }) => {
       // Преобразуем performers в team для совместимости
       const team = performers.map(performer => ({
         id: performer.id,
+        staff: performer.staff, // Добавляем ID сотрудника
         name: performer.staff_name || 'Исполнитель',
         staff_name: performer.staff_name || 'Исполнитель',
         staff_image: performer.staff_image
@@ -524,15 +594,17 @@ const ProjectCard = ({ useMockData = false }) => {
       
       setProject({
         ...projectData,
-        team: team
+        team: team,
+        performers: performers // Сохраняем оригинальный массив
       });
       
       setProjectName(projectData.name || 'Проект без названия');
       setStartDate(projectData.startDateFormatted || projectData.startDate || '');
       setDeadline(projectData.deadlineFormatted || projectData.deadline || '');
-      setProjectType(projectData.typeLabel || projectData.type_display || projectData.type || '');
+      setProjectType(projectData.type_display || projectData.typeLabel || projectData.type || '');
       setPrice(projectData.price || '');
       setCustomer(projectData.customer || '');
+      setProjectHours(projectData.hours?.toString() || '0');
       
       const statusLabel = projectData.status_display || getStatusDisplay(projectData.status);
       setProjectStatus(statusLabel);
@@ -549,9 +621,9 @@ const ProjectCard = ({ useMockData = false }) => {
   const getStatusDisplay = (status) => {
     const statusMap = {
       'draft': 'Черновик',
-      'active': 'Активный',
+      'active': 'В работе',
       'paused': 'Приостановлен',
-      'tests': 'Тестирование',
+      'tests': 'Тестируется',
       'completed': 'Завершен',
       'cancelled': 'Отменен'
     };
@@ -564,7 +636,7 @@ const ProjectCard = ({ useMockData = false }) => {
 
   if (isLoading) {
     return (
-      <div className="projectcard-container">
+      <div className="projectcard-container_project_card">
         <div className="gantt-loading_gantt_class">
           <div className="loading-spinner_gantt_class"></div>
           <h3 style={{ color: 'black', margin: '1vh 0', fontSize: '2vh' }}>Загрузка карточки проекта...</h3>
@@ -578,7 +650,7 @@ const ProjectCard = ({ useMockData = false }) => {
   
   if (!project) {
     return (
-      <div className="projectcard-container">
+      <div className="projectcard-container_project_card">
         <div className="no-tasks-message_gantt_class">
           <div className="no-tasks-content_gantt_class">
             <span className="no-tasks-icon_gantt_class">⚠️</span>
@@ -605,7 +677,7 @@ const ProjectCard = ({ useMockData = false }) => {
   });
 
   return (
-    <div className="projectcard-container">
+    <div className="projectcard-container_project_card">
       <input
         type="file"
         ref={fileInputRef}
@@ -614,10 +686,10 @@ const ProjectCard = ({ useMockData = false }) => {
         disabled={uploadingFile}
       />
       
-      <div className="projectcard-header">
-        <h1 className="projectcard-title">
+      <div className="projectcard-header_project_card">
+        <h1 className="projectcard-title_project_card">
           <span 
-            className="projects-link" 
+            className="projects-link_project_card" 
             onClick={() => navigate('/projects')}
             style={{ cursor: 'pointer' }}
           >
@@ -629,7 +701,7 @@ const ProjectCard = ({ useMockData = false }) => {
           </span>
         </h1>
         <button 
-          className="save-changes-btn" 
+          className="save-changes-btn_project_card" 
           onClick={handleSaveChanges}
           disabled={isSaving}
         >
@@ -637,15 +709,15 @@ const ProjectCard = ({ useMockData = false }) => {
         </button>
       </div>
 
-      <div className="projectcard-main-content">
-        <div className="projectcard-layout">
-          <div className="main-cards-section">
-            <div className="top-row">
-              <div className="projectcard-tile">
-                <div className="date-item">
-                  <span className="date-label">Начало проекта</span>
+      <div className="projectcard-main-content_project_card">
+        <div className="projectcard-layout_project_card">
+          <div className="main-cards-section_project_card">
+            <div className="top-row_project_card">
+              <div className="projectcard-tile_project_card">
+                <div className="date-item_project_card">
+                  <span className="date-label_project_card">Начало проекта</span>
                   <span 
-                    className="date-value1 editable" 
+                    className="date-value1_project_card editable_project_card" 
                     contentEditable
                     suppressContentEditableWarning
                     onBlur={(e) => setStartDate(e.target.textContent)}
@@ -653,10 +725,10 @@ const ProjectCard = ({ useMockData = false }) => {
                     {formatDateForDisplay(startDate)}
                   </span>
                 </div>
-                <div className="date-item">
-                  <span className="date-label">Дедлайн</span>
+                <div className="date-item_project_card">
+                  <span className="date-label_project_card">Дедлайн</span>
                   <span 
-                    className="date-value deadline editable" 
+                    className="date-value_project_card deadline_project_card editable_project_card" 
                     contentEditable
                     suppressContentEditableWarning
                     onBlur={(e) => setDeadline(e.target.textContent)}
@@ -666,32 +738,98 @@ const ProjectCard = ({ useMockData = false }) => {
                 </div>
               </div>
 
-              <div className="projectcard-tile">
-                <div className="tile-header">
+              <div className="projectcard-tile_project_card">
+                <div className="tile-header_project_card">
                   <h3>Исполнители</h3>
-                  <button className="add-btn" onClick={handleAddTeamMember}>
+                  <button className="add-btn_project_card" onClick={handleAddTeamMember}>
                     + Добавить исполнителя
                   </button>
                 </div>
-                <div className="team-container">
-                  {renderTeamAvatars(project.performers || [])}
+                <div className="team-container_project_card" style={{ 
+                  display: 'flex', 
+                  justifyContent: 'center',
+                  minHeight: '80px',
+                  alignItems: 'center'
+                }}>
+                  {renderTeamAvatars(project.performers || project.team || [])}
                 </div>
-                <div className="team-count">
-                  Всего исполнителей: {project.team?.length || 0}
+                <div className="team-count_project_card">
+                  Всего исполнителей: {(project.performers || project.team || []).length}
                 </div>
               </div>
             </div>
 
-            <div className="middle-row">
-              <div className="projectcard-tile">
-                <div className="info-item">
-                  <span className="info-label">Тип проекта</span>
+            <div className="middle-row_project_card">
+              <div className="projectcard-tile_project_card">
+                <div className="info-item_project_card">
+                  <span className="info-label_project_card">Часы на проект</span>
                   <span 
-                    className="project-type1 editable" 
+                    className="project-hours_project_card editable_project_card" 
+                    contentEditable
+                    suppressContentEditableWarning
+                    onBlur={(e) => setProjectHours(e.target.textContent)}
+                  >
+                    {projectHours || '0'}
+                  </span>
+                </div>
+                <div className="info-item_project_card">
+                  <span className="info-label_project_card">Бюджет проекта</span>
+                  <span 
+                    className="project-price_project_card editable_project_card" 
+                    contentEditable
+                    suppressContentEditableWarning
+                    onBlur={(e) => setPrice(e.target.textContent)}
+                  >
+                    {formatPrice(price)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="projectcard-tile_project_card">
+                <div className="customer-section_project_card">
+                  <h3>Заказчик</h3>
+                  <div className="customer-info_project_card">
+                    <div className="customer-details_project_card">
+                      <span 
+                        className="customer-name_project_card editable_project_card" 
+                        contentEditable
+                        suppressContentEditableWarning
+                        onKeyDown={(e) => {
+                          const currentText = e.target.textContent;
+                          if (currentText.length >= CUSTOMER_NAME_MAX_LENGTH && 
+                              e.key !== 'Backspace' && 
+                              e.key !== 'Delete' &&
+                              e.key !== 'ArrowLeft' &&
+                              e.key !== 'ArrowRight' &&
+                              e.key !== 'ArrowUp' &&
+                              e.key !== 'ArrowDown' &&
+                              e.key !== 'Tab') {
+                            e.preventDefault();
+                          }
+                        }}
+                        onPaste={(e) => {
+                          e.preventDefault();
+                          const pastedText = e.clipboardData.getData('text');
+                          const currentText = e.target.textContent;
+                          const newText = currentText + pastedText;
+                          if (newText.length <= CUSTOMER_NAME_MAX_LENGTH) {
+                            document.execCommand('insertText', false, pastedText);
+                          }
+                        }}
+                        onBlur={(e) => setCustomer(e.target.textContent)}
+                      >
+                        {customer}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="type-section_project_card">
+                  <h1 className="info-label_project_card">Тип проекта</h1>
+                  <span 
+                    className="project-type_project_card editable_project_card" 
                     contentEditable
                     suppressContentEditableWarning
                     onKeyDown={(e) => {
-                      // Проверяем, если текст уже 20 символов и не нажата клавиша удаления
                       const currentText = e.target.textContent;
                       if (currentText.length >= PROJECT_TYPE_MAX_LENGTH && 
                           e.key !== 'Backspace' && 
@@ -715,82 +853,32 @@ const ProjectCard = ({ useMockData = false }) => {
                     }}
                     onBlur={(e) => setProjectType(e.target.textContent)}
                   >
-                    {projectType || project.typeLabel || project.type_display || project.type || 'Не указан'}
+                    {projectType || project.type_display || project.typeLabel || project.type || 'Не указан'}
                   </span>
-                </div>
-                <div className="info-item">
-                  <span className="info-label">Бюджет проекта</span>
-                  <span 
-                    className="project-price editable" 
-                    contentEditable
-                    suppressContentEditableWarning
-                    onBlur={(e) => setPrice(e.target.textContent)}
-                  >
-                    {formatPrice(price)}
-                  </span>
-                </div>
-              </div>
-
-              <div className="projectcard-tile">
-                <h3>Заказчик</h3>
-                <div className="customer-info">
-                  <div className="customer-details">
-                    <span 
-                      className="customer-name editable" 
-                      contentEditable
-                      suppressContentEditableWarning
-                      onKeyDown={(e) => {
-                        // Проверяем, если текст уже 20 символов и не нажата клавиша удаления
-                        const currentText = e.target.textContent;
-                        if (currentText.length >= CUSTOMER_NAME_MAX_LENGTH && 
-                            e.key !== 'Backspace' && 
-                            e.key !== 'Delete' &&
-                            e.key !== 'ArrowLeft' &&
-                            e.key !== 'ArrowRight' &&
-                            e.key !== 'ArrowUp' &&
-                            e.key !== 'ArrowDown' &&
-                            e.key !== 'Tab') {
-                          e.preventDefault();
-                        }
-                      }}
-                      onPaste={(e) => {
-                        e.preventDefault();
-                        const pastedText = e.clipboardData.getData('text');
-                        const currentText = e.target.textContent;
-                        const newText = currentText + pastedText;
-                        if (newText.length <= CUSTOMER_NAME_MAX_LENGTH) {
-                          document.execCommand('insertText', false, pastedText);
-                        }
-                      }}
-                      onBlur={(e) => setCustomer(e.target.textContent)}
-                    >
-                      {customer}
-                    </span>
-                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="bottom-row">
-              <div className="projectcard-tile">
+            <div className="bottom-row_project_card">
+              <div className="projectcard-tile_project_card">
                 <h3>Изменения</h3>
-                <div className="changes-container">
+                <div className="changes-container_project_card">
                   {changes.length === 0 ? (
-                    <div className="empty-state">
-                      <span className="empty-icon">📋</span>
-                      <span className="empty-text">История изменений будет отображаться здесь</span>
+                    <div className="empty-state_project_card">
+                      <span className="empty-icon_project_card">📋</span>
+                      <span className="empty-text_project_card">История изменений будет отображаться здесь</span>
                     </div>
                   ) : (
-                    <div className="changes-chat">
+                    <div className="changes-chat_project_card">
                       {sortedDates.map(date => (
                         <React.Fragment key={date}>
-                          <div className="change-date-header">{date}</div>
+                          <div className="change-date-header_project_card">{date}</div>
                           {groupedChanges[date].map(change => {
                             const time = change.date?.split(' ')[1] || '';
                             return (
-                              <div key={change.id} className="change-message">
-                                <div className="change-content">{change.action}</div>
-                                <div className="change-time">{time}</div>
+                              <div key={change.id} className="change-message_project_card">
+                                <div className="change-content_project_card">{change.action}</div>
+                                <div className="change-time_project_card">{time}</div>
                               </div>
                             );
                           })}
@@ -801,15 +889,15 @@ const ProjectCard = ({ useMockData = false }) => {
                 </div>
               </div>
 
-              <div className="projectcard-tile">
+              <div className="projectcard-tile_project_card">
                 <button 
-                  className="action-btn kanban-btn" 
+                  className="action-btn_project_card kanban-btn_project_card" 
                   onClick={() => navigate(`/kanban/${project.id}`)}
                 >
                   Открыть канбан
                 </button>
                 <button 
-                  className="action-btn gantt-btn" 
+                  className="action-btn_project_card gantt-btn_project_card" 
                   onClick={() => navigate(`/gantt/${project.id}`)}
                 >
                   Диаграмма Ганта
@@ -818,15 +906,15 @@ const ProjectCard = ({ useMockData = false }) => {
             </div>
           </div>
 
-          <div className="right-panel">
-            <div className="status-tile" ref={statusDropdownRef}>
-              <div className="status-header">
-                <h3 className="status-title">Статус проекта</h3>
+          <div className="right-panel_project_card">
+            <div className="status-tile_project_card" ref={statusDropdownRef}>
+              <div className="status-header_project_card">
+                <h3 className="status-title_project_card">Статус проекта</h3>
               </div>
               
-              <div className="status-dropdown-wrapper">
+              <div className="status-dropdown-wrapper_project_card">
                 <button 
-                  className="status-current-btn"
+                  className="status-current-btn_project_card"
                   onClick={() => setShowStatusDropdown(!showStatusDropdown)}
                 >
                   <span>{projectStatus}</span>
@@ -834,11 +922,11 @@ const ProjectCard = ({ useMockData = false }) => {
                 </button>
                 
                 {showStatusDropdown && (
-                  <div className="status-dropdown">
+                  <div className="status-dropdown_project_card">
                     {statusOptions.map(option => (
                       <div 
                         key={option.value}
-                        className="status-option"
+                        className="status-option_project_card"
                         onClick={() => handleStatusChange(option.label, option.apiValue)}
                       >
                         {option.label}
@@ -849,36 +937,36 @@ const ProjectCard = ({ useMockData = false }) => {
               </div>
             </div>
 
-            <div className="files-tile">
-              <div className="files-content">
-                <div className="files-header">
+            <div className="files-tile_project_card">
+              <div className="files-content_project_card">
+                <div className="files-header_project_card">
                   <h3>Файлы проекта</h3>
                   <button 
-                    className="add-btn" 
+                    className="add-btn_project_card" 
                     onClick={handleAddFile}
                     disabled={uploadingFile}
                   >
                     {uploadingFile ? 'Загрузка...' : '+ Загрузить файлы'}
                   </button>
                 </div>
-                <div className="files-list">
+                <div className="files-list_project_card">
                   {project.files?.map(file => {
                     const fileName = file.name || file.originalName || (file.file ? file.file.split('/').pop() : 'Файл');
                     
                     return (
-                      <div key={file.id} className="file-item">
-                        <div className="file-details">
-                          <span className="file-name" title={fileName}>
+                      <div key={file.id} className="file-item_project_card">
+                        <div className="file-details_project_card">
+                          <span className="file-name_project_card" title={fileName}>
                             {fileName}
                           </span>
                           {file.uploaded_at && (
-                            <span className="file-date">
+                            <span className="file-date_project_card">
                               {new Date(file.uploaded_at).toLocaleDateString('ru-RU')}
                             </span>
                           )}
                         </div>
                         <button 
-                          className="file-download" 
+                          className="file-download_project_card" 
                           onClick={() => handleDownloadFile(file)}
                           title="Скачать файл"
                         >
@@ -888,7 +976,7 @@ const ProjectCard = ({ useMockData = false }) => {
                     );
                   })}
                 </div>
-                <div className="files-count">
+                <div className="files-count_project_card">
                   Всего файлов: {project.files?.length || 0}
                 </div>
               </div>
@@ -898,12 +986,12 @@ const ProjectCard = ({ useMockData = false }) => {
       </div>
 
       {showAddPerformerModal && (
-        <div className="modal-overlay_projects_performers_create">
-          <div className="modal-content_projects_performers_create">
-            <div className="modal-header_projects_performers_create">
+        <div className="modal-overlay_projects_performers_create_project_card">
+          <div className="modal-content_projects_performers_create_project_card">
+            <div className="modal-header_projects_performers_create_project_card">
               <h2>Добавить исполнителя</h2>
               <button 
-                className="modal-close_projects_performers_create"
+                className="modal-close_projects_performers_create_project_card"
                 onClick={() => setShowAddPerformerModal(false)}
                 disabled={addingPerformer}
               >
@@ -911,8 +999,8 @@ const ProjectCard = ({ useMockData = false }) => {
               </button>
             </div>
             
-            <div className="modal-body_projects_performers_create" ref={suggestionsRef}>
-              <div className="form-group_projects_performers_create" style={{ position: 'relative' }}>
+            <div className="modal-body_projects_performers_create_project_card" ref={suggestionsRef}>
+              <div className="form-group_projects_performers_create_project_card" style={{ position: 'relative' }}>
                 <label>ФИО сотрудника *</label>
                 <input
                   type="text"
@@ -959,7 +1047,7 @@ const ProjectCard = ({ useMockData = false }) => {
                 )}
               </div>
               
-              <div className="form-group_projects_performers_create">
+              <div className="form-group_projects_performers_create_project_card">
                 <p style={{ color: '#666', fontSize: '1.4vh' }}>
                   <strong>Примечание:</strong> Начните вводить ФИО сотрудника и выберите его из списка. 
                   После добавления сотрудник появится в команде проекта.
@@ -967,16 +1055,16 @@ const ProjectCard = ({ useMockData = false }) => {
               </div>
             </div>
             
-            <div className="modal-footer_projects_performers_create">
+            <div className="modal-footer_projects_performers_create_project_card">
               <button 
-                className="btn-cancel_projects_performers_create"
+                className="btn-cancel_projects_performers_create_project_card"
                 onClick={() => setShowAddPerformerModal(false)}
                 disabled={addingPerformer}
               >
                 Отмена
               </button>
               <button 
-                className="btn-create_projects_performers_create"
+                className="btn-create_projects_performers_create_project_card"
                 onClick={handleAddPerformerSubmit}
                 disabled={addingPerformer}
               >

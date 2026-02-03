@@ -28,7 +28,7 @@ function SideBar() {
     if (urlPath.includes('/my-tasks') || urlPath.includes('/tasks/')) {
       return 'mytasks';
     }
-    else if (urlPath.includes('/projects') || urlPath.includes('/project/')) {
+    else if (urlPath.includes('/projects') || urlPath.includes('/project/') || urlPath.includes('/kanban/') || urlPath.includes('/gantt/')) {
       return 'projects';
     }
     else if (urlPath.includes('/staff')) {

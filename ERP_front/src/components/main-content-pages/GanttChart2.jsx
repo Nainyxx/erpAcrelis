@@ -747,7 +747,7 @@ const GanttChart = ({ useMockData = false }) => {
                           borderColor: 'rgba(255, 255, 255, 0.5)',
                           boxSizing: 'border-box'
                         }}
-                        onClick={() => navigate(`/tasks/${task.id}`)}
+                        onClick={() => navigate(`/gantt/${projectId}/${task.id}`)}
                         title={`${task.title}\nСтатус: ${task.isCompleted ? 'Завершено' : 'В работе'}`}
                       >
                         {/* Кружок слева - УВЕЛИЧЕННЫЙ с галочкой при статусе completed */}

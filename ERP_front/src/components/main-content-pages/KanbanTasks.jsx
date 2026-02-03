@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { 
   getTasks, 
-  getProjectById, // Получаем название проекта
+  getProjectById,
   formatDateForDisplay, 
   createTask, 
   getStaffList 
@@ -16,7 +16,7 @@ const KanbanTasks = ({ useMockData = true }) => {
   const [tasks, setTasks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [projectName, setProjectName] = useState('Проект'); // Инициализируем
+  const [projectName, setProjectName] = useState('Проект');
 
   const columns = [
     { id: 'new', title: 'Новое' },
@@ -25,7 +25,6 @@ const KanbanTasks = ({ useMockData = true }) => {
     { id: 'done', title: 'Готов' }
   ];
 
-  // Маппинг статусов API → канбан
   const apiToKanbanStatus = {
     'draft': 'new',
     'new': 'new',
@@ -35,7 +34,42 @@ const KanbanTasks = ({ useMockData = true }) => {
     'failed': 'waiting'
   };
 
-  // Для создания задачи
+  // Функция для форматирования даты в dd.mm.yyyy
+  const formatDeadlineToDisplay = (dateString) => {
+    if (!dateString) return 'Не указан';
+    
+    // Если уже в формате dd.mm.yyyy
+    if (dateString.match(/^\d{2}\.\d{2}\.\d{4}$/)) {
+      return dateString;
+    }
+    
+    // Если в формате YYYY-MM-DD или YYYY-MM-DDTHH:mm:ss
+    if (dateString.includes('-')) {
+      try {
+        // Получаем только дату (без времени)
+        const datePart = dateString.split('T')[0];
+        const [year, month, day] = datePart.split('-');
+        return `${day}.${month}.${year}`;
+      } catch (e) {
+        return 'Неверная дата';
+      }
+    }
+    
+    // Если это строка с другим форматом
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return 'Неверная дата';
+      }
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}.${month}.${year}`;
+    } catch (e) {
+      return 'Неверная дата';
+    }
+  };
+
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState('');
@@ -50,7 +84,6 @@ const KanbanTasks = ({ useMockData = true }) => {
     hours: 0
   });
   
-  // Данные для автодополнения
   const [allStaff, setAllStaff] = useState([]);
   const [performerSuggestions, setPerformerSuggestions] = useState([]);
   const [directorSuggestions, setDirectorSuggestions] = useState([]);
@@ -60,12 +93,11 @@ const KanbanTasks = ({ useMockData = true }) => {
   const performerInputRef = useRef(null);
   const directorInputRef = useRef(null);
 
-  // Функция для генерации аватарки как в ProjectCard
   const generateAvatar = (name, imageUrl = null, size = '3vh') => {
     if (!name || name === 'Не назначен') {
       return (
         <div 
-          className="assignee-avatar"
+          className="assignee-avatar_kanban_task"
           style={{ 
             backgroundColor: '#e0e0e0',
             width: size,
@@ -84,7 +116,6 @@ const KanbanTasks = ({ useMockData = true }) => {
       );
     }
     
-    // Получаем инициалы
     let initials = '';
     try {
       const words = name.split(' ').filter(word => word && word.length > 0);
@@ -99,7 +130,6 @@ const KanbanTasks = ({ useMockData = true }) => {
       initials = 'И';
     }
     
-    // Цвет для фона
     const colors = [
       '#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0', 
       '#118AB2', '#EF476F', '#9D4EDD', '#F15BB5',
@@ -108,11 +138,9 @@ const KanbanTasks = ({ useMockData = true }) => {
     const hash = name.split('').reduce((acc, char) => acc + (char.charCodeAt(0) || 0), 0);
     const backgroundColor = colors[hash % colors.length];
     
-    // Если есть изображение
     if (imageUrl && imageUrl.trim() !== '') {
       let fullImageUrl;
       
-      // Формируем полный URL
       if (imageUrl.startsWith('http')) {
         fullImageUrl = imageUrl;
       } else if (imageUrl.startsWith('/')) {
@@ -123,7 +151,7 @@ const KanbanTasks = ({ useMockData = true }) => {
       
       return (
         <div 
-          className="assignee-avatar"
+          className="assignee-avatar_kanban_task"
           style={{ 
             backgroundColor: backgroundColor,
             position: 'relative',
@@ -133,7 +161,6 @@ const KanbanTasks = ({ useMockData = true }) => {
             overflow: 'hidden'
           }}
         >
-          {/* Изображение */}
           <img 
             src={fullImageUrl} 
             alt={name}
@@ -147,13 +174,11 @@ const KanbanTasks = ({ useMockData = true }) => {
             }}
             onError={(e) => {
               e.target.style.display = 'none';
-              // Показываем инициалы
               e.target.nextSibling.style.display = 'flex';
             }}
             crossOrigin="anonymous"
           />
           
-          {/* Fallback с инициалами (скрыт по умолчанию) */}
           <div 
             style={{
               display: 'none',
@@ -176,10 +201,9 @@ const KanbanTasks = ({ useMockData = true }) => {
       );
     }
     
-    // Если нет изображения, показываем только инициалы
     return (
       <div 
-        className="assignee-avatar"
+        className="assignee-avatar_kanban_task"
         style={{ 
           backgroundColor: backgroundColor,
           width: size,
@@ -198,7 +222,6 @@ const KanbanTasks = ({ useMockData = true }) => {
     );
   };
 
-  // Загрузка задач проекта и названия проекта
   const loadProjectTasks = async () => {
     if (!projectId) {
       navigate('/projects');
@@ -209,7 +232,6 @@ const KanbanTasks = ({ useMockData = true }) => {
     setError(null);
     
     try {
-      
       // Сначала загружаем данные проекта
       try {
         const projectData = await getProjectById(projectId, useMockData);
@@ -227,11 +249,8 @@ const KanbanTasks = ({ useMockData = true }) => {
       // Запрашиваем задачи для конкретного проекта
       const response = await getTasks(useMockData, filters);
       
-      // API возвращает {results: [], count: X}
       const apiTasks = response.results || [];
 
-      
-      // Конвертируем задачи API в формат канбана
       const kanbanTasks = apiTasks.map(task => {
         const kanbanStatus = apiToKanbanStatus[task.status] || 'new';
         
@@ -239,10 +258,10 @@ const KanbanTasks = ({ useMockData = true }) => {
           id: task.id,
           title: task.name || 'Без названия',
           startDate: formatDateForDisplay(task.created) || 'Не указано',
-          deadline: formatDateForDisplay(task.deadline) || 'Не указано',
+          deadline: formatDeadlineToDisplay(task.deadline) || 'Не указано',
           assignee: task.performer_name || 'Не назначен',
           assigneeId: task.performer,
-          assigneeImage: task.performer_image, // Используем performer_image из API
+          assigneeImage: task.performer_image,
           status: kanbanStatus,
           comment: task.description || '',
           originalTask: task
@@ -252,7 +271,6 @@ const KanbanTasks = ({ useMockData = true }) => {
       setTasks(kanbanTasks);
       
     } catch (error) {
-
       setError('Не удалось загрузить задачи. Проверьте подключение.');
       setTasks([]);
     } finally {
@@ -266,6 +284,7 @@ const KanbanTasks = ({ useMockData = true }) => {
       const staffData = staffResult.employees || [];
       setAllStaff(staffData);
     } catch (error) {
+      console.error('Ошибка загрузки списка сотрудников:', error);
     }
   };
 
@@ -273,12 +292,17 @@ const KanbanTasks = ({ useMockData = true }) => {
     loadProjectTasks();
   }, [projectId, useMockData]);
 
-  // Обработчик для случая, когда у проекта нет задач
   const handleNoTasksRedirect = () => {
     navigate(`/projects/${projectId}`);
   };
 
-  const openCreateModal = () => {
+  const openCreateModal = async () => {
+    try {
+      await loadStaffList(); // Загружаем список сотрудников перед открытием модалки
+    } catch (error) {
+      console.error('Не удалось загрузить список сотрудников:', error);
+    }
+    
     setShowCreateModal(true);
     setCreateError('');
     setNewTask({
@@ -292,7 +316,11 @@ const KanbanTasks = ({ useMockData = true }) => {
       hours: 0
     });
     
-    loadStaffList();
+    // Устанавливаем дефолтную дату дедлайна (текущая дата + 7 дней)
+    const today = new Date();
+    const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const formattedDate = nextWeek.toISOString().split('T')[0];
+    setNewTask(prev => ({ ...prev, deadline: formattedDate }));
   };
 
   const closeCreateModal = () => {
@@ -307,7 +335,6 @@ const KanbanTasks = ({ useMockData = true }) => {
     setNewTask(prev => ({ ...prev, [name]: value }));
   };
 
-  // Автодополнение исполнителя
   const handlePerformerInputChange = (e) => {
     const value = e.target.value;
     setNewTask(prev => ({ ...prev, performerName: value, performer: '' }));
@@ -315,7 +342,7 @@ const KanbanTasks = ({ useMockData = true }) => {
     if (value.length > 1) {
       const searchTerm = value.toLowerCase().trim();
       const filtered = allStaff.filter(staff => 
-        staff.name.toLowerCase().includes(searchTerm)
+        staff.name && staff.name.toLowerCase().includes(searchTerm)
       ).slice(0, 5);
       
       setPerformerSuggestions(filtered);
@@ -331,7 +358,6 @@ const KanbanTasks = ({ useMockData = true }) => {
     setShowPerformerSuggestions(false);
   };
 
-  // Автодополнение руководителя
   const handleDirectorInputChange = (e) => {
     const value = e.target.value;
     setNewTask(prev => ({ ...prev, directorName: value, director: '' }));
@@ -339,7 +365,7 @@ const KanbanTasks = ({ useMockData = true }) => {
     if (value.length > 1) {
       const searchTerm = value.toLowerCase().trim();
       const filtered = allStaff.filter(staff => 
-        staff.name.toLowerCase().includes(searchTerm)
+        staff.name && staff.name.toLowerCase().includes(searchTerm)
       ).slice(0, 5);
       
       setDirectorSuggestions(filtered);
@@ -355,7 +381,6 @@ const KanbanTasks = ({ useMockData = true }) => {
     setShowDirectorSuggestions(false);
   };
 
-  // Закрытие выпадающих списков при клике вне
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (showPerformerSuggestions && performerInputRef.current && !performerInputRef.current.contains(event.target)) {
@@ -372,9 +397,7 @@ const KanbanTasks = ({ useMockData = true }) => {
     };
   }, [showPerformerSuggestions, showDirectorSuggestions]);
 
-  // СОЗДАНИЕ ЗАДАЧИ
   const handleCreateTask = async () => {
-    // Валидация
     if (!newTask.name.trim()) {
       setCreateError('Название задачи обязательно');
       return;
@@ -385,10 +408,21 @@ const KanbanTasks = ({ useMockData = true }) => {
       return;
     }
 
+    // Валидация дедлайна (не раньше сегодняшнего дня)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const deadlineDate = new Date(newTask.deadline);
+    if (deadlineDate < today) {
+      setCreateError('Дедлайн не может быть раньше сегодняшнего дня');
+      return;
+    }
+
     if (newTask.performerName && !newTask.performer) {
       const foundPerformer = allStaff.find(staff => 
-        staff.name.toLowerCase() === newTask.performerName.toLowerCase() ||
-        staff.name.toLowerCase().includes(newTask.performerName.toLowerCase())
+        staff.name && (
+          staff.name.toLowerCase() === newTask.performerName.toLowerCase() ||
+          staff.name.toLowerCase().includes(newTask.performerName.toLowerCase())
+        )
       );
       
       if (foundPerformer) {
@@ -399,11 +433,12 @@ const KanbanTasks = ({ useMockData = true }) => {
       }
     }
 
-    // Проверяем руководителя
     if (newTask.directorName && !newTask.director) {
       const foundDirector = allStaff.find(staff => 
-        staff.name.toLowerCase() === newTask.directorName.toLowerCase() ||
-        staff.name.toLowerCase().includes(newTask.directorName.toLowerCase())
+        staff.name && (
+          staff.name.toLowerCase() === newTask.directorName.toLowerCase() ||
+          staff.name.toLowerCase().includes(newTask.directorName.toLowerCase())
+        )
       );
       
       if (foundDirector) {
@@ -429,7 +464,6 @@ const KanbanTasks = ({ useMockData = true }) => {
         hours: newTask.hours || 0
       };
 
-      
       await createTask(taskData, useMockData);
       
       setShowCreateModal(false);
@@ -447,9 +481,7 @@ const KanbanTasks = ({ useMockData = true }) => {
       // Обновляем список задач
       await loadProjectTasks();
       
-      
     } catch (error) {
-      
       let userFriendlyError = 'Не удалось создать задачу';
       
       if (error.message.includes('API Error: 400')) {
@@ -468,7 +500,7 @@ const KanbanTasks = ({ useMockData = true }) => {
               userFriendlyError = `Дата дедлайна: ${errorJson.deadline[0]}`;
             }
           } catch {
-
+            // Если не удалось распарсить JSON, используем общее сообщение
           }
         }
       } else if (error.message.includes('Network Error') || error.message.includes('Failed to fetch')) {
@@ -498,7 +530,7 @@ const KanbanTasks = ({ useMockData = true }) => {
 
   if (isLoading) {
     return (
-      <div className="kanban-container">
+      <div className="kanban-container_kanban_task">
         <div className="gantt-loading_gantt_class">
           <div className="loading-spinner_gantt_class"></div>
           <h3 style={{ color: 'black', margin: '1vh 0', fontSize: '2vh' }}>Загрузка канбана задач...</h3>
@@ -510,28 +542,37 @@ const KanbanTasks = ({ useMockData = true }) => {
     );
   }
 
-  if (error) {
-    return (
-      <div className="kanban-container">
-        <div className="kanban-header">
-          <h1 className="kanban-title">
-            <span 
-              className="breadcrumb-link" 
-              onClick={() => navigate('/projects')}
-            >
-              Проекты
-            </span>
-            {' — '}
-            <span 
-              className="breadcrumb-link" 
-              onClick={() => navigate(`/projects/${projectId}`)}
-            >
-              {projectName || 'Проект'}
-            </span>
-            {' — Канбан задач'}
-          </h1>
-        </div>
-        
+  return (
+    <div className="kanban-container_kanban_task">
+      <div className="kanban-header_kanban_task">
+        <h1 className="kanban-title_kanban_task">
+          <span 
+            className="breadcrumb-link_kanban_task" 
+            onClick={() => navigate('/projects')}
+          >
+            Проекты
+          </span>
+          {' — '}
+          <span 
+            className="breadcrumb-link_kanban_task" 
+            onClick={() => navigate(`/projects/${projectId}`)}
+          >
+            {projectName || 'Проект'}
+          </span>
+          {' — Канбан задач'}
+        </h1>
+      </div>
+
+      <div className="create-task-section_kanban_task">
+        <button 
+          className="create-task-btn_kanban_task" 
+          onClick={openCreateModal}
+        >
+          Создать задачу
+        </button>
+      </div>
+
+      {error ? (
         <div className="no-tasks-message_gantt_class">
           <div className="no-tasks-content_gantt_class">
             <span className="no-tasks-icon_gantt_class">⚠️</span>
@@ -546,38 +587,7 @@ const KanbanTasks = ({ useMockData = true }) => {
             </button>
           </div>
         </div>
-      </div>
-    );
-  }
-
-  if (tasks.length === 0) {
-    return (
-      <div className="kanban-container">
-        <div className="kanban-header">
-          <h1 className="kanban-title">
-            <span 
-              className="breadcrumb-link" 
-              onClick={() => navigate('/projects')}
-            >
-              Проекты
-            </span>
-            {' — '}
-            <span 
-              className="breadcrumb-link" 
-              onClick={() => navigate(`/projects/${projectId}`)}
-            >
-              {projectName || 'Проект'}
-            </span>
-            {' — Канбан задач'}
-          </h1>
-        </div>
-
-        <div className="create-task-section">
-          <button className="create-task-btn" onClick={openCreateModal}>
-            Создать задачу
-          </button>
-        </div>
-
+      ) : tasks.length === 0 ? (
         <div className="no-tasks-message_gantt_class">
           <div className="no-tasks-content_gantt_class">
             <span className="no-tasks-icon_gantt_class">📋</span>
@@ -604,113 +614,59 @@ const KanbanTasks = ({ useMockData = true }) => {
             </button>
           </div>
         </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="kanban-container">
-      {/* Хлебные крошки */}
-      <div className="kanban-header">
-        <h1 className="kanban-title">
-          <span 
-            className="breadcrumb-link" 
-            onClick={() => navigate('/projects')}
-          >
-            Проекты
-          </span>
-          {' — '}
-          <span 
-            className="breadcrumb-link" 
-            onClick={() => navigate(`/projects/${projectId}`)}
-          >
-            {projectName || 'Проект'}
-          </span>
-          {' — Канбан задач'}
-        </h1>
-      </div>
-
-      {/* Кнопка создания задачи */}
-      <div className="create-task-section">
-        <button className="create-task-btn" onClick={openCreateModal}>
-          Создать задачу
-        </button>
-      </div>
-
-      {/* Канбан доска */}
-      <div className="kanban-board">
-        {columns.map(column => (
-          <div 
-            key={column.id} 
-            className="kanban-column"
-          >
-            <div className="column-header">
-              <h3>{column.title}</h3>
-            </div>
-            
-            <div className="tasks-list">
-              {tasks
-                .filter(task => task.status === column.id)
-                .map(task => (
-                  <div 
-                    key={task.id} 
-                    className={`task-card task-card-${task.status}`}
-                    onClick={() => navigate(`/tasks/${task.id}`)}
-                  >
-                    {/* 1. Название задачи по центру */}
-                    <div className="task-title">{task.title}</div>
-                    
-                    {/* 2. Начало: и дата начала В ОДНОЙ СТРОКЕ */}
-                    <div className="task-dates">
-                      <div className="date-row">
-                        <span className="date-label">Начало:</span>
-                        <span className="date-value">{task.startDate}</span>
+      ) : (
+        <div className="kanban-board_kanban_task">
+          {columns.map(column => (
+            <div 
+              key={column.id} 
+              className="kanban-column_kanban_task"
+            >
+              <div className="column-header_kanban_task">
+                <h3>{column.title}</h3>
+              </div>
+              
+              <div className="tasks-list_kanban_task">
+                {tasks
+                  .filter(task => task.status === column.id)
+                  .map(task => (
+                    <div 
+                      key={task.id} 
+                      className={`task-card_kanban_task task-card-${task.status}_kanban_task`}
+                      onClick={() => navigate(`/kanban/${projectId}/${task.id}`)}
+                    >
+                      <div className="task-title_kanban_task">{task.title}</div>
+                      
+                      <div className="task-dates_kanban_task">
+                        <div className="date-row_kanban_task">
+                          <span className="date-label_kanban_task">Начало: </span>
+                          <span className="date-value_kanban_task">{task.startDate}</span>
+                        </div>
+                        
+                        <div className="date-row_kanban_task">
+                          <span className="date-label_kanban_task">Дедлайн: </span>
+                          <span className="date-value_kanban_task">{task.deadline}</span>
+                        </div>
                       </div>
                       
-                      {/* 3. Дедлайн: и дедлайн В ОДНОЙ СТРОКЕ */}
-                      <div className="date-row">
-                        <span className="date-label">Дедлайн:</span>
-                        <span className="date-value">{task.deadline}</span>
+                      <div className="task-assignee_kanban_task">
+                        {generateAvatar(task.assignee, task.assigneeImage, '3vh')}
                       </div>
                     </div>
-                    
-                    {/* 4. Исполнитель в виде кружка как в ProjectCard */}
-                    <div className="task-assignee">
-                      {generateAvatar(task.assignee, task.assigneeImage, '3vh')}
-                    </div>
-                    
-                    {/* 5. Комментарий - прямоугольник белый с закругленными краями */}
-                    {task.comment ? (
-                      <div className="task-comment">
-                        {task.comment}
-                      </div>
-                    ) : (
-                      <button 
-                        className="add-comment-btn"
-                        onClick={(e) => {
-                          e.stopPropagation(); // предотвращаем переход по клику
-                          const comment = prompt('Введите комментарий:');
-                          if (comment) handleAddComment(task.id, comment);
-                        }}
-                      >
-                        + Добавить комментарий
-                      </button>
-                    )}
-                  </div>
-                ))}
+                  ))}
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Модальное окно создания задачи */}
       {showCreateModal && (
-        <div className="modal-overlay123">
-          <div className="modal-content123">
-            <div className="modal-header123">
+        <div className="modal-overlay_kanban_task">
+          <div className="modal-content_kanban_task">
+            <div className="modal-header_kanban_task">
               <h2>Создать задачу в проекте</h2>
               <button 
-                className="modal-close123"
+                className="modal-close_kanban_task"
                 onClick={closeCreateModal}
                 disabled={creating}
               >
@@ -718,12 +674,12 @@ const KanbanTasks = ({ useMockData = true }) => {
               </button>
             </div>
             
-            <div className="modal-body123">
+            <div className="modal-body_kanban_task">
               {createError && (
-                <div className="error-message123">{createError}</div>
+                <div className="error-message_kanban_task">{createError}</div>
               )}
               
-              <div className="form-group123">
+              <div className="form-group_kanban_task">
                 <label>Название задачи *</label>
                 <input
                   type="text"
@@ -733,23 +689,24 @@ const KanbanTasks = ({ useMockData = true }) => {
                   placeholder="Введите название задачи"
                   disabled={creating}
                   maxLength={100}
+                  autoFocus
                 />
               </div>
               
-              <div className="form-group123">
+              <div className="form-group_kanban_task">
                 <label>Описание *</label>
                 <textarea
                   name="description"
                   value={newTask.description}
                   onChange={handleInputChange}
-                  className="form-textarea123"
+                  className="form-textarea_kanban_task"
                   placeholder="Введите описание задачи"
                   disabled={creating}
                   rows="3"
                 />
               </div>
               
-              <div className="form-group123">
+              <div className="form-group_kanban_task">
                 <label>Дедлайн *</label>
                 <input
                   type="date"
@@ -757,11 +714,12 @@ const KanbanTasks = ({ useMockData = true }) => {
                   value={newTask.deadline}
                   onChange={handleInputChange}
                   disabled={creating}
+                  min={new Date().toISOString().split('T')[0]}
                 />
               </div>
               
-              <div className="form-row123">
-                <div className="form-group123" ref={performerInputRef} style={{ position: 'relative' }}>
+              <div className="form-row_kanban_task">
+                <div className="form-group_kanban_task" ref={performerInputRef} style={{ position: 'relative' }}>
                   <label>Исполнитель (опционально)</label>
                   <input
                     type="text"
@@ -774,16 +732,16 @@ const KanbanTasks = ({ useMockData = true }) => {
                   />
                   
                   {showPerformerSuggestions && performerSuggestions.length > 0 && (
-                    <div className="suggestions-dropdown">
+                    <div className="suggestions-dropdown_kanban_task">
                       {performerSuggestions.map((staff, index) => (
                         <div 
                           key={staff.id || index}
-                          className="suggestion-item"
+                          className="suggestion-item_kanban_task"
                           onClick={() => handlePerformerSuggestionClick(staff)}
                         >
-                          <div className="suggestion-name">{staff.name}</div>
+                          <div className="suggestion-name_kanban_task">{staff.name}</div>
                           {staff.position && (
-                            <div className="suggestion-details">{staff.position}</div>
+                            <div className="suggestion-details_kanban_task">{staff.position}</div>
                           )}
                         </div>
                       ))}
@@ -791,7 +749,7 @@ const KanbanTasks = ({ useMockData = true }) => {
                   )}
                 </div>
                 
-                <div className="form-group123" ref={directorInputRef} style={{ position: 'relative' }}>
+                <div className="form-group_kanban_task" ref={directorInputRef} style={{ position: 'relative' }}>
                   <label>Руководитель (опционально)</label>
                   <input
                     type="text"
@@ -804,16 +762,16 @@ const KanbanTasks = ({ useMockData = true }) => {
                   />
                   
                   {showDirectorSuggestions && directorSuggestions.length > 0 && (
-                    <div className="suggestions-dropdown">
+                    <div className="suggestions-dropdown_kanban_task">
                       {directorSuggestions.map((staff, index) => (
                         <div 
                           key={staff.id || index}
-                          className="suggestion-item"
+                          className="suggestion-item_kanban_task"
                           onClick={() => handleDirectorSuggestionClick(staff)}
                         >
-                          <div className="suggestion-name">{staff.name}</div>
+                          <div className="suggestion-name_kanban_task">{staff.name}</div>
                           {staff.position && (
-                            <div className="suggestion-details">{staff.position}</div>
+                            <div className="suggestion-details_kanban_task">{staff.position}</div>
                           )}
                         </div>
                       ))}
@@ -822,8 +780,8 @@ const KanbanTasks = ({ useMockData = true }) => {
                 </div>
               </div>
               
-              <div className="form-row123">
-                <div className="form-group123">
+              <div className="form-row_kanban_task">
+                <div className="form-group_kanban_task">
                   <label>Часы</label>
                   <input
                     type="number"
@@ -832,29 +790,29 @@ const KanbanTasks = ({ useMockData = true }) => {
                     onChange={handleInputChange}
                     placeholder="0"
                     min="0"
-                    max="2147483647"
+                    max="1000"
                     disabled={creating}
                   />
                 </div>
               </div>
 
-              <div className="form-group123">
-                <div className="project-info-note">
-                  <strong>*</strong>Задача будет автоматически привязана к текущему проекту
+              <div className="form-group_kanban_task">
+                <div className="project-info-note_kanban_task">
+                  <strong>*</strong> Задача будет автоматически привязана к текущему проекту
                 </div>
               </div>
             </div>
             
-            <div className="modal-footer123">
+            <div className="modal-footer_kanban_task">
               <button 
-                className="btn-cancel123"
+                className="btn-cancel_kanban_task"
                 onClick={closeCreateModal}
                 disabled={creating}
               >
                 Отмена
               </button>
               <button 
-                className="btn-create123"
+                className="btn-create_kanban_task"
                 onClick={handleCreateTask}
                 disabled={creating}
               >
