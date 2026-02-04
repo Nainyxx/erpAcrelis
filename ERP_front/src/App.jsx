@@ -194,11 +194,26 @@ function App() {
       
       <Routes>
         {/* Публичные маршруты */}
-        <Route path="#/login" element={<LoginPage />} />
-        <Route path="#/register" element={<RegistrationPageStart />} />
-        <Route path="#/register/step2" element={<RegistrationPageEnd />} />
-        <Route path="#/staff/register/invite/:token" element={<InviteRegistrationStart />} />
-        <Route path="#/staff/register/invite/:token/step2" element={<InviteRegistrationEnd />} />
+        {/* Важно: порядок маршрутов имеет значение */}
+        <Route path="/" element={
+          isAuthenticatedUser ? 
+            <Navigate to="/projects" replace /> : 
+            <Navigate to="/login" replace />
+        } />
+        
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegistrationPageStart />} />
+        <Route path="/register/step2" element={<RegistrationPageEnd />} />
+        
+        {/* Приглашения по токену - правильные пути для HashRouter */}
+        <Route 
+          path="/staff/register/invite/:token" 
+          element={<InviteRegistrationStart />} 
+        />
+        <Route 
+          path="/staff/register/invite/:token/step2" 
+          element={<InviteRegistrationEnd />} 
+        />
         
         {/* Защищённые маршруты */}
         <Route path="/*" element={
@@ -262,20 +277,21 @@ function App() {
                 } />
                 
                 {/* Карточка задачи через канбан */}
-<Route path="/kanban/:projectId/:taskId" element={
-  <TaskCard 
-    useMockData={useMockData}
-    showNotification={() => {}}
-  />
-} />
+                <Route path="/kanban/:projectId/:taskId" element={
+                  <TaskCard 
+                    useMockData={useMockData}
+                    showNotification={() => {}}
+                  />
+                } />
 
-{/* Карточка задачи через Гант */}
-<Route path="/gantt/:projectId/:taskId" element={
-  <TaskCard 
-    useMockData={useMockData}
-    showNotification={() => {}}
-  />
-} />
+                {/* Карточка задачи через Гант */}
+                <Route path="/gantt/:projectId/:taskId" element={
+                  <TaskCard 
+                    useMockData={useMockData}
+                    showNotification={() => {}}
+                  />
+                } />
+                
                 {/* Бухгалтерия */}
                 <Route path="/accounting" element={
                   <AccountingPage showNotification={() => {}} />
@@ -302,6 +318,13 @@ function App() {
               </Routes>
             </MainLayout>
           </PrivateRoute>
+        } />
+        
+        {/* Редирект всех неправильных публичных путей на логин */}
+        <Route path="*" element={
+          isAuthenticatedUser ? 
+            <Navigate to="/projects" replace /> : 
+            <Navigate to="/login" replace />
         } />
       </Routes>
     </div>

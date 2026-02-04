@@ -8,7 +8,7 @@ function AccessDeniedOverlay() {
     // Очищаем все данные
     localStorage.clear();
     // Перенаправляем на страницу логина
-    window.location.href = '/login';
+    window.location.href = '#/login';
   };
 
   return (

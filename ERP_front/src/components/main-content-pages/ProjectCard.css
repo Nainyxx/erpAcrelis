@@ -51,9 +51,11 @@
   box-shadow: 0 0.4vh 0.8vh rgba(0, 0, 0, 0.1);
 }
 
+/* Основная структура - изменяем высоту на адаптивную */
 .projectcard-main-content_project_card {
   width: 100%;
   height: calc(100vh - 18vh);
+  min-height: 62.5vh;
 }
 
 /* Основная структура */
@@ -73,7 +75,7 @@
   min-width: 0;
 }
 
-/* Ряды карточек */
+/* Ряды карточек - изменяем высоту на более адаптивную */
 .top-row_project_card,
 .middle-row_project_card,
 .bottom-row_project_card {
@@ -81,19 +83,22 @@
   grid-template-columns: 1fr 1fr;
   gap: 2.4vh;
   width: 100%;
-  height: 22vh;
+  height: auto;
+  min-height: 18vh;
+  flex: 1;
 }
 
-/* Карточки имеют фиксированную высоту */
+/* Карточки имеют адаптивную высоту */
 .projectcard-tile_project_card {
   background: #FFFFFF;
   border-radius: 1.6vh;
-  padding: 2.8vh;
+  padding: 2vh;
   box-shadow: 0 0.4vh 1.2vh rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
   transition: transform 0.2s, box-shadow 0.2s;
   height: 100%;
+  min-height: 16vh;
 }
 
 /* Правая часть - файлы с статусом (33%) */
@@ -103,27 +108,27 @@
   flex-direction: column;
   gap: 2.4vh;
   min-width: 0;
-  height: 103.5%;
+  height: 100%;
 }
 
 /* Стили для карточки статуса */
 .status-tile_project_card {
   background: #FFFFFF;
   border-radius: 1.6vh;
-  padding: 2.8vh;
+  padding: 2vh;
   box-shadow: 0 0.4vh 1.2vh rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
   transition: transform 0.2s, box-shadow 0.2s;
   height: auto;
-  min-height: 0;
+  min-height: 18vh;
 }
 
 /* Стили для карточки файлов */
 .files-tile_project_card {
   background: #FFFFFF;
   border-radius: 1.6vh;
-  padding: 2.8vh;
+  padding: 2vh;
   box-shadow: 0 0.4vh 1.2vh rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
@@ -135,9 +140,8 @@
 
 /* Стили для разделов заказчика и типа проекта */
 .customer-section_project_card {
-  margin-bottom: 1.6vh;
+  margin-bottom: 1.2vh;
 }
-
 
 /* Стили для часов проекта */
 .project-hours_project_card {
@@ -161,7 +165,7 @@
 
 /* Стили для заказчика */
 .customer-name_project_card {
-  font-size: 1.8vh; /* Уменьшил размер */
+  font-size: 1.8vh;
   font-weight: 600;
   color: #333;
   padding: 0.8vh 0;
@@ -188,7 +192,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.8vh;
-  margin-bottom: 1.6vh;
+  margin-bottom: 1.2vh;
 }
 
 .date-label_project_card {
@@ -212,7 +216,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.6vh;
+  margin-bottom: 1.2vh;
 }
 
 .tile-header_project_card h3 {
@@ -242,7 +246,7 @@
   flex: 1;
   display: flex;
   align-items: center;
-  margin-bottom: 1.2vh;
+  margin-bottom: 1vh;
 }
 
 .team-avatars_project_card {
@@ -290,14 +294,14 @@
   color: #6C757D;
   font-weight: 500;
   text-align: center;
-  margin-top: 0.8vh;
+  margin-bottom: 0.6vh;
 }
 
 .info-item_project_card {
   display: flex;
   flex-direction: column;
   gap: 0.8vh;
-  margin-bottom: 1.6vh;
+  margin-bottom: 1.2vh;
 }
 
 .info-label_project_card {
@@ -316,13 +320,13 @@
   display: flex;
   align-items: flex-start;
   gap: 1.6vh;
-  margin-top: 0.8vh;
+  margin-top: 0.6vh;
 }
 
 .customer-details_project_card {
   display: flex;
   flex-direction: column;
-  gap: 0.6vh;
+  gap: 0.4vh;
   flex: 1;
 }
 
@@ -332,33 +336,33 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1.2vh;
+  gap: 1vh;
   color: #6C757D;
 }
 
 .empty-icon_project_card {
-  font-size: 3.6vh;
+  font-size: 3.2vh;
   opacity: 0.5;
 }
 
 .empty-text_project_card {
-  font-size: 1.4vh;
+  font-size: 1.3vh;
   text-align: center;
-  max-width: 25vh;
-  line-height: 1.4;
+  max-width: 22vh;
+  line-height: 1.3;
 }
 
 .action-btn_project_card {
-  padding: 1.2vh 2vh;
+  padding: 1vh 1.8vh;
   border: none;
   border-radius: 1vh;
-  font-size: 2vh;
-  height: 40%;
+  font-size: 1.8vh;
+  height: 35%;
   cursor: pointer;
   width: 100%;
   text-align: center;
   transition: all 0.2s;
-  margin-bottom: 1vh;
+  margin-bottom: 0.8vh;
 }
 
 .action-btn_project_card:last-child {
@@ -381,7 +385,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.6vh;
+  margin-bottom: 1.2vh;
 }
 
 .status-title_project_card {
@@ -399,9 +403,9 @@
   background: none;
   border: 0.2vh solid #DEE2E6;
   color: #333;
-  padding: 1vh 1.6vh;
+  padding: 0.8vh 1.4vh;
   border-radius: 0.8vh;
-  font-size: 1.6vh;
+  font-size: 1.5vh;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
@@ -432,8 +436,8 @@
 }
 
 .status-option_project_card {
-  padding: 1vh 1.6vh;
-  font-size: 1.4vh;
+  padding: 0.8vh 1.4vh;
+  font-size: 1.3vh;
   color: #333;
   cursor: pointer;
   transition: all 0.2s;
@@ -461,7 +465,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2vh;
+  margin-bottom: 1.6vh;
 }
 
 .files-header_project_card h3 {
@@ -474,18 +478,18 @@
 .files-list_project_card {
   display: flex;
   flex-direction: column;
-  gap: 1.2vh;
+  gap: 1vh;
   flex: 1;
   overflow-y: auto;
-  padding-right: 0.8vh;
+  padding-right: 0.6vh;
 }
 
 .file-item_project_card {
   display: flex;
   align-items: center;
-  gap: 1.2vh;
-  padding: 1.2vh;
-  border-radius: 1vh;
+  gap: 1vh;
+  padding: 1vh;
+  border-radius: 0.8vh;
   transition: all 0.2s;
 }
 
@@ -499,12 +503,12 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.4vh;
+  gap: 0.3vh;
   min-width: 0;
 }
 
 .file-name_project_card {
-  font-size: 1.8vh;
+  font-size: 1.6vh;
   font-weight: 600;
   color: #333;
   white-space: nowrap;
@@ -513,7 +517,7 @@
 }
 
 .file-date_project_card {
-  font-size: 1.3vh;
+  font-size: 1.2vh;
   color: #6C757D;
 }
 
@@ -521,14 +525,14 @@
   background: none;
   border: 0.2vh solid #DEE2E6;
   color: #6C757D;
-  width: 3.6vh;
-  height: 3.6vh;
+  width: 3.2vh;
+  height: 3.2vh;
   border-radius: 0.8vh;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 1.8vh;
+  font-size: 1.6vh;
   transition: all 0.2s;
   flex-shrink: 0;
 }
@@ -539,12 +543,12 @@
 }
 
 .files-count_project_card {
-  font-size: 1.4vh;
+  font-size: 1.3vh;
   color: #6C757D;
   font-weight: 500;
   text-align: center;
-  margin-top: 1.6vh;
-  padding-top: 1.6vh;
+  margin-top: 1.2vh;
+  padding-top: 1.2vh;
   border-top: 0.2vh solid #E9ECEF;
 }
 
@@ -581,41 +585,41 @@
 .changes-chat_project_card {
   flex: 1;
   overflow-y: auto;
-  padding-right: 0.8vh;
+  padding-right: 0.6vh;
   display: flex;
   flex-direction: column;
-  gap: 0.8vh;
-  max-height: 15vh;
+  gap: 0.6vh;
+  max-height: 12vh;
 }
 
 /* Заголовок даты */
 .change-date-header_project_card {
-  font-size: 1.2vh;
+  font-size: 1.1vh;
   color: #6C757D;
   font-weight: 500;
-  margin-top: 0.5vh;
+  margin-top: 0.4vh;
 }
 
 /* Сообщение об изменении */
 .change-message_project_card {
   background: #EAF6F7;
   border-radius: 0.6vh;
-  padding: 0.8vh 1vh;
+  padding: 0.6vh 0.8vh;
   position: relative;
-  font-size: 1.3vh;
+  font-size: 1.2vh;
   color: #333;
-  line-height: 1.4;
+  line-height: 1.3;
 }
 
 .change-content_project_card {
-  padding-right: 4vh;
+  padding-right: 3vh;
 }
 
 .change-time_project_card {
   position: absolute;
-  right: 0.8vh;
-  bottom: 0.5vh;
-  font-size: 1.1vh;
+  right: 0.6vh;
+  bottom: 0.4vh;
+  font-size: 1vh;
   color: #6C757D;
 }
 
@@ -804,4 +808,184 @@
 
 .gantt-back-btn_gantt_class:hover {
   background: #3dbdb4;
+}
+
+/* Медиа-запросы для адаптивности */
+@media (max-height: 700px) {
+  .projectcard-tile_project_card {
+    padding: 1.6vh;
+    min-height: 14vh;
+  }
+  
+  .top-row_project_card,
+  .middle-row_project_card,
+  .bottom-row_project_card {
+    gap: 1.8vh;
+    min-height: 15vh;
+  }
+  
+  .status-tile_project_card,
+  .files-tile_project_card {
+    padding: 1.6vh;
+    min-height: 15vh;
+  }
+  
+  .date-value1_project_card,
+  .project-price_project_card,
+  .project-hours_project_card,
+  .customer-name_project_card,
+  .project-type_project_card {
+    font-size: 1.8vh;
+  }
+  
+  .date-label_project_card,
+  .info-label_project_card,
+  .team-count_project_card,
+  .tile-header_project_card h3 {
+    font-size: 1.3vh;
+  }
+  
+  .projectcard-avatar_project_card {
+    width: 3.2vh;
+    height: 3.2vh;
+    font-size: 1.3vh;
+  }
+  
+  .avatar.extra-avatar_project_card {
+    width: 3.2vh;
+    height: 3.2vh;
+    font-size: 1.1vh;
+  }
+}
+
+@media (max-height: 600px) {
+  .projectcard-tile_project_card {
+    padding: 1.4vh;
+    min-height: 12vh;
+  }
+  
+  .top-row_project_card,
+  .middle-row_project_card,
+  .bottom-row_project_card {
+    gap: 1.4vh;
+    min-height: 13vh;
+  }
+  
+  .status-tile_project_card,
+  .files-tile_project_card {
+    padding: 1.4vh;
+    min-height: 13vh;
+  }
+  
+  .date-value1_project_card,
+  .project-price_project_card,
+  .project-hours_project_card,
+  .customer-name_project_card,
+  .project-type_project_card {
+    font-size: 1.6vh;
+  }
+  
+  .date-label_project_card,
+  .info-label_project_card,
+  .team-count_project_card,
+  .tile-header_project_card h3 {
+    font-size: 1.2vh;
+  }
+  
+  .projectcard-avatar_project_card {
+    width: 2.8vh;
+    height: 2.8vh;
+    font-size: 1.2vh;
+  }
+  
+  .avatar.extra-avatar_project_card {
+    width: 2.8vh;
+    height: 2.8vh;
+    font-size: 1vh;
+  }
+  
+  .action-btn_project_card {
+    padding: 0.8vh 1.4vh;
+    font-size: 1.6vh;
+    height: 32%;
+  }
+}
+
+@media (max-height: 500px) {
+  .projectcard-tile_project_card {
+    padding: 1.2vh;
+    min-height: 10vh;
+  }
+  
+  .top-row_project_card,
+  .middle-row_project_card,
+  .bottom-row_project_card {
+    gap: 1.2vh;
+    min-height: 11vh;
+  }
+  
+  .status-tile_project_card,
+  .files-tile_project_card {
+    padding: 1.2vh;
+    min-height: 11vh;
+  }
+  
+  .date-value1_project_card,
+  .project-price_project_card,
+  .project-hours_project_card,
+  .customer-name_project_card,
+  .project-type_project_card {
+    font-size: 1.4vh;
+  }
+  
+  .date-label_project_card,
+  .info-label_project_card,
+  .team-count_project_card,
+  .tile-header_project_card h3 {
+    font-size: 1.1vh;
+  }
+  
+  .projectcard-main-content_project_card {
+    min-height: 40vh;
+  }
+  
+  .projectcard-avatar_project_card {
+    width: 2.4vh;
+    height: 2.4vh;
+    font-size: 1vh;
+  }
+  
+  .avatar.extra-avatar_project_card {
+    width: 2.4vh;
+    height: 2.4vh;
+    font-size: 0.9vh;
+  }
+  
+  .action-btn_project_card {
+    padding: 0.6vh 1.2vh;
+    font-size: 1.4vh;
+    height: 30%;
+  }
+}
+
+/* Фиксируем отступы между строками */
+.top-row_project_card {
+  margin-bottom: 0;
+}
+
+.middle-row_project_card {
+  margin: 0;
+}
+
+.bottom-row_project_card {
+  margin-top: 0;
+}
+
+/* Сохраняем вертикальные отступы между строками карточек */
+.projectcard-layout_project_card {
+  gap: 2.4vh; /* Фиксированный отступ между левой и правой панелями */
+}
+
+.main-cards-section_project_card {
+  gap: 2.4vh; /* Фиксированный отступ между строками карточек */
 }

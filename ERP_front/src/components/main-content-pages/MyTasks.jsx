@@ -1,5 +1,4 @@
 // MyTasks.jsx
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
@@ -291,6 +290,7 @@ const MyTasks = ({ useMockData = true }) => {
     return task.directorName || 'Не назначен';
   };
 
+  // Функция для обработки клика по ячейке
   const handleTaskClick = (task) => {
     navigate(`/tasks/${task.id}`);
   };
@@ -599,6 +599,37 @@ const MyTasks = ({ useMockData = true }) => {
     return statusClassMap[status] || 'new';
   };
 
+  // Функция для обработки ховера на ячейку с эффектом на всю строку
+  const handleCellHover = (taskId, isHovering) => {
+    // Находим все ячейки этой задачи (они идут последовательно в DOM)
+    const startIndex = tasks.findIndex(t => t.id === taskId) * 5;
+    
+    // Получаем все ячейки таблицы
+    const allCells = document.querySelectorAll('.tasks-table > .task-cell');
+    
+    // Применяем/убираем стили для 5 ячеек строки
+    for (let i = 0; i < 5; i++) {
+      const cellIndex = startIndex + i;
+      if (allCells[cellIndex]) {
+        if (isHovering) {
+          allCells[cellIndex].style.fontWeight = '500';
+          allCells[cellIndex].style.transform = 'scale(1.05)';
+          allCells[cellIndex].style.boxShadow = '0 0.2vh 1vh rgba(0,0,0,0.05)';
+          allCells[cellIndex].style.zIndex = '1';
+          allCells[cellIndex].style.position = 'relative';
+          allCells[cellIndex].style.backgroundColor = 'rgba(0,0,0,0.02)';
+        } else {
+          allCells[cellIndex].style.fontWeight = '';
+          allCells[cellIndex].style.transform = '';
+          allCells[cellIndex].style.boxShadow = '';
+          allCells[cellIndex].style.zIndex = '';
+          allCells[cellIndex].style.position = '';
+          allCells[cellIndex].style.backgroundColor = '';
+        }
+      }
+    }
+  };
+
   // ЗАГРУЗКА
   if (loading || selectedPerformer === '') {
     return (
@@ -793,6 +824,8 @@ const MyTasks = ({ useMockData = true }) => {
               <div 
                 className="task-cell task-name"
                 onClick={() => handleTaskClick(task)}
+                onMouseEnter={() => handleCellHover(task.id, true)}
+                onMouseLeave={() => handleCellHover(task.id, false)}
               >
                 <div className="task-name-text">{task.taskName}</div>
               </div>
@@ -801,6 +834,8 @@ const MyTasks = ({ useMockData = true }) => {
               <div 
                 className="task-cell"
                 onClick={() => handleTaskClick(task)}
+                onMouseEnter={() => handleCellHover(task.id, true)}
+                onMouseLeave={() => handleCellHover(task.id, false)}
               >
                 <div className={`deadline ${task.status === 'completed' ? 'completed' : ''}`}>
                   {task.deadline}
@@ -811,6 +846,8 @@ const MyTasks = ({ useMockData = true }) => {
               <div 
                 className="task-cell"
                 onClick={() => handleTaskClick(task)}
+                onMouseEnter={() => handleCellHover(task.id, true)}
+                onMouseLeave={() => handleCellHover(task.id, false)}
               >
                 <div className={`task-status-badge ${getStatusClass(task.status)}`}>
                   {task.status_display}
@@ -821,6 +858,8 @@ const MyTasks = ({ useMockData = true }) => {
               <div 
                 className="task-cell"
                 onClick={() => handleTaskClick(task)}
+                onMouseEnter={() => handleCellHover(task.id, true)}
+                onMouseLeave={() => handleCellHover(task.id, false)}
               >
                 <div className="project-info">
                   <div className="project-name">{task.projectName}</div>
@@ -831,6 +870,8 @@ const MyTasks = ({ useMockData = true }) => {
               <div 
                 className="task-cell"
                 onClick={() => handleTaskClick(task)}
+                onMouseEnter={() => handleCellHover(task.id, true)}
+                onMouseLeave={() => handleCellHover(task.id, false)}
               >
                 <div className="manager-info">
                   <div className="manager-name">{getProjectManager(task)}</div>

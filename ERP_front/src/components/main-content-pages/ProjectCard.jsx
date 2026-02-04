@@ -752,10 +752,9 @@ const ProjectCard = ({ useMockData = false }) => {
                   alignItems: 'center'
                 }}>
                   {renderTeamAvatars(project.performers || project.team || [])}
+\
                 </div>
-                <div className="team-count_project_card">
-                  Всего исполнителей: {(project.performers || project.team || []).length}
-                </div>
+
               </div>
             </div>
 

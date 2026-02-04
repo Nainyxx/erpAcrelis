@@ -163,7 +163,7 @@ function RegistrationPageEnd() {
       
       // Перенаправляем на логин через 2 секунды
       setTimeout(() => {
-        navigate('/login');
+        navigate('#/login');
       }, 2000);
       
     } catch (err) {
@@ -285,7 +285,7 @@ function RegistrationPageEnd() {
         {/* Ссылка на вход */}
         <div className="login_links_login_page">
           <span className="login_no_account_login_page">Уже есть аккаунт?</span>
-          <Link to="/login" className="login_register_link_login_page">
+          <Link to="#/login" className="login_register_link_login_page">
             Войти
           </Link>
         </div>

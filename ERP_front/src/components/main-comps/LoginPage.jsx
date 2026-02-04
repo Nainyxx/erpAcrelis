@@ -50,7 +50,7 @@ function LoginPage() {
       try {
         await getProjects(false, {});
         // Если запрос успешен, переходим на главную
-        navigate('/');
+        navigate('/projects', { replace: true });
       } catch (apiError) {
         
         // Проверяем, если это ошибка доступа 403
@@ -62,7 +62,7 @@ function LoginPage() {
           setAccessDenied(true);
         } else {
           // Если другая ошибка, все равно даем доступ
-          navigate('/');
+          navigate('/projects', { replace: true });
         }
       }
       
@@ -100,7 +100,7 @@ function LoginPage() {
           <button
             onClick={() => {
               // localStorage уже очищен, просто перезагружаем
-              window.location.href = '/login';
+              window.location.href = '/#/login';
             }}
             className="access_denied_button_123net_prav"
           >

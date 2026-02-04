@@ -61,12 +61,14 @@ const TaskCard = ({ useMockData = false }) => {
     const [progress, setProgress] = useState(0);
     const [showStatusDropdown_task_card, setShowStatusDropdown_task_card] = useState(false);
     const [assignee, setAssignee] = useState({
+        id: null,
         name: '',
         initials: '',
         color: '#FF6B6B',
         image: null
     });
     const [manager, setManager] = useState({
+        id: null,
         name: '',
         initials: '',
         color: '#4ECDC4',
@@ -109,104 +111,119 @@ const TaskCard = ({ useMockData = false }) => {
     }, [projectId, useMockData, loadingProject]);
 
     // ==================== Рендеринг заголовка в зависимости от контекста ====================
-// В TaskCard.jsx обновите функцию renderHeader:
-
-// ==================== Рендеринг заголовка в зависимости от контекста ====================
-const renderHeader = () => {
-    // Используем window.location.hash для HashRouter
-    const hashPath = window.location.hash || '';
-    
-    // Убираем # из начала
-    const path = hashPath.startsWith('#') ? hashPath.substring(1) : hashPath;
-    
-    // Разбиваем путь на части
-    const pathParts = path.split('/').filter(part => part !== '');
-    
-    
-    // Проверяем структуру пути
-    const isFromKanban = pathParts[0] === 'kanban' && pathParts.length === 3;
-    const isFromGantt = pathParts[0] === 'gantt' && pathParts.length === 3;
-    const isFromTasks = pathParts[0] === 'tasks' && pathParts.length === 2;
-    
-    // Если пришли из канбана
-    if (isFromKanban) {
-        return (
-            <div className="taskcard-header_task_card">
-                <h1 className="taskcard-title_task_card">
-                    <span 
-                        className="mytasks-link_task_card" 
-                        onClick={() => navigate('/projects')}
-                        style={{ cursor: 'pointer'}}
-                    >
-                        Проекты
-                    </span>
-                    {' — '}
-                    <span 
-                        className="mytasks-link_task_card" 
-                        onClick={() => navigate(`/projects/${projectId}`)}
-                        style={{ cursor: 'pointer'}}
-                    >
-                        {project?.name || 'ERP Front'}
-                    </span>
-                    {' — '}
-                    <span 
-                        className="mytasks-link_task_card" 
-                        onClick={() => navigate(`/kanban/${projectId}`)}
-                        style={{ cursor: 'pointer'}}
-                    >
-                        Канбан задач
-                    </span>
-                    {' — '}
-                    <span className="task-name_task_card">{task?.name || 'Задача'}</span>
-                </h1>
-            </div>
-        );
-    }
-    
-    // Если пришли из ганта
-    if (isFromGantt) {
-        return (
-            <div className="taskcard-header_task_card">
-                <h1 className="taskcard-title_task_card">
-                    <span 
-                        className="mytasks-link_task_card" 
-                        onClick={() => navigate('/projects')}
-                        style={{ cursor: 'pointer'}}
-                    >
-                        Проекты
-                    </span>
-                    {' — '}
-                    <span 
-                        className="mytasks-link_task_card" 
-                        onClick={() => navigate(`/projects/${projectId}`)}
-                        style={{ cursor: 'pointer'}}
-                    >
-                        {project?.name || 'ERP Front'}
-                    </span>
-                    {' — '}
-                    <span 
-                        className="mytasks-link_task_card" 
-                        onClick={() => navigate(`/gantt/${projectId}`)}
-                        style={{ cursor: 'pointer'}}
-                    >
-                        Диаграмма Ганта
-                    </span>
-                    {' — '}
-                    <span className="task-name_task_card">{task?.name || 'Задача'}</span>
-                </h1>
-            </div>
-        );
-    }
-    
-    // Если пришли из списка задач
-    if (isFromTasks) {
+    const renderHeader = () => {
+        // Используем window.location.hash для HashRouter
+        const hashPath = window.location.hash || '';
+        
+        // Убираем # из начала
+        const path = hashPath.startsWith('#') ? hashPath.substring(1) : hashPath;
+        
+        // Разбиваем путь на части
+        const pathParts = path.split('/').filter(part => part !== '');
+        
+        
+        // Проверяем структуру пути
+        const isFromKanban = pathParts[0] === 'kanban' && pathParts.length === 3;
+        const isFromGantt = pathParts[0] === 'gantt' && pathParts.length === 3;
+        const isFromTasks = pathParts[0] === 'tasks' && pathParts.length === 2;
+        
+        // Если пришли из канбана
+        if (isFromKanban) {
+            return (
+                <div className="taskcard-header_task_card">
+                    <h1 className="taskcard-title_task_card">
+                        <span 
+                            className="mytasks-link_task_card" 
+                            onClick={() => navigate('/projects')}
+                            style={{ cursor: 'pointer'}}
+                        >
+                            Проекты
+                        </span>
+                        {' — '}
+                        <span 
+                            className="mytasks-link_task_card" 
+                            onClick={() => navigate(`/projects/${projectId}`)}
+                            style={{ cursor: 'pointer'}}
+                        >
+                            {project?.name || 'ERP Front'}
+                        </span>
+                        {' — '}
+                        <span 
+                            className="mytasks-link_task_card" 
+                            onClick={() => navigate(`/kanban/${projectId}`)}
+                            style={{ cursor: 'pointer'}}
+                        >
+                            Канбан задач
+                        </span>
+                        {' — '}
+                        <span className="task-name_task_card">{task?.name || 'Задача'}</span>
+                    </h1>
+                </div>
+            );
+        }
+        
+        // Если пришли из ганта
+        if (isFromGantt) {
+            return (
+                <div className="taskcard-header_task_card">
+                    <h1 className="taskcard-title_task_card">
+                        <span 
+                            className="mytasks-link_task_card" 
+                            onClick={() => navigate('/projects')}
+                            style={{ cursor: 'pointer'}}
+                        >
+                            Проекты
+                        </span>
+                        {' — '}
+                        <span 
+                            className="mytasks-link_task_card" 
+                            onClick={() => navigate(`/projects/${projectId}`)}
+                            style={{ cursor: 'pointer'}}
+                        >
+                            {project?.name || 'ERP Front'}
+                        </span>
+                        {' — '}
+                        <span 
+                            className="mytasks-link_task_card" 
+                            onClick={() => navigate(`/gantt/${projectId}`)}
+                            style={{ cursor: 'pointer'}}
+                        >
+                            Диаграмма Ганта
+                        </span>
+                        {' — '}
+                        <span className="task-name_task_card">{task?.name || 'Задача'}</span>
+                    </h1>
+                </div>
+            );
+        }
+        
+        // Если пришли из списка задач
+        if (isFromTasks) {
+            return (
+                <div className="taskcard-header_task_card">
+                    <h1 className="taskcard-title_task_card">
+                        <span 
+                            className="mytasks-link_task_card" 
+                            onClick={() => navigate('/my-tasks')}
+                            style={{ cursor: 'pointer' }}
+                        >
+                            Мои задачи
+                        </span>
+                        {' — '}
+                        <span className="task-name_task_card">{task?.name || 'Задача'}</span>
+                    </h1>
+                </div>
+            );
+        }
+        
+        // По умолчанию
         return (
             <div className="taskcard-header_task_card">
                 <h1 className="taskcard-title_task_card">
                     <span 
                         className="mytasks-link_task_card" 
                         onClick={() => navigate('/my-tasks')}
-                        style={{ cursor: 'pointer' }}
+                        style={{ cursor: 'pointer', textDecoration: 'underline' }}
                     >
                         Мои задачи
                     </span>
@@ -215,25 +232,7 @@ const renderHeader = () => {
                 </h1>
             </div>
         );
-    }
-    
-    // По умолчанию
-    return (
-        <div className="taskcard-header_task_card">
-            <h1 className="taskcard-title_task_card">
-                <span 
-                    className="mytasks-link_task_card" 
-                    onClick={() => navigate('/my-tasks')}
-                    style={{ cursor: 'pointer', textDecoration: 'underline' }}
-                >
-                    Мои задачи
-                </span>
-                {' — '}
-                <span className="task-name_task_card">{task?.name || 'Задача'}</span>
-            </h1>
-        </div>
-    );
-};
+    };
 
     // ==================== Функции для обработки названий файлов ====================
     
@@ -529,9 +528,11 @@ const renderHeader = () => {
                 setProgress(statusOption ? statusOption.progress : 50);
             }
             
-            if (taskData.performer_name) {
+            // Обновляем данные исполнителя
+            if (taskData.performer || taskData.performer_name) {
                 const initials = taskData.performer_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
                 setAssignee({
+                    id: taskData.performer,
                     name: taskData.performer_name,
                     initials: initials,
                     color: '#FF6B6B',
@@ -539,9 +540,11 @@ const renderHeader = () => {
                 });
             }
             
-            if (taskData.director_name) {
+            // Обновляем данные руководителя
+            if (taskData.director || taskData.director_name) {
                 const initials = taskData.director_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
                 setManager({
+                    id: taskData.director,
                     name: taskData.director_name,
                     initials: initials,
                     color: '#4ECDC4',
@@ -869,6 +872,68 @@ const renderHeader = () => {
         return new Date(dateA).getTime() - new Date(dateB).getTime();
     });
 
+    // ==================== Функции для перехода на карточку сотрудника ====================
+    
+    const handleAssigneeClick = () => {
+        if (assignee.id) {
+            navigate(`/staff/${assignee.id}`);
+        }
+    };
+
+    const handleManagerClick = () => {
+        if (manager.id) {
+            navigate(`/staff/${manager.id}`);
+        }
+    };
+
+    // ==================== Рендеринг блока с исполнителем и руководителем ====================
+    
+    const renderPeopleInfo = () => (
+        <div className="info-rectangle_task_card">
+            {/* Исполнитель */}
+            <div className="person-item_task_card">
+                <div className="person-role_task_card">Исполнитель</div>
+                <div 
+                    className={`person-info_task_card ${assignee.id ? 'clickable-person' : ''}`}
+                    onClick={assignee.id ? handleAssigneeClick : undefined}
+                    style={{
+                        cursor: assignee.id ? 'pointer' : 'default'
+                    }}
+                >
+                    {generateAvatar_task_card(assignee.initials, assignee.color, assignee.image)}
+                    <span 
+                        className="person-name_task_card"
+                        style={{
+                        }}
+                    >
+                        {assignee.name}
+                    </span>
+                </div>
+            </div>
+            
+            {/* Руководитель */}
+            <div className="person-item_task_card">
+                <div className="person-role_task_card">Руководитель</div>
+                <div 
+                    className={`person-info_task_card ${manager.id ? 'clickable-person' : ''}`}
+                    onClick={manager.id ? handleManagerClick : undefined}
+                    style={{
+                        cursor: manager.id ? 'pointer' : 'default'
+                    }}
+                >
+                    {generateAvatar_task_card(manager.initials, manager.color, manager.image)}
+                    <span 
+                        className="person-name_task_card"
+                        style={{
+                        }}
+                    >
+                        {manager.name}
+                    </span>
+                </div>
+            </div>
+        </div>
+    );
+
     useEffect(() => {
         scrollToBottom();
     }, [commentsList, scrollToBottom]);
@@ -1192,23 +1257,7 @@ const renderHeader = () => {
                         </div>
 
                         {/* Прямоугольник 3: Исполнитель и руководитель */}
-                        <div className="info-rectangle_task_card">
-                            <div className="person-item_task_card">
-                                <div className="person-role_task_card">Исполнитель</div>
-                                <div className="person-info_task_card">
-                                    {generateAvatar_task_card(assignee.initials, assignee.color, assignee.image)}
-                                    <span className="person-name_task_card">{assignee.name}</span>
-                                </div>
-                            </div>
-                            
-                            <div className="person-item_task_card">
-                                <div className="person-role_task_card">Руководитель</div>
-                                <div className="person-info_task_card">
-                                    {generateAvatar_task_card(manager.initials, manager.color, manager.image)}
-                                    <span className="person-name_task_card">{manager.name}</span>
-                                </div>
-                            </div>
-                        </div>
+                        {renderPeopleInfo()}
                     </div>
                 </div>
             </div>

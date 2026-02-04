@@ -39,7 +39,7 @@ function Header({ currentUser }) {
 
     const handleLogout = () => {
         clearTokens();
-        window.location.href = '/login';
+        window.location.href = '#/login';
     };
 
     const handleAccountClick = () => {
