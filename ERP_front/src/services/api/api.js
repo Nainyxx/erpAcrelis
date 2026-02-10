@@ -587,7 +587,7 @@ export async function createProject(projectData, USE_MOCK_DATA) {
   formData.append('type', projectData.type);
   formData.append('status', projectData.status);
   formData.append('customer', projectData.customer);
-  formData.append('deadline', projectData.deadline + 'T00:00:00+03:00');
+  formData.append('deadline', projectData.deadline);
   formData.append('hours', projectData.hours.toString());
   
   if (projectData.price) {
@@ -1593,11 +1593,11 @@ function convertToAPIDate(dateString) {
   
   if (dateString.match(/^\d{2}\.\d{2}\.\d{4}$/)) {
     const [day, month, year] = dateString.split('.');
-    return `${year}-${month}-${day}T00:00:00+03:00`;
+    return `${year}-${month}-${day}`;
   }
   
   if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
-    return dateString + 'T00:00:00+03:00';
+    return dateString;
   }
   
   return dateString;

@@ -466,7 +466,7 @@ const ProjectsList = ({ useMockData = true, showNotification }) => {
                 <input
                   type="date"
                   value={newProject.deadline}
-                  onChange={(e) => setNewProject({...newProject, deadline: (e.target.value).split('T')[0]})}
+                  onChange={(e) => setNewProject({...newProject, deadline: `${(e.target.value).split('T')[0]}`})}
                   disabled={creating}
                 />
               </div>

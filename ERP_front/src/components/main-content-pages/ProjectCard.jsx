@@ -292,7 +292,7 @@ const ProjectCard = ({ useMockData = false }) => {
       if (startDate !== formattedProjectStartDate && startDate.trim() !== '' && startDate !== 'Не указана') {
         if (startDate.match(/^\d{2}\.\d{2}\.\d{4}$/)) {
           const [day, month, year] = startDate.split('.');
-          updateData.start_date = `${year}-${month}-${day}T00:00:00+03:00`;
+          updateData.start_date = `${year}-${month}-${day}`;
         } else {
           updateData.start_date = startDate;
         }
@@ -302,7 +302,7 @@ const ProjectCard = ({ useMockData = false }) => {
       if (deadline !== formattedProjectDeadline && deadline.trim() !== '' && deadline !== 'Не указана') {
         if (deadline.match(/^\d{2}\.\d{2}\.\d{4}$/)) {
           const [day, month, year] = deadline.split('.');
-          updateData.deadline = `${year}-${month}-${day}T00:00:00+03:00`;
+          updateData.deadline = `${year}-${month}-${day}`;
         } else {
           updateData.deadline = deadline;
         }
