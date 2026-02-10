@@ -243,7 +243,8 @@ const KanbanTasks = ({ useMockData = true }) => {
       // Фильтр по проекту
       const filters = { 
         project: projectId,
-        page: 1
+        page: 1,
+        exclude_completed: 'false'
       };
       
       // Запрашиваем задачи для конкретного проекта

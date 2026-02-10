@@ -121,39 +121,73 @@ export async function register(userData) {
   }
 }
 
-// Обновление access токена
+
 export async function refreshAccessToken() {
-  const refreshToken = getRefreshToken();
-  
-  if (!refreshToken) {
-    throw new Error('Требуется повторная авторизация');
-  }
-  
-  try {
-    const response = await fetch(`${API_CONFIG.BASE_URL}auth/refresh/`, {
-      method: 'POST',
-      headers: {
-        'accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        refresh: refreshToken
-      })
-    });
+  let isRefreshing = false;
+  let refreshPromise = null;
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      clearTokens();
-      throw new Error('Сессия истекла. Требуется повторная авторизация');
+  if (isRefreshing && refreshPromise) {
+    return refreshPromise;
+  }
+
+  isRefreshing = true;
+  refreshPromise = (async () => {
+    try {
+      const refreshToken = getRefreshToken();
+      const accessToken = getAccessToken();
+
+      if (!refreshToken || !accessToken || accessToken === '') {
+        clearTokens();
+        window.location.href = '#/login';
+        throw new Error('Требуется повторная авторизация');
+      }
+
+      const response = await fetch(`${API_CONFIG.BASE_URL}auth/refresh/`, {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({
+          refresh: refreshToken
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        
+        if (response.status === 401) {
+          clearTokens();
+          window.location.href = '#/login';
+          throw new Error('Сессия истекла');
+        }
+        
+        throw new Error(`Ошибка обновления: ${response.status}`);
+      }
+
+      const newTokens = await response.json();
+      
+      if (!newTokens.access) {
+        throw new Error('Не получили новый токен');
+      }
+      
+      localStorage.setItem('access_token', newTokens.access);
+      API_CONFIG.ACCESS_TOKEN = newTokens.access;
+      
+      if (newTokens.refresh) {
+        localStorage.setItem('refresh_token', newTokens.refresh);
+      }
+      
+      return newTokens.access;
+      
+    } finally {
+      isRefreshing = false;
+      refreshPromise = null;
     }
-
-    const newTokens = await response.json();
-    saveTokens(newTokens);
-    return newTokens.access;
-    
-  } catch (error) {
-    throw error;
-  }
+  })();
+  
+  return refreshPromise;
 }
 
 // Сохранение токенов в localStorage
@@ -294,29 +328,42 @@ export async function authFetch(url, options = {}) {
   try {
     const response = await fetch(url, requestOptions);
     
+    // Если получили 401 - пробуем обновить токен
     if (response.status === 401) {
+      // НЕ обновляем токен для endpoints аутентификации (это вызовет бесконечный цикл)
+      if (url.includes('auth/')) {
+        clearTokens();
+        window.location.href = '#/login';
+        throw new Error('Требуется повторная авторизация');
+      }
+      
       try {
         const newAccessToken = await refreshAccessToken();
+        
+        // Обновляем заголовок с новым токеном
         requestOptions.headers['Authorization'] = `Bearer ${newAccessToken}`;
+        
+        // Повторяем запрос с новым токеном
         const retryResponse = await fetch(url, requestOptions);
         
-        if (!retryResponse.ok) {
-          if (retryResponse.status === 401) {
-            clearTokens();
-            window.location.href = '/login';
-          }
+        // Если снова 401 - значит токен не обновился или что-то не так
+        if (retryResponse.status === 401) {
+          clearTokens();
+          window.location.href = '#/login';
+          throw new Error('Не удалось обновить сессию');
         }
         
         return retryResponse;
       } catch (refreshError) {
         clearTokens();
-        window.location.href = '/login';
+        window.location.href = '#/login';
         throw refreshError;
       }
     }
     
     return response;
   } catch (error) {
+    // Если это ошибка сети или другая ошибка - просто пробрасываем дальше
     throw error;
   }
 }

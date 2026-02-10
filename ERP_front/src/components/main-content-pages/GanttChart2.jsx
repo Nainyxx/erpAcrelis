@@ -94,7 +94,8 @@ const GanttChart = ({ useMockData = false }) => {
         // Используем фильтр по проекту и текущую страницу
         const filters = {
           project: projectId,
-          page: currentPage
+          page: currentPage,
+          exclude_completed: 'false'
         };
         
         const response = await getTasks(useMockData, filters);

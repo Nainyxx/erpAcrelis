@@ -97,23 +97,32 @@ const MyTasks = ({ useMockData = true }) => {
     ...Object.entries(TASK_STATUS_MAP).map(([id, label]) => ({ id, label }))
   ];
 
-  // Инициализация - получаем текущего пользователя
+  // Инициализация - получаем текущего пользователя и парсим query параметры
   useEffect(() => {
     const user = getCurrentUser();
     setCurrentUser(user);
     
-    // Сразу устанавливаем фильтр по staff_id текущего пользователя
-    if (user && user.staff_id) {
-      setSelectedPerformer(user.staff_id.toString());
-    } else if (user && user.user_id) {
-      setSelectedPerformer(user.user_id.toString());
+    // Парсим query параметры
+    const params = new URLSearchParams(location.search);
+    const performerParam = params.get('performer');
+    
+    // Если есть performer в query параметрах - используем его
+    if (performerParam) {
+      setSelectedPerformer(performerParam);
     } else {
-      setSelectedPerformer('all');
+      // Иначе используем ID текущего пользователя
+      if (user && user.staff_id) {
+        setSelectedPerformer(user.staff_id.toString());
+      } else if (user && user.user_id) {
+        setSelectedPerformer(user.user_id.toString());
+      } else {
+        setSelectedPerformer('all');
+      }
     }
     
     // Загружаем список сотрудников
     loadStaffList();
-  }, [useMockData]);
+  }, [useMockData, location.search]);
 
   // Загрузка задач при изменении фильтров или страницы
   useEffect(() => {
@@ -636,7 +645,7 @@ const MyTasks = ({ useMockData = true }) => {
       <div className="mytasks-container">
         <div className="gantt-loading_gantt_class">
           <div className="loading-spinner_gantt_class"></div>
-          <h3 style={{ color: 'black', margin: '1vh 0', fontSize: '2vh' }}>Загрузка ваших задач...</h3>
+          <h3 style={{ color: 'black', margin: '1vh 0', fontSize: '2vh' }}>Загрузка задач...</h3>
           <p style={{ color: 'rgba(0, 0, 0, 0.8)', fontSize: '1.4vh' }}>
             Подготавливаем список задач
           </p>

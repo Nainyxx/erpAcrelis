@@ -40,20 +40,25 @@ const CONFIG = {
 
 // Компонент для защищённых роутов
 function PrivateRoute({ children }) {
-  const [authChecked, setAuthChecked] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [isAuth, setIsAuth] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
+      setLoading(true);
+      
+      // Даем небольшую задержку для плавности
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
       const authenticated = isAuthenticated();
       setIsAuth(authenticated);
-      setAuthChecked(true);
+      setLoading(false);
     };
 
     checkAuth();
   }, []);
 
-  if (!authChecked) {
+  if (loading) {
     return (
       <div style={{
         display: 'flex',
@@ -74,6 +79,7 @@ function PrivateRoute({ children }) {
     );
   }
 
+  // Если есть токен - показываем контент, если нет - редирект на логин
   return isAuth ? children : <Navigate to="/login" />;
 }
 
@@ -173,18 +179,16 @@ function App() {
   const [projects] = useState(projectsData);
   const [useMockData] = useState(CONFIG.USE_MOCK_DATA);
   const [currentUser, setCurrentUser] = useState(null);
-  const [isAuthenticatedUser, setIsAuthenticatedUser] = useState(false);
 
   useEffect(() => {
     // Получаем текущего пользователя при загрузке
     const user = getCurrentUser();
     setCurrentUser(user);
-    setIsAuthenticatedUser(isAuthenticated());
   }, []);
 
   // Определяем, показывать ли WebSocket уведомления
   const shouldShowWebSocketNotifications = () => {
-    return isAuthenticatedUser;
+    return isAuthenticated();
   };
 
   return (
@@ -193,19 +197,19 @@ function App() {
       {shouldShowWebSocketNotifications() && <NotificationContainer />}
       
       <Routes>
-        {/* Публичные маршруты */}
-        {/* Важно: порядок маршрутов имеет значение */}
+        {/* Главная страница - сразу на проекты, PrivateRoute сам решит что делать */}
         <Route path="/" element={
-          isAuthenticatedUser ? 
-            <Navigate to="/projects" replace /> : 
-            <Navigate to="/login" replace />
+          <PrivateRoute>
+            <Navigate to="/projects" replace />
+          </PrivateRoute>
         } />
         
+        {/* Публичные маршруты */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegistrationPageStart />} />
         <Route path="/register/step2" element={<RegistrationPageEnd />} />
         
-        {/* Приглашения по токену - правильные пути для HashRouter */}
+        {/* Приглашения по токену */}
         <Route 
           path="/staff/register/invite/:token" 
           element={<InviteRegistrationStart />} 
@@ -244,7 +248,7 @@ function App() {
                   />
                 } />
                 
-                {/* Канбан задач - НОВЫЙ МАРШРУТ */}
+                {/* Канбан задач */}
                 <Route path="/kanban/:projectId" element={
                   <KanbanPage 
                     useMockData={useMockData}
@@ -252,7 +256,7 @@ function App() {
                   />
                 } />
                 
-                {/* Диаграмма Ганта - НОВЫЙ МАРШРУТ */}
+                {/* Диаграмма Ганта */}
                 <Route path="/gantt/:projectId" element={
                   <GanttPage 
                     useMockData={useMockData}
@@ -318,13 +322,6 @@ function App() {
               </Routes>
             </MainLayout>
           </PrivateRoute>
-        } />
-        
-        {/* Редирект всех неправильных публичных путей на логин */}
-        <Route path="*" element={
-          isAuthenticatedUser ? 
-            <Navigate to="/projects" replace /> : 
-            <Navigate to="/login" replace />
         } />
       </Routes>
     </div>
