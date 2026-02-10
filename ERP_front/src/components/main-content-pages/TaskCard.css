@@ -731,3 +731,46 @@
   margin-right: 1vh;
   font-size: 1.4vh;
 }
+
+/* Кнопка сохранения изменений */
+.save-changes-btn_task_card {
+  background-color: #FFFFFF;
+  color: #26262C;
+  border: 1px solid #E5E5E5;
+  border-radius: 1vh;
+  padding: 1vh 2vh;
+  font-size: 2vh;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+  white-space: nowrap;
+  margin-left: 2vh;
+}
+
+.save-changes-btn_task_card:hover:not(:disabled) {
+  background: #dadada;
+  transform: translateY(-0.2vh);
+  box-shadow: 0 0.4vh 0.8vh rgba(0, 0, 0, 0.1);
+}
+
+.save-changes-btn_task_card:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Хедер с кнопкой */
+.taskcard-header_task_card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2vh;
+}
+
+.taskcard-title_task_card {
+  font-size: 2.2vh;
+  font-weight: 600;
+  color: #5B5B5B;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+}

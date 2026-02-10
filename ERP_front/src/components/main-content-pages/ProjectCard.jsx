@@ -752,7 +752,7 @@ const ProjectCard = ({ useMockData = false }) => {
                   alignItems: 'center'
                 }}>
                   {renderTeamAvatars(project.performers || project.team || [])}
-\
+
                 </div>
 
               </div>

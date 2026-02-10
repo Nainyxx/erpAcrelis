@@ -23,7 +23,6 @@ const TaskCard = ({ useMockData = false }) => {
     
     const chatContainerRef_task_card = useRef(null);
     const fileInputRef_task_card = useRef(null);
-    const patchTimeoutRef_task_card = useRef(null);
     
     // Флаги для отслеживания состояния
     const initialLoadDone = useRef(false);
@@ -37,6 +36,7 @@ const TaskCard = ({ useMockData = false }) => {
     const [loading, setLoading] = useState(true);
     const [loadingProject, setLoadingProject] = useState(false);
     const [error, setError] = useState(null);
+    const [isSaving, setIsSaving] = useState(false);
     
     // WebSocket состояния
     const [isWebSocketConnected, setIsWebSocketConnected] = useState(false);
@@ -46,6 +46,7 @@ const TaskCard = ({ useMockData = false }) => {
     
     // Состояния для полей
     const [comment, setComment] = useState('');
+    const [originalComment, setOriginalComment] = useState('');
     const [newComment, setNewComment] = useState('');
     const [replyToCommentId, setReplyToCommentId] = useState(null);
     const [commentsList, setCommentsList] = useState([]);
@@ -57,8 +58,11 @@ const TaskCard = ({ useMockData = false }) => {
     
     const [startDate, setStartDate] = useState('');
     const [deadline, setDeadline] = useState('');
+    const [originalDeadline, setOriginalDeadline] = useState('');
     const [status, setStatus] = useState('');
+    const [originalStatus, setOriginalStatus] = useState('');
     const [progress, setProgress] = useState(0);
+    const [originalProgress, setOriginalProgress] = useState(0);
     const [showStatusDropdown_task_card, setShowStatusDropdown_task_card] = useState(false);
     const [assignee, setAssignee] = useState({
         id: null,
@@ -79,7 +83,7 @@ const TaskCard = ({ useMockData = false }) => {
         { value: 'new', label: 'Новое', progress: 20, apiValue: 'new' },
         { value: 'active', label: 'В работе', progress: 60, apiValue: 'active' },
         { value: 'paused', label: 'Ожидает', progress: 0, apiValue: 'paused' },
-        { value: 'completed', label: 'Завершено', progress: 100, apiValue: 'completed' },
+        { value: 'completed', label: 'Готова', progress: 100, apiValue: 'completed' },
         { value: 'draft', label: 'Черновик', progress: 10, apiValue: 'draft' }
     ];
 
@@ -121,7 +125,6 @@ const TaskCard = ({ useMockData = false }) => {
         // Разбиваем путь на части
         const pathParts = path.split('/').filter(part => part !== '');
         
-        
         // Проверяем структуру пути
         const isFromKanban = pathParts[0] === 'kanban' && pathParts.length === 3;
         const isFromGantt = pathParts[0] === 'gantt' && pathParts.length === 3;
@@ -158,6 +161,12 @@ const TaskCard = ({ useMockData = false }) => {
                         {' — '}
                         <span className="task-name_task_card">{task?.name || 'Задача'}</span>
                     </h1>
+                    <button 
+                        className="save-changes-btn_task_card" 
+                        onClick={handleSaveChanges}
+                    >
+                        {isSaving ? 'Сохранение...' : 'Сохранить изменения'}
+                    </button>
                 </div>
             );
         }
@@ -193,6 +202,12 @@ const TaskCard = ({ useMockData = false }) => {
                         {' — '}
                         <span className="task-name_task_card">{task?.name || 'Задача'}</span>
                     </h1>
+                    <button 
+                        className="save-changes-btn_task_card" 
+                        onClick={handleSaveChanges}
+                    >
+                        {isSaving ? 'Сохранение...' : 'Сохранить изменения'}
+                    </button>
                 </div>
             );
         }
@@ -212,6 +227,12 @@ const TaskCard = ({ useMockData = false }) => {
                         {' — '}
                         <span className="task-name_task_card">{task?.name || 'Задача'}</span>
                     </h1>
+                    <button 
+                        className="save-changes-btn_task_card" 
+                        onClick={handleSaveChanges}
+                    >
+                        {isSaving ? 'Сохранение...' : 'Сохранить изменения'}
+                    </button>
                 </div>
             );
         }
@@ -230,6 +251,12 @@ const TaskCard = ({ useMockData = false }) => {
                     {' — '}
                     <span className="task-name_task_card">{task?.name || 'Задача'}</span>
                 </h1>
+                <button 
+                    className="save-changes-btn_task_card" 
+                    onClick={handleSaveChanges}
+                >
+                    {isSaving ? 'Сохранение...' : 'Сохранить изменения'}
+                </button>
             </div>
         );
     };
@@ -508,6 +535,7 @@ const TaskCard = ({ useMockData = false }) => {
             
             if (taskData.description) {
                 setComment(taskData.description);
+                setOriginalComment(taskData.description);
             }
             
             if (taskData.created) {
@@ -520,12 +548,16 @@ const TaskCard = ({ useMockData = false }) => {
                 const deadlineDate = new Date(taskData.deadline);
                 const formattedDeadline = `${deadlineDate.getDate().toString().padStart(2, '0')}.${(deadlineDate.getMonth() + 1).toString().padStart(2, '0')}.${deadlineDate.getFullYear()}`;
                 setDeadline(formattedDeadline);
+                setOriginalDeadline(formattedDeadline);
             }
             
             if (taskData.status_display) {
                 setStatus(taskData.status_display);
+                setOriginalStatus(taskData.status_display);
                 const statusOption = statusOptions_task_card.find(opt => opt.label === taskData.status_display);
-                setProgress(statusOption ? statusOption.progress : 50);
+                const progressValue = statusOption ? statusOption.progress : 50;
+                setProgress(progressValue);
+                setOriginalProgress(progressValue);
             }
             
             // Обновляем данные исполнителя
@@ -645,6 +677,77 @@ const TaskCard = ({ useMockData = false }) => {
         }
     };
 
+    // ==================== Обработка изменений полей ====================
+
+    const handleCommentChange_task_card = (e) => {
+        const newComment = e.target.value;
+        setComment(newComment);
+    };
+
+    const handleDeadlineChange_task_card = (e) => {
+        const newDeadline = e.target.textContent;
+        setDeadline(newDeadline);
+    };
+
+    const handleStatusChange_task_card = (statusLabel, statusApiValue, newProgress) => {
+        setStatus(statusLabel);
+        setProgress(newProgress);
+    };
+
+    // ==================== Сохранение изменений ====================
+
+    const handleSaveChanges = async () => {
+        if (!taskId || isSaving) return;
+        
+        setIsSaving(true);
+        
+        try {
+            const updateData = {};
+            
+            // Проверяем изменения описания
+            if (comment !== originalComment) {
+                updateData.description = comment;
+            }
+            
+            // Проверяем изменения дедлайна
+            if (deadline !== originalDeadline) {
+                if (deadline.match(/^\d{2}\.\d{2}\.\d{4}$/)) {
+                    const [day, month, year] = deadline.split('.');
+                    updateData.deadline = `${year}-${month}-${day}T00:00:00+03:00`;
+                } else {
+                    updateData.deadline = deadline;
+                }
+            }
+            
+            // Проверяем изменения статуса
+            if (status !== originalStatus) {
+                const statusOption = statusOptions_task_card.find(opt => opt.label === status);
+                if (statusOption) {
+                    updateData.status = statusOption.apiValue;
+                }
+            }
+            
+            // Если есть изменения, отправляем запрос
+            if (Object.keys(updateData).length > 0) {
+                const updatedTask = await updateTask(taskId, updateData, useMockData);
+                setTask(updatedTask);
+                
+                // Обновляем оригинальные значения
+                setOriginalComment(comment);
+                setOriginalDeadline(deadline);
+                setOriginalStatus(status);
+                setOriginalProgress(progress);
+            } else {
+                // Нет изменений для сохранения
+            }
+            
+        } catch (error) {
+            alert('Не удалось сохранить изменения. Проверьте подключение.');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     // ==================== Остальные функции ====================
 
     const generateAvatar_task_card = (initials, color, imageUrl = null) => {
@@ -732,70 +835,6 @@ const TaskCard = ({ useMockData = false }) => {
                 </div>
             </div>
         );
-    };
-
-    const patchDescription_task_card = async (descriptionText) => {
-        if (!taskId || !task) return;
-        
-        clearTimeout(patchTimeoutRef_task_card.current);
-        
-        patchTimeoutRef_task_card.current = setTimeout(async () => {
-            try {
-                const updateData = { description: descriptionText };
-                const updatedTask = await updateTask(taskId, updateData, useMockData);
-                setTask(updatedTask);
-            } catch (error) {
-            }
-        }, 1000);
-    };
-
-    const patchDeadline_task_card = async (deadlineText) => {
-        if (!taskId || !task) return;
-        
-        clearTimeout(patchTimeoutRef_task_card.current);
-        
-        patchTimeoutRef_task_card.current = setTimeout(async () => {
-            try {
-                let deadlineForAPI = deadlineText;
-                if (deadlineText.match(/^\d{2}\.\d{2}\.\d{4}$/)) {
-                    const [day, month, year] = deadlineText.split('.');
-                    deadlineForAPI = `${year}-${month}-${day}T00:00:00+03:00`;
-                }
-                
-                const updateData = { deadline: deadlineForAPI };
-                const updatedTask = await updateTask(taskId, updateData, useMockData);
-                setTask(updatedTask);
-            } catch (error) {
-            }
-        }, 1000);
-    };
-
-    const patchStatus_task_card = async (statusApiValue, statusLabel, newProgress) => {
-        try {
-            const updateData = { status: statusApiValue };
-            const updatedTask = await updateTask(taskId, updateData, useMockData);
-            setTask(updatedTask);
-            setStatus(statusLabel);
-            setProgress(newProgress);
-        } catch (error) {
-        }
-    };
-
-    const handleCommentChange_task_card = (e) => {
-        const newComment = e.target.value;
-        setComment(newComment);
-        patchDescription_task_card(newComment);
-    };
-
-    const handleDeadlineChange_task_card = (e) => {
-        const newDeadline = e.target.textContent;
-        setDeadline(newDeadline);
-        patchDeadline_task_card(newDeadline);
-    };
-
-    const handleStatusChange_task_card = (statusLabel, statusApiValue, newProgress) => {
-        patchStatus_task_card(statusApiValue, statusLabel, newProgress);
-        setShowStatusDropdown_task_card(false);
     };
 
     const handleFileUpload_task_card = async (e) => {
@@ -945,8 +984,6 @@ const TaskCard = ({ useMockData = false }) => {
         }
         
         return () => {
-            clearTimeout(patchTimeoutRef_task_card.current);
-            
             if (wsServiceRef.current) {
                 
                 if (wsServiceRef.current.unsubscribeFunctions) {
@@ -1046,7 +1083,6 @@ const TaskCard = ({ useMockData = false }) => {
                         placeholder="Описание задачи..."
                         value={comment}
                         onChange={handleCommentChange_task_card}
-                        onBlur={() => patchDescription_task_card(comment)}
                     />
                 </form>
             </div>
