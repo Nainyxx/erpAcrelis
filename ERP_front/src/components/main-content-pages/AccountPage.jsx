@@ -1,378 +1,387 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getEmployeeById, authFetch } from '../../services/api/api';
+import { useNavigate } from 'react-router-dom';
+import { getEmployeeById, updateEmployeeById } from '../../services/api/api';
+import { jointProjectsFilterMock, jointProjectMembersMock } from '../../MockData/accountJointProjects';
 import './AccountPage.css';
+import BackgoundFrame from "../../assets/Frame-account.svg";
+import statisticDonutSrc from '../../assets/statistic-account.svg';
+
+const JOINT_PROJECT_FILTER_PLACEHOLDER = 'Проект';
+
+function jointMemberInitials(name) {
+    if (!name || typeof name !== 'string') return '?';
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return '?';
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return `${parts[0][0] || ''}${parts[parts.length - 1][0] || ''}`.toUpperCase();
+}
+
+/** Фильтр по проекту в шапке блока «Совместные проекты». */
+function AccountJointProjectsDropdown({
+    headingId,
+    menuRef,
+    isOpen,
+    onToggle,
+    showPlaceholder,
+    triggerText,
+    options,
+    selectedId,
+    onSelectOption
+}) {
+    return (
+        <div className={`account-joint-projects-select-wrap ${isOpen ? 'is-menu-open' : ''}`}>
+            <div className="account-joint-dropdown" ref={menuRef}>
+                <button
+                    type="button"
+                    id="joint-project-filter-trigger"
+                    className={`account-joint-dropdown-trigger ${isOpen ? 'is-open' : ''}`}
+                    aria-expanded={isOpen}
+                    aria-haspopup="listbox"
+                    aria-controls="joint-project-filter-listbox"
+                    aria-label="Фильтр по проекту"
+                    onClick={onToggle}
+                >
+                    <span
+                        className={`account-joint-dropdown-value ${showPlaceholder ? 'is-placeholder' : ''}`}
+                    >
+                        {triggerText}
+                    </span>
+                    <span className="account-joint-dropdown-chevron" aria-hidden="true">
+                        <svg
+                            width="12"
+                            height="12"
+                            viewBox="0 0 12 12"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path
+                                d="M2.75 4.5 6 7.75l3.25-3.25"
+                                stroke="#6b6f78"
+                                strokeWidth="1.25"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            />
+                        </svg>
+                    </span>
+                </button>
+                {isOpen ? (
+                    <div
+                        id="joint-project-filter-listbox"
+                        className="account-joint-dropdown-panel"
+                        role="listbox"
+                        aria-labelledby={headingId}
+                    >
+                        {options.map((opt) => {
+                            const selected =
+                                selectedId != null && String(opt.id) === String(selectedId);
+                            return (
+                                <button
+                                    key={opt.id}
+                                    type="button"
+                                    role="option"
+                                    aria-selected={selected}
+                                    className={`account-joint-dropdown-option ${selected ? 'is-selected' : ''}`}
+                                    onClick={() => onSelectOption(opt.id)}
+                                >
+                                    <span className="account-joint-dropdown-option-text">
+                                        {opt.label}
+                                    </span>
+                                    {selected ? (
+                                        <span
+                                            className="account-joint-dropdown-check"
+                                            aria-hidden="true"
+                                        >
+                                            <svg
+                                                width="14"
+                                                height="14"
+                                                viewBox="0 0 14 14"
+                                                fill="none"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                            >
+                                                <path
+                                                    d="M11.083 4 6.125 8.958 2.917 5.75"
+                                                    stroke="#3d6fd8"
+                                                    strokeWidth="1.5"
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                />
+                                            </svg>
+                                        </span>
+                                    ) : (
+                                        <span className="account-joint-dropdown-check-placeholder" />
+                                    )}
+                                </button>
+                            );
+                        })}
+                    </div>
+                ) : null}
+            </div>
+        </div>
+    );
+}
+
+function AccountJointProjectMemberRow({ member }) {
+    const handleAvatarError = (e) => {
+        e.target.style.display = 'none';
+        const fb = e.target.nextElementSibling;
+        if (fb) fb.style.display = 'flex';
+    };
+
+    return (
+        <li className="account-joint-projects-item">
+            <div className="account-joint-projects-avatar-wrap">
+                {member.avatarUrl ? (
+                    <img
+                        src={member.avatarUrl}
+                        alt=""
+                        className="account-joint-projects-avatar"
+                        onError={handleAvatarError}
+                    />
+                ) : null}
+                <span
+                    className="account-joint-projects-avatar-fallback"
+                    style={{ display: member.avatarUrl ? 'none' : 'flex' }}
+                    aria-hidden="true"
+                >
+                    {jointMemberInitials(member.name)}
+                </span>
+            </div>
+            <div className="account-joint-projects-meta">
+                <span className="account-joint-projects-name">{member.name}</span>
+                <span className="account-joint-projects-role">{member.role || '—'}</span>
+            </div>
+        </li>
+    );
+}
+
+function AccountJointProjectsList({ members }) {
+    return (
+        <div className="account-joint-projects-scroll-outer">
+            <ul className="account-joint-projects-list" role="list">
+                {members.length === 0 ? (
+                    <li className="account-joint-projects-empty">
+                        В этом проекте пока нет коллег в списке
+                    </li>
+                ) : (
+                    members.map((member) => (
+                        <AccountJointProjectMemberRow key={member.id} member={member} />
+                    ))
+                )}
+            </ul>
+        </div>
+    );
+}
 
 function AccountPage() {
+    const navigate = useNavigate();
     const [userData, setUserData] = useState({
         id: null,
         name: '',
         post: '',
-        email: '',
-        telegram: '',
-        phone: '',
-        birthday: '',
-        birthDate: '',
+        director: { name: '' },
         image: null,
         image_url: null,
-        director: {
-            id: null,
-            name: '',
-            post: ''
-        },
-        department: '',
-        department_name: '',
-        is_active: true,
-        created: ''
+        statistic_percent: null,
+        statistic_label: ''
     });
-    
-    const [originalData, setOriginalData] = useState({});
     const [isLoading, setIsLoading] = useState(true);
-    const [isEditing, setIsEditing] = useState(false);
+    const [isProfileEditing, setIsProfileEditing] = useState(false);
+    const [isProfileSaving, setIsProfileSaving] = useState(false);
     const [error, setError] = useState(null);
-    const [isSaving, setIsSaving] = useState(false);
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
-    const [tempBirthDate, setTempBirthDate] = useState('');
-    const [tempPhone, setTempPhone] = useState('');
-    
+    const [profileForm, setProfileForm] = useState({
+        email: 'email@mail.ru',
+        phone: '+7 (900) 123-45-67',
+        telegram: '@username',
+        birthdate: '05.07.2006',
+        dream: 'Я хочу печеньки в офис...'
+    });
+    const [originalProfileForm, setOriginalProfileForm] = useState({
+        email: '',
+        phone: '',
+        telegram: '',
+        birthdate: '',
+        dream: ''
+    });
+    /** null — только плейсхолдер «Проект», показ всех; 'all' — явно «Все проекты»; иначе id проекта */
+    const [jointProjectFilter, setJointProjectFilter] = useState(null);
+    const [jointProjectMembers, setJointProjectMembers] = useState(jointProjectMembersMock);
+    const [jointProjectMenuOpen, setJointProjectMenuOpen] = useState(false);
     const fileInputRef = useRef(null);
-    const nameRef = useRef(null);
-    const postRef = useRef(null);
-    const emailRef = useRef(null);
+    const jointProjectMenuRef = useRef(null);
 
     useEffect(() => {
         fetchAccountData();
     }, []);
 
-    const fetchAccountData = async () => {
-        setIsLoading(true);
-        setError(null);
-        
-        try {
-            const staffId = localStorage.getItem('staff_id');
-            
-            if (!staffId) {
-                throw new Error('Не удалось определить сотрудника');
+    useEffect(() => {
+        if (!jointProjectMenuOpen) return undefined;
+        const onDocMouseDown = (e) => {
+            if (
+                jointProjectMenuRef.current &&
+                !jointProjectMenuRef.current.contains(e.target)
+            ) {
+                setJointProjectMenuOpen(false);
             }
-
-            const response = await authFetch(`https://api.acrelis.ru/staff/staff/${staffId}/`, {
-                method: 'GET'
-            });
-
-            if (!response.ok) {
-                throw new Error(`Ошибка загрузки данных: ${response.status}`);
-            }
-
-            const employeeData = await response.json();
-            
-            
-            const formattedPhone = formatPhoneForDisplay(employeeData.phone);
-            const formattedBirthDate = formatBirthDateForDisplay(employeeData.birthday);
-            
-            const formattedData = {
-                id: employeeData.id,
-                name: employeeData.name || '',
-                post: employeeData.post || '',
-                email: employeeData.email || '',
-                telegram: employeeData.telegram || '',
-                phone: formattedPhone,
-                originalPhone: employeeData.phone || '',
-                birthday: employeeData.birthday || '',
-                birthDate: formattedBirthDate,
-                image: employeeData.image || null,
-                image_url: employeeData.image_url || null,
-                director: employeeData.director || { id: null, name: '', post: '' },
-                department: employeeData.department || '',
-                department_name: employeeData.department_name || '',
-                is_active: employeeData.is_active !== undefined ? employeeData.is_active : true,
-                created: employeeData.created || ''
-            };
-            
-            setUserData(formattedData);
-            setOriginalData(formattedData);
-            setTempBirthDate(formattedBirthDate);
-            setTempPhone(formattedPhone);
-            
-            localStorage.setItem('name', formattedData.name);
-            localStorage.setItem('post', formattedData.post);
-            localStorage.setItem('email', formattedData.email);
-            
-        } catch (error) {
-            setError(error.message);
-            
-            const fallbackData = {
-                id: parseInt(localStorage.getItem('staff_id')) || null,
-                name: localStorage.getItem('name') || '',
-                post: localStorage.getItem('post') || '',
-                email: localStorage.getItem('email') || '',
-                telegram: '',
-                phone: '',
-                birthday: '',
-                birthDate: '',
-                image: null,
-                image_url: null,
-                director: { id: null, name: '', post: '' },
-                department: '',
-                department_name: '',
-                is_active: true,
-                created: ''
-            };
-            
-            setUserData(fallbackData);
-            setOriginalData(fallbackData);
-            setTempBirthDate('');
-            setTempPhone('');
-        } finally {
-            setIsLoading(false);
-        }
-    };
+        };
+        const onKeyDown = (e) => {
+            if (e.key === 'Escape') setJointProjectMenuOpen(false);
+        };
+        document.addEventListener('mousedown', onDocMouseDown);
+        document.addEventListener('keydown', onKeyDown);
+        return () => {
+            document.removeEventListener('mousedown', onDocMouseDown);
+            document.removeEventListener('keydown', onKeyDown);
+        };
+    }, [jointProjectMenuOpen]);
 
     const formatTelegramForDisplay = (telegram) => {
         if (!telegram) return '';
-        
-        if (telegram.startsWith('@')) {
-            return telegram;
+        if (telegram.startsWith('@')) return telegram;
+
+        const match = telegram.match(/t\.me\/([a-zA-Z0-9_]+)/);
+        if (match && match[1]) {
+            return `@${match[1]}`;
         }
-        
-        if (telegram.includes('t.me/')) {
-            const match = telegram.match(/t\.me\/([a-zA-Z0-9_]+)/);
-            if (match && match[1]) {
-                return `@${match[1]}`;
-            }
-        }
-        
-        if (telegram.match(/^[a-zA-Z0-9_]+$/)) {
+
+        if (/^[a-zA-Z0-9_]+$/.test(telegram)) {
             return `@${telegram}`;
         }
-        
-        return telegram;
-    };
 
-    const getTelegramLink = () => {
-        const userId = localStorage.getItem('staff_id');
-        if (userId) {
-            return `https://t.me/MouseAcrelisBot?start=${userId}`;
-        }
-        return '#';
+        return telegram;
     };
 
     const formatBirthDateForDisplay = (dateString) => {
         if (!dateString) return '';
-        
-        try {
-            const date = new Date(dateString);
-            if (!isNaN(date.getTime())) {
-                const day = String(date.getDate()).padStart(2, '0');
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const year = date.getFullYear();
-                return `${day}.${month}.${year}`;
-            }
-            
-            return dateString;
-        } catch (error) {
-            return dateString;
-        }
-    };
+        const date = new Date(dateString);
+        if (Number.isNaN(date.getTime())) return '';
 
-    const formatDateForAPI = (dateString) => {
-        if (!dateString) return '';
-        
-        try {
-            if (dateString.match(/^\d{2}\.\d{2}\.\d{4}$/)) {
-                const [day, month, year] = dateString.split('.');
-                return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-            }
-            
-            if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                return dateString;
-            }
-            
-            return '';
-        } catch (error) {
-            return '';
-        }
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}.${month}.${year}`;
     };
 
     const formatPhoneForDisplay = (phone) => {
         if (!phone) return '';
-        
-        if (phone.includes('(') || phone.includes(')')) {
-            return phone;
-        }
-        
+        if (phone.includes('(') || phone.includes(')')) return phone;
+
         const cleaned = phone.replace(/\D/g, '');
-        
         if (cleaned.length === 11) {
             return `+7 (${cleaned.substring(1, 4)}) ${cleaned.substring(4, 7)}-${cleaned.substring(7, 9)}-${cleaned.substring(9)}`;
-        } else if (cleaned.length === 10) {
-            return `+7 (${cleaned.substring(0, 3)}) ${cleaned.substring(3, 6)}-${cleaned.substring(6, 8)}-${cleaned.substring(8)}`;
-        } else if (cleaned.length === 12 && cleaned.startsWith('7')) {
-            return `+7 (${cleaned.substring(1, 4)}) ${cleaned.substring(4, 7)}-${cleaned.substring(7, 9)}-${cleaned.substring(9)}`;
         }
-        
+        if (cleaned.length === 10) {
+            return `+7 (${cleaned.substring(0, 3)}) ${cleaned.substring(3, 6)}-${cleaned.substring(6, 8)}-${cleaned.substring(8)}`;
+        }
         return phone;
     };
 
     const formatPhoneForAPI = (phone) => {
         if (!phone) return '';
-        
+
         const cleaned = phone.replace(/\D/g, '');
-        
-        if (cleaned.startsWith('7') || cleaned.startsWith('8')) {
-            return cleaned;
-        }
-        
-        if (cleaned.length === 10) {
-            return '7' + cleaned;
-        }
-        
+        if (!cleaned) return '';
+        if (cleaned.startsWith('7') || cleaned.startsWith('8')) return cleaned;
+        if (cleaned.length === 10) return `7${cleaned}`;
         return cleaned;
     };
 
-    const handleEditClick = () => {
-        setIsEditing(true);
-        setError(null);
-        setTempBirthDate(userData.birthDate || '');
-        setTempPhone(userData.phone || '');
-    };
+    const formatBirthDateForAPI = (birthDate) => {
+        if (!birthDate) return '';
+        if (/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) return birthDate;
 
-    const handleCancelClick = () => {
-        setUserData(originalData);
-        setIsEditing(false);
-        setError(null);
-        setImageFile(null);
-        setImagePreview(null);
-        setTempBirthDate(originalData.birthDate || '');
-        setTempPhone(originalData.phone || '');
-    };
-
-    const handleBirthDateChange = (e) => {
-        let value = e.target.value.replace(/\D/g, '');
-        
-        if (value.length <= 2) {
-            value = value;
-        } else if (value.length <= 4) {
-            value = value.slice(0, 2) + '.' + value.slice(2);
-        } else if (value.length <= 6) {
-            value = value.slice(0, 2) + '.' + value.slice(2, 4) + '.' + value.slice(4);
-        } else {
-            value = value.slice(0, 2) + '.' + value.slice(2, 4) + '.' + value.slice(4, 8);
-        }
-        
-        setTempBirthDate(value);
-    };
-
-    // Новый обработчик для телефона с автоформатированием
-    const handlePhoneChange = (e) => {
-        let value = e.target.value.replace(/\D/g, '');
-        
-        // Форматируем российский номер телефона
-        if (value.length <= 1) {
-            value = value;
-        } else if (value.length <= 4) {
-            value = '+7 (' + value.slice(1, 4);
-        } else if (value.length <= 7) {
-            value = '+7 (' + value.slice(1, 4) + ') ' + value.slice(4, 7);
-        } else if (value.length <= 9) {
-            value = '+7 (' + value.slice(1, 4) + ') ' + value.slice(4, 7) + '-' + value.slice(7, 9);
-        } else {
-            value = '+7 (' + value.slice(1, 4) + ') ' + value.slice(4, 7) + '-' + value.slice(7, 9) + '-' + value.slice(9, 11);
-        }
-        
-        setTempPhone(value);
-    };
-
-    const handleSaveClick = async () => {
-        if (!userData.id) {
-            setError('ID сотрудника не найден');
-            return;
+        if (/^\d{2}\.\d{2}\.\d{4}$/.test(birthDate)) {
+            const [day, month, year] = birthDate.split('.');
+            return `${year}-${month}-${day}`;
         }
 
-        setIsSaving(true);
+        return '';
+    };
+
+    const formatTelegramForAPI = (telegram) => {
+        if (!telegram) return '';
+        const trimmed = telegram.trim();
+        if (!trimmed) return '';
+        if (trimmed.startsWith('@')) return trimmed.slice(1);
+
+        const match = trimmed.match(/t\.me\/([a-zA-Z0-9_]+)/);
+        if (match && match[1]) return match[1];
+
+        return trimmed;
+    };
+
+    const fetchAccountData = async () => {
+        setIsLoading(true);
         setError(null);
 
         try {
-            const formData = new FormData();
-            let hasChanges = false;
-            
-            // Получаем значения из contentEditable полей
-            const currentName = nameRef.current?.textContent || userData.name;
-            const currentPost = postRef.current?.textContent || userData.post;
-            const currentEmail = emailRef.current?.textContent || userData.email;
-            const currentPhone = tempPhone;
-            const currentBirthDate = tempBirthDate;
-
-
-            if (currentName !== originalData.name) {
-                formData.append('name', currentName);
-                hasChanges = true;
-            }
-            
-            if (currentPost !== originalData.post) {
-                formData.append('post', currentPost);
-                hasChanges = true;
-            }
-            
-            if (currentEmail !== originalData.email) {
-                formData.append('email', currentEmail);
-                hasChanges = true;
-            }
-            
-            if (currentPhone !== originalData.phone) {
-                const cleanPhone = formatPhoneForAPI(currentPhone);
-                formData.append('phone', cleanPhone);
-                hasChanges = true;
-            }
-            
-            if (currentBirthDate !== originalData.birthDate) {
-                const apiDate = formatDateForAPI(currentBirthDate);
-                if (apiDate) {
-                    formData.append('birthday', apiDate);
-                    hasChanges = true;
-                }
-            }
-            
-            if (imageFile) {
-                formData.append('image', imageFile);
-                hasChanges = true;
+            const staffId = localStorage.getItem('staff_id');
+            if (!staffId) {
+                throw new Error('Не удалось определить сотрудника');
             }
 
+            const employeeData = await getEmployeeById(staffId, false);
 
-            if (!hasChanges) {
-                setIsEditing(false);
-                setImageFile(null);
-                setImagePreview(null);
-                return;
-            }
+            const formattedData = {
+                id: employeeData.id,
+                name: employeeData.name || '',
+                post: employeeData.post || '',
+                director: employeeData.director || { name: '' },
+                image: employeeData.image || null,
+                image_url: employeeData.image_url || null,
+                statistic_percent:
+                    employeeData.statistic_percent != null ? employeeData.statistic_percent : null,
+                statistic_label: employeeData.statistic_label || ''
+            };
 
-            const response = await authFetch(`https://api.acrelis.ru/staff/staff/${userData.id}/`, {
-                method: 'PATCH',
-                body: formData
+            setUserData(formattedData);
+            const nextProfileForm = {
+                email: employeeData.email || '',
+                phone: formatPhoneForDisplay(employeeData.phone),
+                telegram: formatTelegramForDisplay(employeeData.telegram),
+                birthdate: formatBirthDateForDisplay(employeeData.birthday),
+                dream: employeeData.dream || ''
+            };
+            setProfileForm(nextProfileForm);
+            setOriginalProfileForm(nextProfileForm);
+            const team = employeeData.shared_project_team;
+            setJointProjectMembers(
+                Array.isArray(team) && team.length > 0 ? team : jointProjectMembersMock
+            );
+
+            localStorage.setItem('name', formattedData.name);
+            localStorage.setItem('post', formattedData.post);
+            localStorage.setItem('email', employeeData.email || '');
+        } catch (loadError) {
+            setError(loadError.message);
+            setUserData({
+                id: parseInt(localStorage.getItem('staff_id')) || null,
+                name: localStorage.getItem('name') || '',
+                post: localStorage.getItem('post') || '',
+                director: { name: '' },
+                image: null,
+                image_url: null,
+                statistic_percent: null,
+                statistic_label: ''
             });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Ошибка сохранения: ${response.status} - ${errorText}`);
-            }
-
-            const updatedData = await response.json();
-            
-            setIsEditing(false);
-            setImageFile(null);
-            setImagePreview(null);
-            
-            
-            await fetchAccountData();
-            
-        } catch (error) {
-            setError(error.message || 'Ошибка при сохранении данных');
+            const fallbackProfileForm = {
+                email: localStorage.getItem('email') || '',
+                phone: '',
+                telegram: '',
+                birthdate: '',
+                dream: ''
+            };
+            setProfileForm(fallbackProfileForm);
+            setOriginalProfileForm(fallbackProfileForm);
+            setJointProjectMembers(jointProjectMembersMock);
         } finally {
-            setIsSaving(false);
+            setIsLoading(false);
         }
     };
 
     const handleAvatarClick = () => {
-        if (isEditing && fileInputRef.current) {
+        if (isProfileEditing && fileInputRef.current) {
             fileInputRef.current.click();
         }
     };
@@ -392,25 +401,143 @@ function AccountPage() {
         }
 
         const imageUrl = URL.createObjectURL(file);
+        setImagePreview((prev) => {
+            if (prev && typeof prev === 'string' && prev.startsWith('blob:')) {
+                URL.revokeObjectURL(prev);
+            }
+            return imageUrl;
+        });
         setImageFile(file);
-        setImagePreview(imageUrl);
         setError(null);
+        event.target.value = '';
     };
+
+    const handleProfileFieldChange = (event) => {
+        const { name, value } = event.target;
+        setError(null);
+        setProfileForm((prevData) => ({
+            ...prevData,
+            [name]: value
+        }));
+    };
+
+    const handleProfileEditButtonClick = async () => {
+        if (!isProfileEditing) {
+            setError(null);
+            setIsProfileEditing(true);
+            return;
+        }
+
+        const hasScalarChanges =
+            profileForm.email !== originalProfileForm.email ||
+            profileForm.phone !== originalProfileForm.phone ||
+            profileForm.telegram !== originalProfileForm.telegram ||
+            profileForm.birthdate !== originalProfileForm.birthdate;
+
+        if (!imageFile && !hasScalarChanges) {
+            setIsProfileEditing(false);
+            setImagePreview((prev) => {
+                if (prev && typeof prev === 'string' && prev.startsWith('blob:')) {
+                    URL.revokeObjectURL(prev);
+                }
+                return null;
+            });
+            setImageFile(null);
+            return;
+        }
+
+        if (!userData.id) {
+            setError('ID сотрудника не найден');
+            return;
+        }
+
+        setIsProfileSaving(true);
+        setError(null);
+
+        try {
+            const payload = {};
+
+            if (profileForm.email !== originalProfileForm.email) {
+                payload.email = profileForm.email.trim();
+            }
+
+            if (profileForm.phone !== originalProfileForm.phone) {
+                payload.phone = formatPhoneForAPI(profileForm.phone);
+            }
+
+            if (profileForm.telegram !== originalProfileForm.telegram) {
+                payload.telegram = formatTelegramForAPI(profileForm.telegram);
+            }
+
+            if (profileForm.birthdate !== originalProfileForm.birthdate) {
+                payload.birthday = formatBirthDateForAPI(profileForm.birthdate);
+            }
+
+            if (imageFile) {
+                payload.image = imageFile;
+            }
+
+            if (Object.keys(payload).length === 0) {
+                setImagePreview((prev) => {
+                    if (prev && typeof prev === 'string' && prev.startsWith('blob:')) {
+                        URL.revokeObjectURL(prev);
+                    }
+                    return null;
+                });
+                setImageFile(null);
+                setIsProfileEditing(false);
+                return;
+            }
+
+            await updateEmployeeById(userData.id, payload, false);
+
+            setImagePreview((prev) => {
+                if (prev && typeof prev === 'string' && prev.startsWith('blob:')) {
+                    URL.revokeObjectURL(prev);
+                }
+                return null;
+            });
+            setImageFile(null);
+            setIsProfileEditing(false);
+            await fetchAccountData();
+        } catch (saveError) {
+            setError(saveError.message || 'Ошибка при сохранении данных');
+        } finally {
+            setIsProfileSaving(false);
+        }
+    };
+
+    const jointProjectEffectiveFilter =
+        jointProjectFilter == null ? 'all' : jointProjectFilter;
+
+    const filteredJointMembers =
+        jointProjectEffectiveFilter === 'all'
+            ? jointProjectMembers
+            : jointProjectMembers.filter((m) =>
+                (m.projectIds || ['all']).includes(jointProjectEffectiveFilter)
+            );
+
+    const jointProjectShowPlaceholder = jointProjectFilter == null;
+    const jointProjectTriggerText = jointProjectShowPlaceholder
+        ? JOINT_PROJECT_FILTER_PLACEHOLDER
+        : jointProjectsFilterMock.find(
+            (o) => String(o.id) === String(jointProjectFilter)
+        )?.label ?? JOINT_PROJECT_FILTER_PLACEHOLDER;
 
     const renderAvatar = () => {
         if (imagePreview) {
             return (
-                <div 
-                    className={`avatar-container ${isEditing ? 'editable' : ''}`}
+                <div
+                    className={`avatar-container ${isProfileEditing ? 'editable' : ''}`}
                     onClick={handleAvatarClick}
-                    title={isEditing ? "Нажмите для изменения фото" : ""}
+                    title={isProfileEditing ? 'Нажмите для изменения фото' : ''}
                 >
-                    <img 
-                        src={imagePreview} 
-                        alt="Предпросмотр" 
+                    <img
+                        src={imagePreview}
+                        alt="Предпросмотр"
                         className="avatar-image"
                     />
-                    {isEditing && (
+                    {isProfileEditing && (
                         <div className="avatar-overlay">
                             <span>Изменить фото</span>
                         </div>
@@ -420,14 +547,14 @@ function AccountPage() {
         } else if (userData.image || userData.image_url) {
             const imageSrc = userData.image || userData.image_url;
             return (
-                <div 
-                    className={`avatar-container ${isEditing ? 'editable' : ''}`}
+                <div
+                    className={`avatar-container ${isProfileEditing ? 'editable' : ''}`}
                     onClick={handleAvatarClick}
-                    title={isEditing ? "Нажмите для изменения фото" : ""}
+                    title={isProfileEditing ? 'Нажмите для изменения фото' : ''}
                 >
-                    <img 
-                        src={imageSrc} 
-                        alt={userData.name} 
+                    <img
+                        src={imageSrc}
+                        alt={userData.name}
                         className="avatar-image"
                         onError={(e) => {
                             e.target.style.display = 'none';
@@ -435,19 +562,19 @@ function AccountPage() {
                             if (svg) svg.style.display = 'block';
                         }}
                     />
-                    <svg 
-                        width="20.9vh" 
-                        height="20.9vh" 
-                        viewBox="0 0 209 209" 
-                        fill="none" 
+                    <svg
+                        width="20.9vh"
+                        height="20.9vh"
+                        viewBox="0 0 209 209"
+                        fill="none"
                         xmlns="http://www.w3.org/2000/svg"
                         style={{ display: 'none' }}
                     >
-                        <circle cx="104.5" cy="104.5" r="104.5" fill="#E5E5E5"/>
-                        <path d="M104.5 42.5C119.35 42.5 131.5 56.3132 131.5 73.5C131.5 90.6868 119.35 104.5 104.5 104.5C89.6499 104.5 77.5 90.6868 77.5 73.5C77.5 56.3132 89.6499 42.5 104.5 42.5Z" stroke="#26262C"/>
-                        <path d="M56 151.5C56 145.919 57.2674 140.392 59.7299 135.236C62.1924 130.08 65.8017 125.394 70.3518 121.448C74.9018 117.501 80.3036 114.371 86.2485 112.235C92.1935 110.099 98.5652 109 105 109C111.435 109 117.807 110.099 123.751 112.235C129.696 114.371 135.098 117.501 139.648 121.448C144.198 125.394 147.808 130.08 150.27 135.236C152.733 140.392 154 145.919 154 151.5L153.917 151.5C153.917 145.928 152.651 140.411 150.193 135.264C147.735 130.116 144.132 125.439 139.589 121.499C135.047 117.559 129.654 114.434 123.72 112.302C117.785 110.17 111.424 109.072 105 109.072C98.5762 109.072 92.2153 110.17 86.2805 112.302C80.3456 114.434 74.9531 117.559 70.4108 121.499C65.8685 125.439 62.2653 130.116 59.807 135.264C57.3487 140.411 56.0835 145.928 56.0835 151.5L56 151.5Z" stroke="#26262C"/>
+                        <circle cx="104.5" cy="104.5" r="104.5" fill="#E5E5E5" />
+                        <path d="M104.5 42.5C119.35 42.5 131.5 56.3132 131.5 73.5C131.5 90.6868 119.35 104.5 104.5 104.5C89.6499 104.5 77.5 90.6868 77.5 73.5C77.5 56.3132 89.6499 42.5 104.5 42.5Z" stroke="#26262C" />
+                        <path d="M56 151.5C56 145.919 57.2674 140.392 59.7299 135.236C62.1924 130.08 65.8017 125.394 70.3518 121.448C74.9018 117.501 80.3036 114.371 86.2485 112.235C92.1935 110.099 98.5652 109 105 109C111.435 109 117.807 110.099 123.751 112.235C129.696 114.371 135.098 117.501 139.648 121.448C144.198 125.394 147.808 130.08 150.27 135.236C152.733 140.392 154 145.919 154 151.5L153.917 151.5C153.917 145.928 152.651 140.411 150.193 135.264C147.735 130.116 144.132 125.439 139.589 121.499C135.047 117.559 129.654 114.434 123.72 112.302C117.785 110.17 111.424 109.072 105 109.072C98.5762 109.072 92.2153 110.17 86.2805 112.302C80.3456 114.434 74.9531 117.559 70.4108 121.499C65.8685 125.439 62.2653 130.116 59.807 135.264C57.3487 140.411 56.0835 145.928 56.0835 151.5L56 151.5Z" stroke="#26262C" />
                     </svg>
-                    {isEditing && (
+                    {isProfileEditing && (
                         <div className="avatar-overlay">
                             <span>Изменить фото</span>
                         </div>
@@ -456,17 +583,17 @@ function AccountPage() {
             );
         } else {
             return (
-                <div 
-                    className={`avatar-container ${isEditing ? 'editable' : ''}`}
+                <div
+                    className={`avatar-container ${isProfileEditing ? 'editable' : ''}`}
                     onClick={handleAvatarClick}
-                    title={isEditing ? "Нажмите для добавления фото" : ""}
+                    title={isProfileEditing ? "Нажмите для добавления фото" : ""}
                 >
                     <svg width="20.9vh" height="20.9vh" viewBox="0 0 209 209" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="104.5" cy="104.5" r="104.5" fill="#E5E5E5"/>
-                        <path d="M104.5 42.5C119.35 42.5 131.5 56.3132 131.5 73.5C131.5 90.6868 119.35 104.5 104.5 104.5C89.6499 104.5 77.5 90.6868 77.5 73.5C77.5 56.3132 89.6499 42.5 104.5 42.5Z" stroke="#26262C"/>
-                        <path d="M56 151.5C56 145.919 57.2674 140.392 59.7299 135.236C62.1924 130.08 65.8017 125.394 70.3518 121.448C74.9018 117.501 80.3036 114.371 86.2485 112.235C92.1935 110.099 98.5652 109 105 109C111.435 109 117.807 110.099 123.751 112.235C129.696 114.371 135.098 117.501 139.648 121.448C144.198 125.394 147.808 130.08 150.27 135.236C152.733 140.392 154 145.919 154 151.5L153.917 151.5C153.917 145.928 152.651 140.411 150.193 135.264C147.735 130.116 144.132 125.439 139.589 121.499C135.047 117.559 129.654 114.434 123.72 112.302C117.785 110.17 111.424 109.072 105 109.072C98.5762 109.072 92.2153 110.17 86.2805 112.302C80.3456 114.434 74.9531 117.559 70.4108 121.499C65.8685 125.439 62.2653 130.116 59.807 135.264C57.3487 140.411 56.0835 145.928 56.0835 151.5L56 151.5Z" stroke="#26262C"/>
+                        <circle cx="104.5" cy="104.5" r="104.5" fill="#E5E5E5" />
+                        <path d="M104.5 42.5C119.35 42.5 131.5 56.3132 131.5 73.5C131.5 90.6868 119.35 104.5 104.5 104.5C89.6499 104.5 77.5 90.6868 77.5 73.5C77.5 56.3132 89.6499 42.5 104.5 42.5Z" stroke="#26262C" />
+                        <path d="M56 151.5C56 145.919 57.2674 140.392 59.7299 135.236C62.1924 130.08 65.8017 125.394 70.3518 121.448C74.9018 117.501 80.3036 114.371 86.2485 112.235C92.1935 110.099 98.5652 109 105 109C111.435 109 117.807 110.099 123.751 112.235C129.696 114.371 135.098 117.501 139.648 121.448C144.198 125.394 147.808 130.08 150.27 135.236C152.733 140.392 154 145.919 154 151.5L153.917 151.5C153.917 145.928 152.651 140.411 150.193 135.264C147.735 130.116 144.132 125.439 139.589 121.499C135.047 117.559 129.654 114.434 123.72 112.302C117.785 110.17 111.424 109.072 105 109.072C98.5762 109.072 92.2153 110.17 86.2805 112.302C80.3456 114.434 74.9531 117.559 70.4108 121.499C65.8685 125.439 62.2653 130.116 59.807 135.264C57.3487 140.411 56.0835 145.928 56.0835 151.5L56 151.5Z" stroke="#26262C" />
                     </svg>
-                    {isEditing && (
+                    {isProfileEditing && (
                         <div className="avatar-overlay">
                             <span>Добавить фото</span>
                         </div>
@@ -478,194 +605,210 @@ function AccountPage() {
 
     if (isLoading) {
         return (
-            <div className="account-page-container">
-                <div className="account-card">
+            <div className="account-page">
+                <div className="account-column-left"></div>
+                <div className="account-column-center">
                     <div className="loading-state">
                         <div className="loading-spinner"></div>
                         <p>Загрузка данных...</p>
                     </div>
                 </div>
-            </div>
-        );
-    }
-
-    if (error && !userData.name) {
-        return (
-            <div className="account-page-container">
-                <div className="account-card">
-                    
-                </div>
+                <div className="account-column-right"></div>
             </div>
         );
     }
 
     return (
-        <div className="account-page-container">
-            <div className="account-card">
+        <div className="account-page">
+            <img
+                className="account-bg-svg"
+                src={BackgoundFrame}
+                alt=""
+                aria-hidden="true"
+            />
+
+            <div className="account-column-left">
                 <input
                     type="file"
                     ref={fileInputRef}
-                    style={{ display: 'none' }}
+                    className="account-avatar-file-input"
                     accept="image/*"
+                    aria-hidden="true"
+                    tabIndex={-1}
                     onChange={handleFileChange}
                 />
-
-                {!isEditing ? (
-                    <button 
-                        className="edit-button"
-                        onClick={handleEditClick}
-                    >
-                        Редактировать
-                    </button>
-                ) : (
-                    <div className="edit-controls">
-                        <button 
-                            className="cancel-button"
-                            onClick={handleCancelClick}
-                            disabled={isSaving}
-                        >
-                            Отмена
-                        </button>
-                        <button 
-                            className="save-button"
-                            onClick={handleSaveClick}
-                            disabled={isSaving}
-                        >
-                            {isSaving ? 'Сохранение...' : 'Сохранить'}
-                        </button>
-                    </div>
-                )}
-
-                <div className="profile-section">
+                <div className="account-avatar-anchor">
                     {renderAvatar()}
+                </div>
+                <h2>{userData.name || 'Имя не указано'}</h2>
+                <p className="user-info">{userData.post || 'Должность не указана'}</p>
+                <p className="user-info">Руководитель: {userData.director?.name || 'не указан'}</p>
 
-                    <div className="name-section">
-                        {isEditing ? (
-                            <>  
-                                <h1 
-                                    ref={nameRef}
-                                    className="user-name editable"
-                                    contentEditable
-                                    suppressContentEditableWarning
-                                >
-                                    {userData.name || ''}
-                                </h1>
-                                <h2 
-                                    ref={postRef}
-                                    className="user-post editable"
-                                    contentEditable
-                                    suppressContentEditableWarning
-                                >
-                                    {userData.post || ''}
-                                </h2>
-                            </>
-                        ) : (
-                            <>
-                                <h1 className="user-name">{userData.name || 'Имя не указано'}</h1>
-                                <h2 className="user-post">{userData.post || 'Должность не указана'}</h2>
-                            </>
-                        )}
-                        {userData.director && userData.director.name && (
-                            <p className="user-director">
-                                <span className="director-label">Руководитель: </span>
-                                <span className="director-name">{userData.director.name}</span>
-                            </p>
-                        )}
-                        {userData.department_name && (
-                            <p className="user-department">
-                                <span className="department-label">Отдел: </span>
-                                <span className="department-name">{userData.department_name}</span>
-                            </p>
-                        )}
+                <div className="left-stats-list">
+                    <div className="left-stat-item">
+                        <span>Текущие задачи:</span>
+                        <span>10</span>
+                    </div>
+                    <div className="left-stat-item">
+                        <span>Не закрытые в срок:</span>
+                        <span>10</span>
+                    </div>
+                    <div className="left-stat-item">
+                        <span>Закрытые в срок:</span>
+                        <span>5</span>
+                    </div>
+                    <div className="left-stat-item">
+                        <span>Проваленые задачи:</span>
+                        <span>0</span>
                     </div>
                 </div>
-
-                <div className="personal-info-section">
-                    <h2 className="section-title">Личная информация</h2>
-                    
-                    <div className="input-row">
-                        <div className="input-group">
-                            <label className="input-label">Email</label>
-                            <div className="input-field">
-                                {isEditing ? (
-                                    <div 
-                                        ref={emailRef}
-                                        className="readonly-input editable"
-                                        contentEditable
-                                        suppressContentEditableWarning
-                                    >
-                                        {userData.email || ''}
-                                    </div>
-                                ) : (
-                                    <div className="readonly-input">
-                                        {userData.email || 'Не указан'}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                        
-                        <div className="input-group">
-                            <label className="input-label">Telegram</label>
-                            <div className="input-field">
-                                {userData.telegram ? (
-                                    <div className={`telegram-field ${isEditing ? 'readonly-editing' : ''}`}>
-                                        <div className="readonly-input">
-                                            {formatTelegramForDisplay(userData.telegram)}
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <a 
-                                        href={getTelegramLink()} 
-                                        target="_blank" 
-                                        rel="noopener noreferrer"
-                                        className="telegram-link-button"
-                                    >
-                                        Привязать Telegram
-                                    </a>
-                                )}
+            </div>
+            <div className="account-column-center">
+                <div className="account-center-toolbar" aria-label="Раздел середины профиля">
+                    <button
+                        type="button"
+                        className="account-center-tab"
+                        onClick={() => navigate('/projects')}
+                    >
+                        График
+                    </button>
+                    <button
+                        type="button"
+                        className="account-center-tab"
+                        onClick={() => navigate('/my-tasks')}
+                    >
+                        Список задач
+                    </button>
+                </div>
+                <section className="account-statistics-card" aria-labelledby="account-statistics-heading">
+                    <div className="profile-card-header">
+                        <h3 id="account-statistics-heading">Статистика сотрудника</h3>
+                    </div>
+                    <div className="account-statistics-chart">
+                        <div className="account-statistics-donut">
+                            <img
+                                src={statisticDonutSrc}
+                                alt=""
+                                className="account-statistics-donut-img"
+                                width={96}
+                                height={96}
+                                decoding="async"
+                            />
+                            <div className="account-statistics-donut-core" aria-hidden="true">
+                                <span className="account-statistics-percent">
+                                    {userData.statistic_percent != null
+                                        ? `${userData.statistic_percent}%`
+                                        : '—'}
+                                </span>
+                                <span className="account-statistics-grade">
+                                    {userData.statistic_label || (userData.statistic_percent != null ? '' : 'Нет данных')}
+                                </span>
                             </div>
                         </div>
                     </div>
+                </section>
 
-                    <div className="input-row">
-                        <div className="input-group">
-                            <label className="input-label">Телефон</label>
-                            <div className="input-field">
-                                {isEditing ? (
-                                    <input
-                                        type="text"
-                                        value={tempPhone}
-                                        onChange={handlePhoneChange}
-                                        className="editable-input"
-                                        placeholder="+7 (XXX) XXX-XX-XX"
-                                        maxLength="18"
-                                    />
-                                ) : (
-                                    <div className="readonly-input">
-                                        {userData.phone || 'Не указан'}
-                                    </div>
-                                )}
-                            </div>
+                <section
+                    className="account-joint-projects-card"
+                    aria-labelledby="account-joint-projects-heading"
+                >
+                    <div className="profile-card-header">
+                        <h3 id="account-joint-projects-heading">Совместные проекты</h3>
+                        <AccountJointProjectsDropdown
+                            headingId="account-joint-projects-heading"
+                            menuRef={jointProjectMenuRef}
+                            isOpen={jointProjectMenuOpen}
+                            onToggle={() => setJointProjectMenuOpen((open) => !open)}
+                            showPlaceholder={jointProjectShowPlaceholder}
+                            triggerText={jointProjectTriggerText}
+                            options={jointProjectsFilterMock}
+                            selectedId={jointProjectFilter}
+                            onSelectOption={(id) => {
+                                setJointProjectFilter(id);
+                                setJointProjectMenuOpen(false);
+                            }}
+                        />
+                    </div>
+                    <div className="account-joint-projects-divider" aria-hidden="true" />
+                    <AccountJointProjectsList members={filteredJointMembers} />
+                </section>
+
+            </div>
+            <div className="account-column-right">
+                <div className="profile-card">
+                    <div className="profile-card-header">
+                        <h3>Личная информация</h3>
+                        <button
+                            type="button"
+                            className={`profile-edit-button ${isProfileEditing ? 'is-active' : ''}`}
+                            aria-label={isProfileEditing ? 'Завершить редактирование профиля' : 'Редактировать профиль'}
+                            onClick={handleProfileEditButtonClick}
+                            disabled={isProfileSaving}
+                        >
+                            {isProfileSaving ? '…' : (isProfileEditing ? '✓' : '✎')}
+                        </button>
+                    </div>
+                    <div className="profile-card-body">
+                        {error && <p className="profile-error-text">{error}</p>}
+
+                        <div className="profile-field">
+                            <label htmlFor="profile-email">Почта</label>
+                            <input
+                                id="profile-email"
+                                name="email"
+                                type="text"
+                                value={profileForm.email}
+                                readOnly={!isProfileEditing}
+                                onChange={handleProfileFieldChange}
+                            />
                         </div>
-                        
-                        <div className="input-group">
-                            <label className="input-label">Дата рождения</label>
-                            <div className="input-field">
-                                {isEditing ? (
-                                    <input
-                                        type="text"
-                                        value={tempBirthDate}
-                                        onChange={handleBirthDateChange}
-                                        className="editable-input"
-                                        placeholder="дд.мм.гггг"
-                                        maxLength="10"
-                                    />
-                                ) : (
-                                    <div className="readonly-input">
-                                        {userData.birthDate || 'Не указана'}
-                                    </div>
-                                )}
-                            </div>
+
+                        <div className="profile-field">
+                            <label htmlFor="profile-phone">Номер телефона</label>
+                            <input
+                                id="profile-phone"
+                                name="phone"
+                                type="text"
+                                value={profileForm.phone}
+                                readOnly={!isProfileEditing}
+                                onChange={handleProfileFieldChange}
+                            />
+                        </div>
+
+                        <div className="profile-field">
+                            <label htmlFor="profile-telegram">Телеграмм</label>
+                            <input
+                                id="profile-telegram"
+                                name="telegram"
+                                type="text"
+                                value={profileForm.telegram}
+                                readOnly={!isProfileEditing}
+                                onChange={handleProfileFieldChange}
+                            />
+                        </div>
+
+                        <div className="profile-field">
+                            <label htmlFor="profile-birthdate">Дата рождения</label>
+                            <input
+                                id="profile-birthdate"
+                                name="birthdate"
+                                type="text"
+                                value={profileForm.birthdate}
+                                readOnly={!isProfileEditing}
+                                onChange={handleProfileFieldChange}
+                            />
+                        </div>
+
+                        <div className="profile-field">
+                            <label htmlFor="profile-dream">Мечта ❤️</label>
+                            <textarea
+                                id="profile-dream"
+                                name="dream"
+                                rows="3"
+                                value={profileForm.dream}
+                                readOnly={!isProfileEditing}
+                                onChange={handleProfileFieldChange}
+                            />
                         </div>
                     </div>
                 </div>

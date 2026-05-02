@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import './SideBar.css';
+import AcrelisLogo from "../../assets/acrelis-logo.svg";
 import ProjectsIcon from "../../assets/sidebar-projects.svg";
 import MyTasksIcon from "../../assets/sidebar-mytasks.svg";
 import AccountingIcon from "../../assets/sidebar-accounting.svg";
@@ -52,6 +53,9 @@ function SideBar() {
 
   return (
     <div className="SideBar">
+      <div className="sidebar-logo-wrap">
+        <img className="sidebar-logo" src={AcrelisLogo} alt="Acrelis Logo" />
+      </div>
       {menuItems.map((item) => (
         <button
           key={item.id}

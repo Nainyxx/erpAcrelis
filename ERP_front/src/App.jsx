@@ -333,7 +333,7 @@ function AccountingPage({ showNotification }) {
   return (
     <div style={{
       padding: '30px',
-      backgroundColor: '#F6F6FE',
+      backgroundColor: '#FAFAFA',
       minHeight: 'calc(100vh - 90px)'
     }}>
       <h1 style={{

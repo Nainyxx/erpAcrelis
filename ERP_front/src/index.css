@@ -6,7 +6,8 @@
 
 body {
   margin: 0;
-  background-color: #F6F6FE; /* твой цвет фона */
+  background-color: #F6F6FE;
+  /* твой цвет фона */
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
@@ -19,4 +20,3 @@ body {
   width: 100%;
   min-height: 90vh;
 }
-

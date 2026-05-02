@@ -315,19 +315,19 @@ export async function authFetch(url, options = {}) {
     'Authorization': `Bearer ${token}`,
     'accept': 'application/json',
   };
-  
+
   if (!url.includes('auth/')) {
     headers['X-CSRFTOKEN'] = API_CONFIG.CSRF_TOKEN;
   }
-  
+
   const requestOptions = {
     ...options,
     headers: headers
   };
-  
+
   try {
     const response = await fetch(url, requestOptions);
-    
+
     // Если получили 401 - пробуем обновить токен
     if (response.status === 401) {
       // НЕ обновляем токен для endpoints аутентификации (это вызовет бесконечный цикл)
@@ -336,23 +336,23 @@ export async function authFetch(url, options = {}) {
         window.location.href = '#/login';
         throw new Error('Требуется повторная авторизация');
       }
-      
+
       try {
         const newAccessToken = await refreshAccessToken();
-        
+
         // Обновляем заголовок с новым токеном
         requestOptions.headers['Authorization'] = `Bearer ${newAccessToken}`;
-        
+
         // Повторяем запрос с новым токеном
         const retryResponse = await fetch(url, requestOptions);
-        
+
         // Если снова 401 - значит токен не обновился или что-то не так
         if (retryResponse.status === 401) {
           clearTokens();
           window.location.href = '#/login';
           throw new Error('Не удалось обновить сессию');
         }
-        
+
         return retryResponse;
       } catch (refreshError) {
         clearTokens();
@@ -360,7 +360,7 @@ export async function authFetch(url, options = {}) {
         throw refreshError;
       }
     }
-    
+
     return response;
   } catch (error) {
     // Если это ошибка сети или другая ошибка - просто пробрасываем дальше
@@ -372,37 +372,55 @@ export async function authFetch(url, options = {}) {
 export async function getProjects(USE_MOCK_DATA, filters = {}) {
   if (USE_MOCK_DATA) {
     await new Promise(resolve => setTimeout(resolve, 300));
-    
-    const mockProjects = [
-      {
-        id: 1,
-        name: 'Тестовый проект',
-        type: 'website',
-        status: 'active',
-        price: '12312.22',
-        hours: 0,
-        performers: [
-          { id: 1, staff: 5, staff_name: 'Шакиев Азат' },
-          { id: 2, staff: 4, staff_name: 'Лутфуллин Амир' }
-        ]
-      },
-      // ... другие проекты
-    ];
-    
+
+    const mockModule = await import('../../MockData/projects.js');
+    const mockProjects = mockModule.projectsData || [];
+
     // Эмуляция пагинации для mock данных
     const page = parseInt(filters.page) || 1;
     const pageSize = 20;
     const startIndex = (page - 1) * pageSize;
     const endIndex = startIndex + pageSize;
-    const paginatedProjects = mockProjects.slice(startIndex, endIndex);
-    
+    const paginatedProjects = mockProjects.slice(startIndex, endIndex).map(project => ({
+      id: project.id,
+      name: project.name,
+      type: project.type || 'other',
+      typeLabel: PROJECT_TYPE_MAP[project.type] || 'Другое',
+      status: project.status || 'draft',
+      price: project.price || "0.00",
+      hours: project.hours || 0,
+      customer: project.customer || 'Не указан',
+      startDate: formatDateForDisplay(project.start_date || project.startDate || project.created),
+      deadline: formatDateForDisplay(project.deadline),
+      team: project.performers || project.team || []
+    }));
+
+    const projectTypes = generateProjectTypes(
+      mockProjects.map(project => ({
+        id: project.id,
+        name: project.name,
+        type: project.type || 'other',
+        typeLabel: PROJECT_TYPE_MAP[project.type] || 'Другое',
+        status: project.status || 'draft',
+        price: project.price || "0.00",
+        hours: project.hours || 0,
+        customer: project.customer || 'Не указан',
+        startDate: formatDateForDisplay(project.start_date || project.startDate || project.created),
+        deadline: formatDateForDisplay(project.deadline),
+        team: project.performers || project.team || []
+      }))
+    );
+
     return {
-      results: paginatedProjects,
-      count: mockProjects.length,
-      next: page * pageSize < mockProjects.length ? page + 1 : null,
-      previous: page > 1 ? page - 1 : null,
-      current_page: page,
-      total_pages: Math.ceil(mockProjects.length / pageSize)
+      projects: paginatedProjects,
+      projectTypes,
+      pagination: {
+        count: mockProjects.length,
+        next: page * pageSize < mockProjects.length ? page + 1 : null,
+        previous: page > 1 ? page - 1 : null,
+        current_page: page,
+        total_pages: Math.ceil(mockProjects.length / pageSize)
+      }
     };
   }
   
@@ -1534,6 +1552,8 @@ export async function getEmployeeById(employeeId, USE_MOCK_DATA) {
       closed_on_time_tasks: 15,
       closed_late_tasks: 2,
       failed_tasks: 1,
+      statistic_percent: 74,
+      statistic_label: 'Отлично',
       director: {
         id: 1,
         name: 'Васильев Дмитрий',
@@ -1555,17 +1575,20 @@ export async function getEmployeeById(employeeId, USE_MOCK_DATA) {
     }
 
     const staffData = await response.json();
-    
+
     const employee = {
       id: staffData.id,
       name: staffData.name,
       position: staffData.post,
       post: staffData.post,
+      image: staffData.image || null,
+      image_url: staffData.image_url || staffData.image || null,
       department: staffData.department?.toString() || '0',
       departmentLabel: staffData.department_name || 'Не указан',
       email: staffData.email,
       phone: staffData.phone,
       birthday: staffData.birthday,
+      dream: staffData.dream || '',
       is_active: staffData.is_active,
       created: staffData.created,
       telegram: staffData.telegram || '@acrelis',
@@ -1573,13 +1596,49 @@ export async function getEmployeeById(employeeId, USE_MOCK_DATA) {
       closed_on_time_tasks: staffData.closed_on_time_tasks || 0,
       closed_late_tasks: staffData.closed_late_tasks || 0,
       failed_tasks: staffData.failed_tasks || 0,
-      director: staffData.director || null
+      director: staffData.director || null,
+      statistic_percent: staffData.statistic_percent ?? null,
+      statistic_label: staffData.statistic_label ?? '',
+      shared_project_team: staffData.shared_project_team,
+      joint_project_collaborators: staffData.joint_project_collaborators,
+      coworkers_shared_projects: staffData.coworkers_shared_projects,
+      shared_project_members: staffData.shared_project_members
     };
     
     return employee;
   } catch (error) {
     throw error;
   }
+}
+
+// Обновление сотрудника по ID
+export async function updateEmployeeById(employeeId, updateData, USE_MOCK_DATA) {
+  if (USE_MOCK_DATA) {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    return { id: parseInt(employeeId), ...updateData };
+  }
+
+  const formData = new FormData();
+  Object.entries(updateData).forEach(([key, value]) => {
+    if (value === undefined || value === null) return;
+    if (typeof Blob !== 'undefined' && value instanceof Blob) {
+      formData.append(key, value);
+      return;
+    }
+    formData.append(key, typeof value === 'string' ? value : String(value));
+  });
+
+  const response = await authFetch(`${API_CONFIG.BASE_URL}staff/staff/${employeeId}/`, {
+    method: 'PATCH',
+    body: formData
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`API Error: ${response.status} - ${errorText}`);
+  }
+
+  return response.json();
 }
 
 // Форматирование данных проекта

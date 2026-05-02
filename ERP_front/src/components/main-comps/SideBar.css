@@ -1,7 +1,24 @@
 .SideBar {
     width: 25vh;
-    background: #F6F6FE;
-    min-height: 90vh;
+    background: #FFFFFF;
+    height: 100%;
+    min-height: 100%;
+}
+
+.sidebar-logo-wrap {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2vh 1.5vh;
+    box-sizing: border-box;
+}
+
+.sidebar-logo {
+    width: 100%;
+    height: auto;
+    max-height: 6vh;
+    object-fit: contain;
 }
 
 .sidebar-item {

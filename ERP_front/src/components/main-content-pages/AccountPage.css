@@ -1,455 +1,585 @@
-.account-page-container {
-    min-height: 85vh;
-    background-color: #F6F6FE;
-    padding: 4vh 8vh;
-}
-
-.account-card {
-    background: white;
-    border-radius: 2vh;
-    padding: 6vh 8vh;
-    box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.08);
+.account-page {
+    --bg-height: 280px;
+    --avatar-size: clamp(96px, 11vw, 220px);
+    --column-block-gap: 12px;
+    --account-center-content-max: 640px;
+    --account-col-left: clamp(200px, 20vw, 400px);
+    --account-col-right: clamp(260px, 24vw, 500px);
+    --account-page-pad-inline: clamp(24px, 4vw, 44px);
+    --account-page-pad-bottom: clamp(28px, 4vw, 52px);
+    --account-column-pad: clamp(16px, 2.5vw, 24px);
     position: relative;
-    max-width: 100%;
-    margin: 0 auto;
-}
-
-.edit-button {
-    position: absolute;
-    top: 6vh;
-    right: 8vh;
     display: flex;
-    align-items: center;
-    gap: 1vh;
-    background: transparent;
-    border: 0.2vh solid #666;
-    border-radius: 1vh;
-    padding: 1.5vh 3vh;
-    font-size: 1.6vh;
-    color: #000000;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.edit-button:hover {
-    background: #666;
-    color: white;
-}
-
-.edit-button svg {
-    transition: all 0.3s ease;
-}
-
-.edit-button:hover svg path {
-    stroke: white;
-}
-
-/* Профиль */
-.profile-section {
-    display: flex;
-    align-items: center;
-    gap: 8vh;
-    margin-bottom: 8vh;
-}
-
-.avatar-container {
-    flex-shrink: 0;
-}
-
-.avatar-container svg {
-    width: 20.9vh;
-    height: 20.9vh;
-}
-
-.name-section {
-    flex: 1;
-}
-
-.user-name {
-    font-size: 2.8vh;
-    font-weight: 600;
-    color: #26262C;
-    margin: 0 0 1vh 0;
-}
-
-.user-post {
-    font-size: 2.4vh;
-    color: #666;
-    margin: 0 0 0.5vh 0;
-}
-
-.user-department {
-    font-size: 2vh;
-    color: #999;
-    margin: 0;
-}
-
-/* Личная информация */
-.personal-info-section {
-    padding-top: 4vh;
-}
-
-.section-title {
-    font-size: 2.8vh;
-    font-weight: 600;
-    color: #26262C;
-    margin: 0 0 4vh 0;
-}
-
-.input-row {
-    display: flex;
-    gap: 4vh;
-    margin-bottom: 4vh;
-}
-
-.input-group {
-    flex: 1;
-}
-
-.input-label {
-    display: block;
-    font-size: 1.8vh;
-    color: #666;
-    margin-bottom: 1vh;
-    font-weight: 500;
-}
-
-.input-field {
-    position: relative;
-}
-
-.readonly-input {
-    width: 100%;
-    padding: 2vh 3vh;
-    background: #6EDCE133; 
-    border: 0.2vh solid #E5E5E5;
-    border-radius: 1vh;
-    font-size: 2vh;
-    color: #26262C;
-    transition: border-color 0.3s ease;
+    flex-direction: row;
+    align-items: stretch;
     box-sizing: border-box;
-}
-
-.readonly-input:focus {
-    outline: none;
-    border-color: #0066CC;
-}
-
-/* Статистика */
-.stats-section {
-    margin-top: 6vh;
-    padding-top: 4vh;
-    border-top: 0.2vh solid #EAEAEA;
-}
-
-.stats-title {
-    font-size: 2.2vh;
+    min-width: min(820px, 100%);
+    min-height: calc(100vh - 10vh - 48px);
+    margin: 0 clamp(16px, 4vw, 48px) var(--account-page-pad-bottom);
+    padding: var(--bg-height) var(--account-page-pad-inline) var(--account-page-pad-bottom);
+    overflow-x: hidden;
+    overflow-y: visible;
+    border-radius: 30px;
+    background: #fff;
+    font-family: 'Inter', sans-serif;
     font-weight: 600;
-    color: #26262C;
-    margin: 0 0 3vh 0;
+    letter-spacing: 0;
 }
 
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 3vh;
-}
-
-.stat-item {
-    text-align: center;
-    padding: 2vh;
-    background: #F8F9FA;
-    border-radius: 1vh;
-}
-
-.stat-value {
+.account-bg-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    width: 100%;
+    height: var(--bg-height);
+    object-fit: cover;
     display: block;
-    font-size: 3.2vh;
-    font-weight: 700;
-    color: #0066CC;
-    margin-bottom: 0.5vh;
+    pointer-events: none;
 }
 
-.stat-label {
+.account-avatar-file-input {
+    display: none;
+}
+
+.account-avatar-anchor {
+    position: relative;
+    z-index: 2;
+    align-self: center;
+    margin-top: calc(var(--avatar-size) * -0.5);
+}
+
+.account-column-left,
+.account-column-center,
+.account-column-right {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: var(--column-block-gap);
+    box-sizing: border-box;
+    min-height: 0;
+    padding: var(--account-column-pad);
+}
+
+.account-column-left {
+    flex: 0 0 var(--account-col-left);
+    width: 100%;
+    max-width: var(--account-col-left);
+    align-self: stretch;
+}
+
+.account-column-center {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    align-self: stretch;
+    align-items: center;
+    gap: 16px;
+    border-radius: 18px;
+    position: relative;
+    z-index: 2;
+    padding-top: 0;
+}
+
+.account-center-toolbar {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: flex-end;
+    gap: 16px;
+    position: absolute;
+    left: 50%;
+    right: auto;
+    top: 0;
+    width: min(var(--account-center-content-max), 100%);
+    max-width: 100%;
+    transform: translate(-50%, -100%);
+    z-index: 3;
+}
+
+.account-statistics-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 0 0 auto;
+    box-sizing: border-box;
+    margin-top: 16px;
+    width: min(var(--account-center-content-max), 100%);
+    padding: 12px 16px;
+    border: 1px solid #e6e8ee;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 1px 3px rgb(38 38 44 / 6%);
+}
+
+.account-statistics-chart {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 1 auto;
+    padding: 2px 0 0;
+}
+
+.account-statistics-donut {
+    position: relative;
+    width: clamp(92px, 18vw, 136px);
+    height: clamp(92px, 18vw, 136px);
+}
+
+.account-statistics-donut-img {
     display: block;
-    font-size: 1.6vh;
-    color: #666;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
 }
 
-.loading-state,
-.error-state {
+.account-statistics-donut-core {
+    position: absolute;
+    inset: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: 40vh;
+    gap: 1px;
+    padding: 0 6px;
     text-align: center;
+    pointer-events: none;
 }
 
-.loading-spinner {
-    width: 6vh;
-    height: 6vh;
-    border: 0.5vh solid #E5E5E5;
-    border-top-color: #0066CC;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin-bottom: 3vh;
+.account-statistics-percent {
+    color: #1a1c22;
+    font-size: clamp(17px, 3.4vw, 24px);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
 }
 
-.loading-state p {
-    font-size: 2vh;
-    color: #666;
+.account-statistics-grade {
+    color: #8e8e95;
+    font-size: clamp(11px, 1.85vw, 13px);
+    font-weight: 500;
+    line-height: 1.15;
 }
 
-.error-state {
-    color: #D32F2F;
-}
-
-.error-message {
-    font-size: 2vh;
-    margin-bottom: 3vh;
-}
-
-.retry-button {
-    background: #0066CC;
-    color: white;
-    border: none;
-    border-radius: 1vh;
-    padding: 1.5vh 3vh;
-    font-size: 1.8vh;
-    cursor: pointer;
-    transition: background 0.3s ease;
-}
-
-.retry-button:hover {
-    background: #0052A3;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-/* Дополнительные стили для редактирования */
-
-/* Контейнер для кнопок редактирования в режиме редактирования */
-.edit-controls {
-    position: absolute;
-    top: 6vh;
-    right: 8vh;
+.account-joint-projects-card {
+    /* высота списка — ровно под 3 видимые карточки, остальное — прокрутка */
+    --joint-item-pad-y: 12px;
+    --joint-avatar-size: 48px;
+    --joint-row-between: 1px;
+    --joint-list-pad-block: 12px;
+    --joint-visible-rows: 3;
+    --joint-list-max-h: calc(var(--joint-list-pad-block) + (var(--joint-item-pad-y) * 2 + var(--joint-avatar-size)) * var(--joint-visible-rows) + var(--joint-row-between) * (var(--joint-visible-rows) - 1));
     display: flex;
-    align-items: center;
-    gap: 1vh;
-}
-
-/* Кнопки сохранения/отмены */
-.cancel-button {
-    padding: 1.5vh 3vh;
+    flex-direction: column;
+    gap: 0;
+    flex: 0 1 auto;
+    box-sizing: border-box;
+    width: min(var(--account-center-content-max), 100%);
+    margin-top: 18px;
+    padding: 0;
+    border: none;
+    border-radius: 0;
     background: transparent;
-    border: 0.2vh solid #dc3545;
-    border-radius: 1vh;
-    font-size: 1.6vh;
-    color: #dc3545;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-weight: 500;
+    box-shadow: none;
 }
 
-.cancel-button:hover:not(:disabled) {
-    background: #dc3545;
-    color: white;
+.account-joint-projects-divider {
+    height: 1px;
+    margin-top: 12px;
+    border: 0;
+    background: #e8eaef;
 }
 
-.cancel-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.save-button {
-    padding: 1.5vh 3vh;
-    background: #666;
-    color: white;
-    border: none;
-    border-radius: 1vh;
-    font-size: 1.6vh;
-    cursor: pointer;
-    transition: background 0.3s ease;
-    font-weight: 500;
-}
-
-.save-button:hover:not(:disabled) {
-    background: #585858;
-}
-
-.save-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    background: #ccc;
-}
-
-/* Сообщение об ошибке */
-.error-message-banner {
-    margin: -4vh 0 4vh 0;
-    padding: 2vh 3vh;
-    background: #f8d7da;
-    color: #721c24;
-    border: 0.2vh solid #f5c6cb;
-    border-radius: 1vh;
-    text-align: center;
-    font-size: 1.8vh;
-    font-weight: 500;
-}
-
-/* Аватарка с оверлеем для редактирования */
-.avatar-container.editable {
+.account-joint-projects-select-wrap {
     position: relative;
+    flex-shrink: 0;
+    min-width: 0;
+}
+
+.account-joint-projects-select-wrap.is-menu-open {
+    z-index: 8;
+}
+
+.account-joint-dropdown {
+    position: relative;
+    display: inline-flex;
+    max-width: min(260px, 85vw);
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.account-joint-dropdown-trigger {
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-width: 132px;
+    max-width: 100%;
+    margin: 0;
+    padding: 9px 12px 9px 16px;
+    border: 1px solid #e0e3ea;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #fff 0%, #fafbfc 100%);
+    color: #4a4d55;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.25;
     cursor: pointer;
-    border-radius: 50%;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.account-joint-dropdown-trigger:hover {
+    border-color: #cfd3dd;
+    background: #fff;
+}
+
+.account-joint-dropdown-trigger:focus-visible {
+    outline: none;
+    border-color: #9eb4e8;
+    box-shadow: 0 0 0 3px rgb(62 109 217 / 16%);
+}
+
+.account-joint-dropdown-trigger.is-open {
+    border-color: #c8d6f5;
+    background: #fff;
+    box-shadow: 0 1px 0 rgb(62 109 217 / 6%);
+}
+
+.account-joint-dropdown-value {
     overflow: hidden;
+    flex: 1 1 auto;
+    min-width: 0;
+    text-align: left;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
-.avatar-container.editable:hover .avatar-overlay {
-    opacity: 1;
+.account-joint-dropdown-value.is-placeholder {
+    color: #8e8e95;
+    font-weight: 500;
 }
 
-.avatar-image {
-    width: 20.9vh;
-    height: 20.9vh;
-    border-radius: 50%;
-    object-fit: cover;
-}
-
-.avatar-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.6);
+.account-joint-dropdown-chevron {
     display: flex;
+    flex-shrink: 0;
     align-items: center;
     justify-content: center;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    border-radius: 50%;
+    margin-left: -2px;
+    transition: transform 0.2s ease;
 }
 
-.avatar-overlay span {
-    color: white;
-    font-size: 1.8vh;
+.account-joint-dropdown-trigger.is-open .account-joint-dropdown-chevron {
+    transform: rotate(180deg);
+}
+
+.account-joint-dropdown-panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    left: auto;
+    z-index: 9;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 100%;
+    width: max-content;
+    max-width: min(320px, 92vw);
+    max-height: min(288px, 42vh);
+    padding: 6px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    border: 1px solid #e6e9f0;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow:
+        0 4px 6px rgb(38 38 44 / 4%),
+        0 12px 32px rgb(38 38 44 / 12%);
+    scrollbar-gutter: stable;
+}
+
+.account-joint-dropdown-panel::-webkit-scrollbar {
+    width: 6px;
+}
+
+.account-joint-dropdown-panel::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: #d8dbe2;
+}
+
+.account-joint-dropdown-option {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    padding: 10px 12px;
+    margin: 0;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: #3a3c42;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.35;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+
+.account-joint-dropdown-option:hover {
+    background: #f4f6fa;
+}
+
+.account-joint-dropdown-option:focus-visible {
+    outline: none;
+    background: #eef3fc;
+    box-shadow: inset 0 0 0 2px rgb(61 111 216 / 25%);
+}
+
+.account-joint-dropdown-option.is-selected {
+    background: linear-gradient(90deg,
+            rgb(61 111 216 / 8%) 0%,
+            rgb(61 111 216 / 3%) 100%);
+    color: #2c3140;
+    font-weight: 600;
+}
+
+.account-joint-dropdown-option-text {
+    overflow: hidden;
+    min-width: 0;
+    flex: 1 1 auto;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.account-joint-dropdown-check {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+}
+
+.account-joint-dropdown-check-placeholder {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+}
+
+.account-joint-projects-scroll-outer {
+    position: relative;
+    margin-top: 12px;
+    max-height: var(--joint-list-max-h);
+}
+
+.account-joint-projects-scroll-outer::after {
+    content: '';
+    position: absolute;
+    inset: auto 6px 0 0;
+    height: 40px;
+    pointer-events: none;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0), #fff);
+}
+
+.account-joint-projects-list {
+    list-style: none;
+    margin: 0;
+    padding: 4px 4px 8px 0;
+    max-height: var(--joint-list-max-h);
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+}
+
+.account-joint-projects-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.account-joint-projects-list::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: #d8dbe2;
+}
+
+.account-joint-projects-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.account-joint-projects-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 4px;
+}
+
+.account-joint-projects-item+.account-joint-projects-item {
+    border-top: 1px solid #f3f4f7;
+}
+
+.account-joint-projects-avatar-wrap {
+    position: relative;
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+}
+
+.account-joint-projects-avatar {
+    display: block;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid #eeeef2;
+}
+
+.account-joint-projects-avatar-fallback {
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 1px solid #eeeef2;
+    background: #ebecef;
+    color: #5c5f69;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.account-joint-projects-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    min-width: 0;
+}
+
+.account-joint-projects-name {
+    color: #333;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.account-joint-projects-role {
+    color: #888;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.25;
+}
+
+.account-joint-projects-empty {
+    padding: 20px 8px;
+    border: none;
+    color: #8e8e95;
+    font-size: 14px;
     font-weight: 500;
     text-align: center;
-    padding: 0 2vh;
+    line-height: 1.35;
 }
 
-/* Контейнер для кнопок редактирования в режиме редактирования */
-.edit-controls {
-    position: absolute;
-    top: 6vh;
-    right: 8vh;
+.account-center-tab {
+    flex: 1;
+    margin: 0;
+    max-width: 200px;
+    padding: 14px 16px 13px;
+    border: 0;
+    border-radius: 12px 12px 0 0;
+    background: #fff;
+    box-shadow: 0 2px 8px rgb(38 38 44 / 8%);
+    color: #6b6f78;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+    transition: color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+    min-width: 0;
+}
+
+.account-center-tab:hover {
+    color: #535660;
+}
+
+.account-column-right {
+    flex: 0 0 var(--account-col-right);
+    width: 100%;
+    max-width: var(--account-col-right);
+    align-self: stretch;
+    align-items: stretch;
+    margin-top: calc(var(--avatar-size) * -0.5);
+    min-height: 100%;
+    padding-top: var(--account-column-pad);
+    padding-bottom: var(--account-column-pad);
+    padding-left: clamp(8px, 1.2vw, 16px);
+    padding-right: clamp(8px, 1.2vw, 16px);
+}
+
+
+.user-info {
+    margin: 0;
+    color: #8e8e95;
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.25;
+}
+
+.left-stats-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--column-block-gap);
+    width: 100%;
+    margin-top: auto;
+}
+
+.left-stat-item {
     display: flex;
     align-items: center;
-    gap: 1vh;
-}
-
-/* Кнопки сохранения/отмены */
-.cancel-button {
-    padding: 1.5vh 3vh;
-    background: transparent;
-    border: 0.2vh solid #dc3545;
-    border-radius: 1vh;
-    font-size: 1.6vh;
-    color: #dc3545;
-    cursor: pointer;
-    transition: all 0.3s ease;
+    justify-content: space-between;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 49px;
+    padding: 10px 14px;
+    border: 1px solid #eceef2;
+    border-radius: 18px;
+    background: #fff;
+    color: #3f4147;
+    font-size: 14px;
     font-weight: 500;
+    line-height: 1.2;
 }
 
-.cancel-button:hover:not(:disabled) {
-    background: #dc3545;
-    color: white;
+.avatar-container {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    border: 5.7px solid #fff;
+    border-radius: 50%;
 }
 
-.cancel-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+.avatar-container svg {
+    width: var(--avatar-size);
+    height: var(--avatar-size);
 }
 
-.save-button {
-    padding: 1.5vh 3vh;
-    background: #666;
-    color: white;
-    border: none;
-    border-radius: 1vh;
-    font-size: 1.6vh;
-    cursor: pointer;
-    transition: background 0.3s ease;
-    font-weight: 500;
-}
-
-.save-button:hover:not(:disabled) {
-    background: #525252;
-}
-
-.save-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    background: #ccc;
-}
-
-/* Сообщение об ошибке */
-.error-message-banner {
-    margin: -4vh 0 4vh 0;
-    padding: 2vh 3vh;
-    background: #f8d7da;
-    color: #721c24;
-    border: 0.2vh solid #f5c6cb;
-    border-radius: 1vh;
-    text-align: center;
-    font-size: 1.8vh;
-    font-weight: 500;
-}
-
-/* Editable элементы - ТОЧНО как в ProjectCard */
-
-
-.editable:hover {
-    text-decoration: underline;
-    text-decoration-color: black;
-    text-underline-offset: 0.3vh;
-}
-
-.editable:focus {
-    text-decoration: underline;
-    text-decoration-color: black;
-}
-
-.user-director {
-    font-size: 2vh;
-    color: #666;
-    margin: 0;
-}
-
-.director-label {
-    color: #888;
-}
-
-.director-name {
-    color: #26262C;
-    font-weight: 500;
-}
-
-/* ... предыдущие стили остаются без изменений до этого момента ... */
-
-/* Аватарка с оверлеем для редактирования */
 .avatar-container.editable {
     position: relative;
-    cursor: pointer;
-    border-radius: 50%;
     overflow: hidden;
+    border-radius: 50%;
+    cursor: pointer;
 }
 
-.avatar-container.editable:hover .avatar-overlay {
+.avatar-container.editable .avatar-overlay {
     opacity: 1;
 }
 
@@ -458,172 +588,219 @@
 }
 
 .avatar-image {
-    width: 20.9vh;
-    height: 20.9vh;
+    width: var(--avatar-size);
+    height: var(--avatar-size);
     border-radius: 50%;
     object-fit: cover;
 }
 
 .avatar-overlay {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.6);
+    inset: 0;
     display: flex;
     align-items: center;
     justify-content: center;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.6);
     opacity: 0;
     transition: opacity 0.3s ease;
-    border-radius: 50%;
 }
 
 .avatar-overlay span {
-    color: white;
-    font-size: 1.8vh;
+    padding: 0 12px;
+    color: #fff;
+    font-size: clamp(12px, 1.1vw, 18px);
     font-weight: 500;
     text-align: center;
-    padding: 0 2vh;
 }
 
-/* Стили для Telegram поля */
-.telegram-field {
-    width: 100%;
-}
-
-/* Стиль для поля с Telegram (когда есть значение) */
-.telegram-field .readonly-input {
-    width: 100%;
-    padding: 2vh 3vh;
-    background: #6EDCE133;
-    border: 0.2vh solid #E5E5E5;
-    border-radius: 1vh;
-    font-size: 2vh;
-    color: #26262C;
-    box-sizing: border-box;
-}
-
-/* Стиль для кнопки привязки (когда Telegram пустой) */
-.telegram-link-button {
-    display: inline-flex;
+.loading-state {
+    display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    width: 100%;
-    background: #0088cc;
-    color: white;
+    text-align: center;
+}
+
+.loading-spinner {
+    width: 6vh;
+    height: 6vh;
+    margin-bottom: 3vh;
+    border: 0.5vh solid #e5e5e5;
+    border-top-color: #06c;
+    border-radius: 50%;
+    animation: accountPageSpin 1s linear infinite;
+}
+
+.loading-state p {
+    font-size: 2vh;
+    color: #fff;
+}
+
+@keyframes accountPageSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.profile-card {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    align-self: stretch;
+    min-height: min-content;
+    gap: var(--column-block-gap);
+    padding: 18px;
+    border: 1px solid #eceef2;
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 6px 18px rgba(38, 38, 44, 0.06);
+}
+
+.profile-card-header {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--column-block-gap);
+}
+
+.profile-card-header h3 {
+    margin: 0;
+    color: #5b5b5b;
+    font-size: 20px;
+    font-weight: 600;
+    line-height: normal;
+    letter-spacing: 0;
+    text-align: left;
+}
+
+.profile-card-body {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: space-evenly;
+    min-height: 0;
+}
+
+.profile-edit-button {
+    width: 28px;
+    height: 28px;
     border: none;
-    border-radius: 1vh;
-    padding: 2vh 3vh;
-    font-size: 2vh;
-    font-weight: 500;
+    border-radius: 8px;
+    background: #f2f3f5;
+    color: #8e8e95;
+    font-size: 16px;
+    line-height: 1;
     cursor: pointer;
-    text-decoration: none;
-    transition: all 0.3s ease;
-    min-height: 6.5vh;
+    transition: background 0.2s ease, color 0.2s ease;
 }
 
-.telegram-link-button:hover {
-    background: #006699;
-    transform: translateY(-0.2vh);
-    box-shadow: 0 0.4vh 0.8vh rgba(0, 136, 204, 0.2);
-}
-
-.telegram-link-button:active {
-    transform: translateY(0);
-    box-shadow: none;
-}
-
-/* Иконка Telegram */
-.telegram-link-button::before {
-    content: '';
-    display: inline-block;
-    width: 2.5vh;
-    height: 2.5vh;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.06-.2-.07-.06-.17-.04-.24-.02-.1.02-1.69 1.09-4.78 3.2-.45.31-.86.46-1.23.45-.41-.01-1.2-.23-1.79-.42-.72-.23-1.29-.36-1.24-.76.03-.23.27-.46.74-.7 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .3z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: contain;
-    margin-right: 1vh;
-    vertical-align: middle;
-}
-
-/* Стиль для поля с Telegram в режиме редактирования (тоже readonly) */
-.telegram-field.readonly-editing .readonly-input {
-    background: #f5f5f5;
-    color: #666;
+.profile-edit-button:disabled {
     cursor: not-allowed;
+    opacity: 0.7;
 }
 
-/* Информационный текст в режиме редактирования */
-.telegram-edit-info {
-    margin-top: 0.5vh;
-    font-size: 1.4vh;
-    color: #666;
-    font-style: italic;
+.profile-edit-button.is-active {
+    background: #3bdce7;
+    color: #fff;
 }
 
-/* Добавь эти стили в конец файла AccountPage.css */
+.profile-error-text {
+    margin: 0;
+    color: #d94343;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.2;
+}
 
-/* Стили для input в режиме редактирования - должны совпадать с readonly-input */
-.editable-input {
-    width: 100%;
-    padding: 2vh 3vh;
-    background: #6EDCE133; 
-    border: 0.2vh solid #E5E5E5;
-    border-radius: 1vh;
-    font-size: 2vh;
-    color: #26262C;
-    transition: border-color 0.3s ease;
+.profile-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35em;
+}
+
+.profile-field label {
+    color: #3f4147;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: normal;
+    letter-spacing: 0;
+    text-align: left;
+}
+
+.profile-field input,
+.profile-field textarea {
     box-sizing: border-box;
+    width: 100%;
+    padding: 15px 16px;
+    border: 1px solid #e0e2e7;
+    border-radius: 999px;
+    background: #fff;
+    color: #8e8e95;
     font-family: inherit;
-    outline: none;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.2;
 }
 
-.editable-input:focus {
-    outline: none;
-    border-color: #0066CC;
+.profile-field textarea {
+    min-height: 98px;
+    border-radius: 18px;
+    resize: none;
 }
 
-/* Убираем дефолтные стили input */
-.editable-input[type="text"] {
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-}
+@media (max-width: 960px) {
+    .account-page {
+        flex-direction: column;
+        align-items: stretch;
+        min-width: 0;
+        margin: 0 clamp(12px, 4vw, 20px) clamp(20px, 4vw, 28px);
+        padding: var(--bg-height) clamp(14px, 4vw, 22px) clamp(18px, 4vw, 28px);
+    }
 
-/* Чтобы input выглядел как readonly-input в неактивном состоянии */
-.readonly-input.editable {
-    cursor: text;
-    background: #6EDCE133;
-}
+    .account-column-left,
+    .account-column-center,
+    .account-column-right {
+        flex: none;
+        width: 100%;
+        max-width: none;
+        align-self: stretch;
+    }
 
-.readonly-input.editable:focus {
-    outline: none;
-    border-color: #0066CC;
-}
+    .account-column-center {
+        position: static;
+        padding-top: 20px;
+        align-items: stretch;
+    }
 
-/* Стили для редактируемых полей */
-.user-name.editable,
-.user-post.editable {
-    display: block;
-    min-width: 10vh;
-    padding: 0.2vh 0.5vh;
-    background: transparent;
-    border: 0.1vh solid transparent;
-    border-radius: 0.5vh;
-    cursor: text;
-    width: 60vh;
-}
+    .account-center-toolbar {
+        position: static;
+        left: auto;
+        right: auto;
+        top: auto;
+        transform: none;
+        width: 100%;
+        max-width: none;
+        z-index: auto;
+    }
 
-.user-name.editable:focus,
-.user-post.editable:focus {
-    outline: none;
-}
+    .account-statistics-card {
+        width: 100%;
+        margin-top: 0;
+    }
 
-.user-name.editable:hover,
-.user-post.editable:hover {
-    text-decoration: underline;
-    text-decoration-color: black;
-    text-underline-offset: 0.3vh;
+    .account-joint-projects-card {
+        width: 100%;
+        margin-top: 12px;
+    }
+
+    .account-column-right {
+        margin-top: 0;
+        min-height: 0;
+        padding: 12px clamp(12px, 3vw, 18px) 20px;
+    }
+
+
 }
