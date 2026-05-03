@@ -31,9 +31,9 @@
   display: flex;
   float: right;
   justify-content: flex-end;
-  color: #26262C;
-  background-color: #FFFFFF;
-  border: 1px solid #E5E5E5;
+  color: #ffffff;
+  background-color: #6EDCE1;
+  border: 1px solid #5ad0d8;
   margin-bottom: 1vh;
   border-radius: 1vh;
   padding: 1vh 2vh;
@@ -45,10 +45,19 @@
   align-self: center;
 }
 
-.save-changes-btn_project_card:hover {
-  background: #dadada;
+.save-changes-btn_project_card:hover:not(:disabled) {
+  color: #ffffff;
+  background: #5dd2db;
+  border-color: #4fc4cf;
   transform: translateY(-0.2vh);
-  box-shadow: 0 0.4vh 0.8vh rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0.4vh 0.8vh rgba(94, 200, 210, 0.35);
+}
+
+.save-changes-btn_project_card:disabled {
+  color: #ffffff;
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
 }
 
 /* Основная структура - изменяем высоту на адаптивную */
@@ -249,6 +258,83 @@
   margin-bottom: 1vh;
 }
 
+/* Блок «Исполнители» */
+.performers-tile_project_card {
+  min-height: 16vh;
+}
+
+.performers-header_project_card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.2vh;
+}
+
+.performers-header_project_card h3 {
+  margin: 0;
+}
+
+.performers-add-btn_project_card {
+  flex-shrink: 0;
+  width: 3.6vh;
+  height: 3.6vh;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 0.9vh;
+  background: #B2E9EF;
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 0.2vh 0.6vh rgba(94, 184, 176, 0.35);
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+}
+
+
+.performers-add-btn_project_card:active {
+  transform: scale(0.96);
+}
+
+.performers-add-icon_project_card {
+  font-size: 2.2vh;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.performers-body_project_card {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 5vh;
+  min-width: 0;
+}
+
+.performers-team-container_project_card {
+  flex: none;
+  width: 100%;
+  justify-content: center;
+  margin-bottom: 0;
+}
+
+.performers-schedule-btn_project_card {
+  align-self: flex-start;
+  margin-top: auto;
+  padding: 0.9vh 2.2vh;
+  border: none;
+  border-radius: 0.9vh;
+  background: #B2E9EF;
+  color: #fff;
+  font-size: 1.5vh;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 0.2vh 0.6vh rgba(94, 184, 176, 0.3);
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
 .team-avatars_project_card {
   display: flex;
   align-items: center;
@@ -271,7 +357,7 @@
   font-weight: 600;
   font-size: 1.5vh;
   border: 0.2vh solid white;
-  box-shadow: 0 0.2vh 0.6vh rgba(0,0,0,0.1);
+  box-shadow: 0 0.2vh 0.6vh rgba(0, 0, 0, 0.1);
 }
 
 .avatar.extra-avatar_project_card {
@@ -369,12 +455,16 @@
   margin-bottom: 0;
 }
 
-.kanban-btn_project_card, .gantt-btn_project_card {
+.kanban-btn_project_card,
+.gantt-btn_project_card,
+.finances-btn_project_card {
   background-color: #EAF6F7;
   color: #333;
 }
 
-.kanban-btn_project_card:hover, .gantt-btn_project_card:hover {
+.kanban-btn_project_card:hover,
+.gantt-btn_project_card:hover,
+.finances-btn_project_card:hover {
   background-color: #D1ECF1;
   transform: translateY(-0.2vh);
   box-shadow: 0 0.4vh 0.8vh rgba(0, 0, 0, 0.1);
@@ -430,7 +520,7 @@
   background: white;
   border: 0.2vh solid #DEE2E6;
   border-radius: 0.8vh;
-  box-shadow: 0 0.4vh 1.2vh rgba(0,0,0,0.1);
+  box-shadow: 0 0.4vh 1.2vh rgba(0, 0, 0, 0.1);
   z-index: 100;
   margin-top: 0.4vh;
 }
@@ -630,7 +720,8 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  /* #B2E9EF @ 69% */
+  background: rgba(178, 233, 239, 0.69);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -756,8 +847,13 @@
 }
 
 @keyframes spin_gantt_class {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .no-tasks-message_gantt_class {
@@ -816,20 +912,20 @@
     padding: 1.6vh;
     min-height: 14vh;
   }
-  
+
   .top-row_project_card,
   .middle-row_project_card,
   .bottom-row_project_card {
     gap: 1.8vh;
     min-height: 15vh;
   }
-  
+
   .status-tile_project_card,
   .files-tile_project_card {
     padding: 1.6vh;
     min-height: 15vh;
   }
-  
+
   .date-value1_project_card,
   .project-price_project_card,
   .project-hours_project_card,
@@ -837,24 +933,39 @@
   .project-type_project_card {
     font-size: 1.8vh;
   }
-  
+
   .date-label_project_card,
   .info-label_project_card,
   .team-count_project_card,
-  .tile-header_project_card h3 {
+  .tile-header_project_card h3,
+  .performers-header_project_card h3 {
     font-size: 1.3vh;
   }
-  
+
   .projectcard-avatar_project_card {
     width: 3.2vh;
     height: 3.2vh;
     font-size: 1.3vh;
   }
-  
+
   .avatar.extra-avatar_project_card {
     width: 3.2vh;
     height: 3.2vh;
     font-size: 1.1vh;
+  }
+
+  .performers-add-btn_project_card {
+    width: 3.2vh;
+    height: 3.2vh;
+  }
+
+  .performers-add-icon_project_card {
+    font-size: 1.9vh;
+  }
+
+  .performers-schedule-btn_project_card {
+    font-size: 1.3vh;
+    padding: 0.75vh 1.8vh;
   }
 }
 
@@ -863,20 +974,20 @@
     padding: 1.4vh;
     min-height: 12vh;
   }
-  
+
   .top-row_project_card,
   .middle-row_project_card,
   .bottom-row_project_card {
     gap: 1.4vh;
     min-height: 13vh;
   }
-  
+
   .status-tile_project_card,
   .files-tile_project_card {
     padding: 1.4vh;
     min-height: 13vh;
   }
-  
+
   .date-value1_project_card,
   .project-price_project_card,
   .project-hours_project_card,
@@ -884,30 +995,45 @@
   .project-type_project_card {
     font-size: 1.6vh;
   }
-  
+
   .date-label_project_card,
   .info-label_project_card,
   .team-count_project_card,
-  .tile-header_project_card h3 {
+  .tile-header_project_card h3,
+  .performers-header_project_card h3 {
     font-size: 1.2vh;
   }
-  
+
   .projectcard-avatar_project_card {
     width: 2.8vh;
     height: 2.8vh;
     font-size: 1.2vh;
   }
-  
+
   .avatar.extra-avatar_project_card {
     width: 2.8vh;
     height: 2.8vh;
     font-size: 1vh;
   }
-  
+
   .action-btn_project_card {
     padding: 0.8vh 1.4vh;
     font-size: 1.6vh;
     height: 32%;
+  }
+
+  .performers-add-btn_project_card {
+    width: 2.8vh;
+    height: 2.8vh;
+  }
+
+  .performers-add-icon_project_card {
+    font-size: 1.7vh;
+  }
+
+  .performers-schedule-btn_project_card {
+    font-size: 1.2vh;
+    padding: 0.65vh 1.6vh;
   }
 }
 
@@ -916,20 +1042,20 @@
     padding: 1.2vh;
     min-height: 10vh;
   }
-  
+
   .top-row_project_card,
   .middle-row_project_card,
   .bottom-row_project_card {
     gap: 1.2vh;
     min-height: 11vh;
   }
-  
+
   .status-tile_project_card,
   .files-tile_project_card {
     padding: 1.2vh;
     min-height: 11vh;
   }
-  
+
   .date-value1_project_card,
   .project-price_project_card,
   .project-hours_project_card,
@@ -937,34 +1063,49 @@
   .project-type_project_card {
     font-size: 1.4vh;
   }
-  
+
   .date-label_project_card,
   .info-label_project_card,
   .team-count_project_card,
-  .tile-header_project_card h3 {
+  .tile-header_project_card h3,
+  .performers-header_project_card h3 {
     font-size: 1.1vh;
   }
-  
+
   .projectcard-main-content_project_card {
     min-height: 40vh;
   }
-  
+
   .projectcard-avatar_project_card {
     width: 2.4vh;
     height: 2.4vh;
     font-size: 1vh;
   }
-  
+
   .avatar.extra-avatar_project_card {
     width: 2.4vh;
     height: 2.4vh;
     font-size: 0.9vh;
   }
-  
+
   .action-btn_project_card {
     padding: 0.6vh 1.2vh;
     font-size: 1.4vh;
     height: 30%;
+  }
+
+  .performers-add-btn_project_card {
+    width: 2.4vh;
+    height: 2.4vh;
+  }
+
+  .performers-add-icon_project_card {
+    font-size: 1.5vh;
+  }
+
+  .performers-schedule-btn_project_card {
+    font-size: 1.1vh;
+    padding: 0.55vh 1.4vh;
   }
 }
 
@@ -983,9 +1124,11 @@
 
 /* Сохраняем вертикальные отступы между строками карточек */
 .projectcard-layout_project_card {
-  gap: 2.4vh; /* Фиксированный отступ между левой и правой панелями */
+  gap: 2.4vh;
+  /* Фиксированный отступ между левой и правой панелями */
 }
 
 .main-cards-section_project_card {
-  gap: 2.4vh; /* Фиксированный отступ между строками карточек */
+  gap: 2.4vh;
+  /* Фиксированный отступ между строками карточек */
 }

@@ -40,7 +40,7 @@
   border-radius: 1vh;
   padding: 2vh;
   margin-bottom: 2vh;
-  box-shadow: 0 0.2vh 0.5vh rgba(0,0,0,0.1);
+  box-shadow: 0 0.2vh 0.5vh rgba(0, 0, 0, 0.1);
 }
 
 .comment-input_task_card {
@@ -78,7 +78,7 @@
   background: #FFFFFF;
   border-radius: 1vh;
   padding: 2vh;
-  box-shadow: 0 0.2vh 0.5vh rgba(0,0,0,0.1);
+  box-shadow: 0 0.2vh 0.5vh rgba(0, 0, 0, 0.1);
 }
 
 /* Стили для чата и файлов (колонки 1 и 2) */
@@ -364,6 +364,27 @@
 }
 
 /* Колонка 3: Информационные прямоугольники */
+.task-meta-columns_task_card {
+  display: flex;
+  flex-direction: row;
+  gap: 2vh;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  align-items: flex-start;
+}
+
+.task-meta-col_task_card {
+  flex: 1;
+  min-width: 0;
+}
+
+.project-hours-col_task_card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2vh;
+}
+
 .info-rectangle_task_card .date-item_task_card {
   display: flex;
   flex-direction: column;
@@ -379,17 +400,53 @@
   margin-bottom: 0.5vh;
 }
 
-/* Начало и дедлайн в две строки */
-.info-rectangle_task_card .date-row_task_card:nth-child(1),
-.info-rectangle_task_card .date-row_task_card:nth-child(3) {
+/* Начало и дедлайн: отступы только внутри колонок метаданных */
+.date-item_task_card>.date-row_task_card:nth-child(1),
+.date-item_task_card>.date-row_task_card:nth-child(3),
+.project-hours-col_task_card>.date-row_task_card:nth-child(1),
+.project-hours-col_task_card>.date-row_task_card:nth-child(3) {
   justify-content: flex-start;
   margin-bottom: 0.2vh;
 }
 
-.info-rectangle_task_card .date-row_task_card:nth-child(2),
-.info-rectangle_task_card .date-row_task_card:nth-child(4) {
+.date-item_task_card>.date-row_task_card:nth-child(2),
+.date-item_task_card>.date-row_task_card:nth-child(4),
+.project-hours-col_task_card>.project-name-row_task_card,
+.project-hours-col_task_card>.date-row_task_card:nth-child(4) {
   justify-content: flex-start;
   margin-bottom: 1vh;
+}
+
+.project-hours-col_task_card>.date-row_task_card:nth-child(4) {
+  margin-bottom: 0;
+}
+
+.project-name-row_task_card {
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.project-name-row_task_card>.project-link_task_card,
+.project-name-row_task_card>.date-value_task_card {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.project-link_task_card {
+  text-decoration: underline;
+  text-underline-offset: 0.25vh;
+  color: #333;
+  font-weight: 600;
+  font-size: 1.8vh;
+}
+
+.project-link_task_card:hover {
+  color: #000;
 }
 
 .date-label_task_card {
@@ -456,7 +513,7 @@
   background: white;
   border: 0.1vh solid #E9ECEF;
   border-radius: 0.6vh;
-  box-shadow: 0 0.4vh 1.2vh rgba(0,0,0,0.1);
+  box-shadow: 0 0.4vh 1.2vh rgba(0, 0, 0, 0.1);
   z-index: 100;
   min-width: 15vh;
 }
@@ -682,7 +739,7 @@
   border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
-  box-shadow: 0 0.2vh 0.4vh rgba(0,0,0,0.1);
+  box-shadow: 0 0.2vh 0.4vh rgba(0, 0, 0, 0.1);
 }
 
 .taskcard-avatar-img_task_card {
@@ -734,12 +791,13 @@
 
 /* Кнопка сохранения изменений */
 .save-changes-btn_task_card {
-  background-color: #FFFFFF;
+  background-color: #6EDCE1;
   color: #26262C;
-  border: 1px solid #E5E5E5;
+  border: 1px solid;
   border-radius: 1vh;
   padding: 1vh 2vh;
   font-size: 2vh;
+  color: #FFFFFF;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s;

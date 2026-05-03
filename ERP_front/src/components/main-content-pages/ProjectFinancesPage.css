@@ -1,0 +1,38 @@
+.project-finances-page {
+    box-sizing: border-box;
+    min-height: calc(100vh - 10vh);
+    padding: 2vh;
+    background-color: #f6f6fe;
+}
+
+.project-finances-title {
+    margin: 0 0 2vh;
+    font-size: 2.2vh;
+    font-weight: 600;
+    color: #5b5b5b;
+}
+
+.project-finances-crumb {
+    color: #5b5b5b;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.project-finances-crumb:hover {
+    text-decoration: underline;
+    text-underline-offset: 0.3vh;
+}
+
+.project-finances-placeholder {
+    max-width: 640px;
+    padding: 3vh;
+    border-radius: 2vh;
+    background: #fff;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.project-finances-placeholder p {
+    margin: 0;
+    color: #666;
+    font-size: 1.8vh;
+}

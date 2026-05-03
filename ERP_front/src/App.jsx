@@ -18,6 +18,7 @@ import NotificationContainer from './components/main-comps/Notification';
 // Страницы контента
 import ProjectsList from './components/main-content-pages/ProjectsList';
 import ProjectCard from './components/main-content-pages/ProjectCard';
+import ProjectFinancesPage from './components/main-content-pages/ProjectFinancesPage';
 import GanttChart2 from './components/main-content-pages/GanttChart2';
 import KanbanTasks from './components/main-content-pages/KanbanTasks';
 import MyTasks from './components/main-content-pages/MyTasks';
@@ -25,6 +26,7 @@ import TaskCard from './components/main-content-pages/TaskCard';
 import StaffList from './components/main-content-pages/StaffList';
 import EmployeeCard from './components/main-content-pages/EmployeeCard';
 import AccountPage from './components/main-content-pages/AccountPage';
+import SchedulePage from './components/main-content-pages/SchedulePage';
 
 // Мок данные
 import { projectsData } from './MockData/projects.js';
@@ -240,6 +242,9 @@ function App() {
                   />
                 } />
                 
+                {/* Финансы проекта (заглушка) — до /projects/:projectId, иначе finans съестся как id */}
+                <Route path="/projects/finans/:projectId" element={<ProjectFinancesPage />} />
+
                 {/* Карточка проекта */}
                 <Route path="/projects/:projectId" element={
                   <ProjectCard 
@@ -271,6 +276,9 @@ function App() {
                     showNotification={() => {}}
                   />
                 } />
+
+                {/* Расписание */}
+                <Route path="/schedule" element={<SchedulePage />} />
                 
                 {/* Карточка задачи */}
                 <Route path="/tasks/:taskId" element={

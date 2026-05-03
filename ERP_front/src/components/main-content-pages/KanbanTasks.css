@@ -236,7 +236,8 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  /* #B2E9EF @ 69% */
+  background: rgba(178, 233, 239, 0.69);
   display: flex;
   align-items: center;
   justify-content: center;

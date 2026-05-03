@@ -182,7 +182,11 @@ function AccountPage() {
         image: null,
         image_url: null,
         statistic_percent: null,
-        statistic_label: ''
+        statistic_label: '',
+        current_tasks: 0,
+        closed_late_tasks: 0,
+        closed_on_time_tasks: 0,
+        failed_tasks: 0
     });
     const [isLoading, setIsLoading] = useState(true);
     const [isProfileEditing, setIsProfileEditing] = useState(false);
@@ -332,7 +336,11 @@ function AccountPage() {
                 image_url: employeeData.image_url || null,
                 statistic_percent:
                     employeeData.statistic_percent != null ? employeeData.statistic_percent : null,
-                statistic_label: employeeData.statistic_label || ''
+                statistic_label: employeeData.statistic_label || '',
+                current_tasks: employeeData.current_tasks ?? 0,
+                closed_late_tasks: employeeData.closed_late_tasks ?? 0,
+                closed_on_time_tasks: employeeData.closed_on_time_tasks ?? 0,
+                failed_tasks: employeeData.failed_tasks ?? 0
             };
 
             setUserData(formattedData);
@@ -363,7 +371,11 @@ function AccountPage() {
                 image: null,
                 image_url: null,
                 statistic_percent: null,
-                statistic_label: ''
+                statistic_label: '',
+                current_tasks: 0,
+                closed_late_tasks: 0,
+                closed_on_time_tasks: 0,
+                failed_tasks: 0
             });
             const fallbackProfileForm = {
                 email: localStorage.getItem('email') || '',
@@ -647,19 +659,19 @@ function AccountPage() {
                 <div className="left-stats-list">
                     <div className="left-stat-item">
                         <span>Текущие задачи:</span>
-                        <span>10</span>
+                        <span>{userData.current_tasks ?? 0}</span>
                     </div>
                     <div className="left-stat-item">
                         <span>Не закрытые в срок:</span>
-                        <span>10</span>
+                        <span>{userData.closed_late_tasks ?? 0}</span>
                     </div>
                     <div className="left-stat-item">
                         <span>Закрытые в срок:</span>
-                        <span>5</span>
+                        <span>{userData.closed_on_time_tasks ?? 0}</span>
                     </div>
                     <div className="left-stat-item">
-                        <span>Проваленые задачи:</span>
-                        <span>0</span>
+                        <span>Проваленные задачи:</span>
+                        <span>{userData.failed_tasks ?? 0}</span>
                     </div>
                 </div>
             </div>
@@ -668,7 +680,7 @@ function AccountPage() {
                     <button
                         type="button"
                         className="account-center-tab"
-                        onClick={() => navigate('/projects')}
+                        onClick={() => navigate('/schedule')}
                     >
                         График
                     </button>

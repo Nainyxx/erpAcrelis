@@ -1,7 +1,7 @@
 // ERP_front/src/components/main-content-pages/TaskCard.jsx
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import { 
     getTaskById, 
     updateTask, 
@@ -1223,27 +1223,58 @@ const TaskCard = ({ useMockData = false }) => {
 
                     {/* Колонка 3: 3 отдельных прямоугольника с информацией */}
                     <div className="column-section_task_card">
-                        {/* Прямоугольник 1: Даты */}
+                        {/* Прямоугольник 1: Даты, проект, часы (данные с API) */}
                         <div className="info-rectangle_task_card">
-                            <div className="date-item_task_card">
-                                <div className="date-row_task_card">
-                                    <span className="date-label_task_card">Начало:</span>
+                            <div className="task-meta-columns_task_card">
+                                <div className="date-item_task_card task-meta-col_task_card">
+                                    <div className="date-row_task_card">
+                                        <span className="date-label_task_card">Начало:</span>
+                                    </div>
+                                    <div className="date-row_task_card">
+                                        <span className="date-value_task_card">{startDate}</span>
+                                    </div>
+                                    <div className="date-row_task_card">
+                                        <span className="date-label_task_card">Дедлайн:</span>
+                                    </div>
+                                    <div className="date-row_task_card">
+                                        <span 
+                                            className="date-value_task_card editable_task_card"
+                                            contentEditable
+                                            suppressContentEditableWarning
+                                            onBlur={(e) => handleDeadlineChange_task_card(e)}
+                                        >
+                                            {deadline}
+                                        </span>
+                                    </div>
                                 </div>
-                                <div className="date-row_task_card">
-                                    <span className="date-value_task_card">{startDate}</span>
-                                </div>
-                                <div className="date-row_task_card">
-                                    <span className="date-label_task_card">Дедлайн:</span>
-                                </div>
-                                <div className="date-row_task_card">
-                                    <span 
-                                        className="date-value_task_card editable_task_card"
-                                        contentEditable
-                                        suppressContentEditableWarning
-                                        onBlur={(e) => handleDeadlineChange_task_card(e)}
-                                    >
-                                        {deadline}
-                                    </span>
+                                <div className="project-hours-col_task_card task-meta-col_task_card">
+                                    <div className="date-row_task_card">
+                                        <span className="date-label_task_card">Проект</span>
+                                    </div>
+                                    <div className="date-row_task_card project-name-row_task_card">
+                                        {task.project != null ? (
+                                            <Link
+                                                className="project-link_task_card date-value_task_card"
+                                                to={`/projects/${task.project}`}
+                                                title={task.project_name || undefined}
+                                            >
+                                                {task.project_name}
+                                            </Link>
+                                        ) : (
+                                            <span
+                                                className="date-value_task_card"
+                                                title={task.project_name || undefined}
+                                            >
+                                                {task.project_name}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="date-row_task_card">
+                                        <span className="date-label_task_card">Часы работы</span>
+                                    </div>
+                                    <div className="date-row_task_card">
+                                        <span className="date-value_task_card">{task.hours}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
