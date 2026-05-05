@@ -50,14 +50,23 @@
   outline: none;
   font-size: 1.6vh;
   font-family: inherit;
-  resize: vertical;
   color: #333;
   background: transparent;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
-.comment-input_task_card::placeholder {
+.comment-input_task_card:empty::before {
+  content: attr(data-placeholder);
   color: #888;
   font-style: italic;
+  pointer-events: none;
+}
+
+.comment-input_task_card a {
+  color: #0a66c2;
+  text-decoration: underline;
 }
 
 /* Основное содержимое */

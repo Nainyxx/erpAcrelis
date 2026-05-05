@@ -10,6 +10,7 @@ import {
   getStaffList 
 } from '../../services/api/api';
 import './MyTasks.css';
+import { MY_TASKS_NAV_QUERY_STORAGE_KEY } from '../../constants/navigationKeys';
 
 // Константы статусов задач
 const TASK_STATUS_MAP = {
@@ -22,6 +23,35 @@ const TASK_STATUS_MAP = {
 };
 
 const TASKS_PER_PAGE = 20;
+
+/** Сравнение query без учёта порядка ключей */
+const normalizeQueryForCompare = (searchStr) => {
+  const raw = (searchStr || '').replace(/^\?/, '');
+  const p = new URLSearchParams(raw);
+  return [...p.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, v]) => `${k}=${v}`)
+    .join('&');
+};
+
+/** Собирает query для /my-tasks (performer, performerName, status, search) */
+const buildMyTasksQueryString = (selectedPerformer, selectedStatus, searchQuery, performers) => {
+  const params = new URLSearchParams();
+  if (selectedPerformer === '' || selectedPerformer == null) return '';
+  if (String(selectedPerformer) === 'all') {
+    params.set('performer', 'all');
+  } else {
+    params.set('performer', String(selectedPerformer));
+    const perf = performers.find((x) => String(x.id) === String(selectedPerformer));
+    if (perf?.label) params.set('performerName', perf.label);
+  }
+  if (selectedStatus && selectedStatus !== 'all') {
+    params.set('status', selectedStatus);
+  }
+  const sq = searchQuery != null ? String(searchQuery).trim() : '';
+  if (sq) params.set('search', sq);
+  return params.toString();
+};
 
 // Функции для работы с localStorage
 const getStoredPage = () => {
@@ -97,32 +127,70 @@ const MyTasks = ({ useMockData = true }) => {
     ...Object.entries(TASK_STATUS_MAP).map(([id, label]) => ({ id, label }))
   ];
 
-  // Инициализация - получаем текущего пользователя и парсим query параметры
+  useEffect(() => {
+    loadStaffList();
+  }, [useMockData]);
+
+  // Парсим query при смене URL (в т.ч. после синхронизации фильтров)
   useEffect(() => {
     const user = getCurrentUser();
     setCurrentUser(user);
-    
-    // Парсим query параметры
+
     const params = new URLSearchParams(location.search);
     const performerParam = params.get('performer');
-    
-    // Если есть performer в query параметрах - используем его
-    if (performerParam) {
+
+    if (performerParam !== null && performerParam !== '') {
       setSelectedPerformer(performerParam);
+    } else if (user?.staff_id) {
+      setSelectedPerformer(String(user.staff_id));
+    } else if (user?.user_id) {
+      setSelectedPerformer(String(user.user_id));
     } else {
-      // Иначе используем ID текущего пользователя
-      if (user && user.staff_id) {
-        setSelectedPerformer(user.staff_id.toString());
-      } else if (user && user.user_id) {
-        setSelectedPerformer(user.user_id.toString());
-      } else {
-        setSelectedPerformer('all');
-      }
+      setSelectedPerformer('all');
     }
-    
-    // Загружаем список сотрудников
-    loadStaffList();
-  }, [useMockData, location.search]);
+
+    const statusParam = params.get('status');
+    setSelectedStatus(statusParam && TASK_STATUS_MAP[statusParam] ? statusParam : 'all');
+
+    const searchParam = params.get('search');
+    if (searchParam != null && searchParam !== '') {
+      setSearchQuery(searchParam);
+      setSearchInput(searchParam);
+    } else {
+      setSearchQuery('');
+      setSearchInput('');
+    }
+  }, [location.search]);
+
+  // Держим адрес в соответствии с фильтрами (как в ссылке performer + performerName + …)
+  useEffect(() => {
+    if (selectedPerformer === '') return;
+
+    const built = buildMyTasksQueryString(
+      selectedPerformer,
+      selectedStatus,
+      searchQuery,
+      performers
+    );
+    const nextSearch = built ? `?${built}` : '';
+    if (normalizeQueryForCompare(location.search) === normalizeQueryForCompare(nextSearch)) {
+      try {
+        sessionStorage.setItem(MY_TASKS_NAV_QUERY_STORAGE_KEY, nextSearch);
+      } catch (_) {}
+      return;
+    }
+    try {
+      sessionStorage.setItem(MY_TASKS_NAV_QUERY_STORAGE_KEY, nextSearch);
+    } catch (_) {}
+    navigate({ pathname: '/my-tasks', search: nextSearch }, { replace: true });
+  }, [
+    selectedPerformer,
+    selectedStatus,
+    searchQuery,
+    performers,
+    location.search,
+    navigate
+  ]);
 
   // Загрузка задач при изменении фильтров или страницы
   useEffect(() => {
@@ -301,7 +369,7 @@ const MyTasks = ({ useMockData = true }) => {
 
   // Функция для обработки клика по ячейке
   const handleTaskClick = (task) => {
-    navigate(`/tasks/${task.id}`);
+    navigate({ pathname: `/tasks/${task.id}`, search: location.search });
   };
 
   // Пагинация

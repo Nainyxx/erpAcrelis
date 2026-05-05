@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { getEmployeeById, updateEmployeeById } from '../../services/api/api';
 import { jointProjectsFilterMock, jointProjectMembersMock } from '../../MockData/accountJointProjects';
 import './AccountPage.css';
+import { MY_TASKS_NAV_QUERY_STORAGE_KEY } from '../../constants/navigationKeys';
+import { SelectFilterDropdown } from '../shared/SelectFilterDropdown';
 import BackgoundFrame from "../../assets/Frame-account.svg";
 import statisticDonutSrc from '../../assets/statistic-account.svg';
 
@@ -14,110 +16,6 @@ function jointMemberInitials(name) {
     if (parts.length === 0) return '?';
     if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
     return `${parts[0][0] || ''}${parts[parts.length - 1][0] || ''}`.toUpperCase();
-}
-
-/** Фильтр по проекту в шапке блока «Совместные проекты». */
-function AccountJointProjectsDropdown({
-    headingId,
-    menuRef,
-    isOpen,
-    onToggle,
-    showPlaceholder,
-    triggerText,
-    options,
-    selectedId,
-    onSelectOption
-}) {
-    return (
-        <div className={`account-joint-projects-select-wrap ${isOpen ? 'is-menu-open' : ''}`}>
-            <div className="account-joint-dropdown" ref={menuRef}>
-                <button
-                    type="button"
-                    id="joint-project-filter-trigger"
-                    className={`account-joint-dropdown-trigger ${isOpen ? 'is-open' : ''}`}
-                    aria-expanded={isOpen}
-                    aria-haspopup="listbox"
-                    aria-controls="joint-project-filter-listbox"
-                    aria-label="Фильтр по проекту"
-                    onClick={onToggle}
-                >
-                    <span
-                        className={`account-joint-dropdown-value ${showPlaceholder ? 'is-placeholder' : ''}`}
-                    >
-                        {triggerText}
-                    </span>
-                    <span className="account-joint-dropdown-chevron" aria-hidden="true">
-                        <svg
-                            width="12"
-                            height="12"
-                            viewBox="0 0 12 12"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                        >
-                            <path
-                                d="M2.75 4.5 6 7.75l3.25-3.25"
-                                stroke="#6b6f78"
-                                strokeWidth="1.25"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            />
-                        </svg>
-                    </span>
-                </button>
-                {isOpen ? (
-                    <div
-                        id="joint-project-filter-listbox"
-                        className="account-joint-dropdown-panel"
-                        role="listbox"
-                        aria-labelledby={headingId}
-                    >
-                        {options.map((opt) => {
-                            const selected =
-                                selectedId != null && String(opt.id) === String(selectedId);
-                            return (
-                                <button
-                                    key={opt.id}
-                                    type="button"
-                                    role="option"
-                                    aria-selected={selected}
-                                    className={`account-joint-dropdown-option ${selected ? 'is-selected' : ''}`}
-                                    onClick={() => onSelectOption(opt.id)}
-                                >
-                                    <span className="account-joint-dropdown-option-text">
-                                        {opt.label}
-                                    </span>
-                                    {selected ? (
-                                        <span
-                                            className="account-joint-dropdown-check"
-                                            aria-hidden="true"
-                                        >
-                                            <svg
-                                                width="14"
-                                                height="14"
-                                                viewBox="0 0 14 14"
-                                                fill="none"
-                                                xmlns="http://www.w3.org/2000/svg"
-                                            >
-                                                <path
-                                                    d="M11.083 4 6.125 8.958 2.917 5.75"
-                                                    stroke="#3d6fd8"
-                                                    strokeWidth="1.5"
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                />
-                                            </svg>
-                                        </span>
-                                    ) : (
-                                        <span className="account-joint-dropdown-check-placeholder" />
-                                    )}
-                                </button>
-                            );
-                        })}
-                    </div>
-                ) : null}
-            </div>
-        </div>
-    );
 }
 
 function AccountJointProjectMemberRow({ member }) {
@@ -669,7 +567,7 @@ function AccountPage() {
                         <span>Закрытые в срок:</span>
                         <span>{userData.closed_on_time_tasks ?? 0}</span>
                     </div>
-                    <div className="left-stat-item">
+                    <div className="left-stat-item" style={{ marginBottom: '0' }}>
                         <span>Проваленные задачи:</span>
                         <span>{userData.failed_tasks ?? 0}</span>
                     </div>
@@ -687,7 +585,14 @@ function AccountPage() {
                     <button
                         type="button"
                         className="account-center-tab"
-                        onClick={() => navigate('/my-tasks')}
+                        onClick={() => {
+                            try {
+                                const saved = sessionStorage.getItem(MY_TASKS_NAV_QUERY_STORAGE_KEY) || '';
+                                navigate(saved ? `/my-tasks${saved}` : '/my-tasks');
+                            } catch (_) {
+                                navigate('/my-tasks');
+                            }
+                        }}
                     >
                         Список задач
                     </button>
@@ -726,8 +631,8 @@ function AccountPage() {
                 >
                     <div className="profile-card-header">
                         <h3 id="account-joint-projects-heading">Совместные проекты</h3>
-                        <AccountJointProjectsDropdown
-                            headingId="account-joint-projects-heading"
+                        <SelectFilterDropdown
+                            labelId="account-joint-projects-heading"
                             menuRef={jointProjectMenuRef}
                             isOpen={jointProjectMenuOpen}
                             onToggle={() => setJointProjectMenuOpen((open) => !open)}
@@ -739,6 +644,7 @@ function AccountPage() {
                                 setJointProjectFilter(id);
                                 setJointProjectMenuOpen(false);
                             }}
+                            triggerAriaLabel="Фильтр по проекту"
                         />
                     </div>
                     <div className="account-joint-projects-divider" aria-hidden="true" />

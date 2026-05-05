@@ -5,69 +5,72 @@
 
 /* Контейнер логина */
 .login_container_login_page {
-  background-color: #F6F6FE;
+  background-color: #ffffff;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 4.4vh 2.2vh; /* 44px 22px (было 40px 20px) */
+  padding: 2rem 1.25rem 3rem;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 /* Логотип */
 .login_logo_login_page {
-  width: 22vh; /* 220px (было 200px) */
-  margin-top: 15vh;
-  margin-bottom: 4.4vh; /* 44px (было 40px) */
+  width: min(38vh, 360px);
+  height: auto;
+  margin-top: min(13vh, 130px);
+  margin-bottom: 2rem;
 }
 
 /* Заголовок */
 .login_title_login_page {
-  color: #122E3A;
-  font-size: 3.52vh; /* 35.2px (было 32px) */
-  font-weight: 600;
-  margin-bottom: 3.3vh; /* 33px (было 30px) */
+  color: #0f172a;
+  font-size: clamp(2rem, 4.2vh, 2.6rem);
+  font-weight: 700;
+  margin: 0 0 2rem;
   text-align: center;
+  letter-spacing: -0.02em;
 }
 
 /* Форма */
 .login_form_login_page {
   width: 100%;
-  max-width: 44vh; /* 440px (было 400px) */
+  max-width: min(100%, 22rem);
   display: flex;
   flex-direction: column;
-  gap: 2.2vh; /* 22px (было 20px) */
+  gap: 1.125rem;
 }
 
 /* Поля ввода */
 .login_input_login_page {
-  background-color: rgba(110, 220, 225, 0.2);
-  color: #122E3A;
+  background-color: #e6f7f8;
+  color: #0f172a;
   border: none;
-  border-radius: 4vh;
-  padding: 1.76vh 2.2vh;
-  font-size: 1.76vh;
+  border-radius: 9999px;
+  padding: 0.9rem 1.25rem;
+  font-size: 1rem;
   outline: none;
-  transition: all 0.3s ease;
+  transition: box-shadow 0.2s ease, background-color 0.2s ease;
   width: 100%;
   box-sizing: border-box;
 }
 
 /* Автозаполнение для всех браузеров */
 .login_input_login_page:-webkit-autofill {
-  -webkit-box-shadow: 0 0 0 110vh rgba(110, 220, 225, 0.2) inset !important;
-  -webkit-text-fill-color: #122E3A !important;
-  border-radius: 4vh !important;
+  -webkit-box-shadow: 0 0 0 100vh #e6f7f8 inset !important;
+  -webkit-text-fill-color: #0f172a !important;
+  border-radius: 9999px !important;
 }
 
 .login_input_login_page:-moz-autofill,
 .login_input_login_page:autofill {
-  background-color: rgba(110, 220, 225, 0.2) !important;
-  color: #122E3A !important;
-  border-radius: 0.88vh !important;
+  background-color: #e6f7f8 !important;
+  color: #0f172a !important;
+  border-radius: 9999px !important;
 }
 
 .login_input_login_page:focus {
-  box-shadow: 0 0 0 0.22vh rgba(110, 220, 225, 0.3);
+  box-shadow: 0 0 0 2px rgba(95, 179, 179, 0.45);
 }
 
 .login_input_login_page:disabled {
@@ -76,7 +79,7 @@
 }
 
 .login_input_login_page::placeholder {
-  color: rgba(18, 46, 58, 0.6);
+  color: rgba(15, 23, 42, 0.45);
 }
 
 /* Контейнер для поля пароля */
@@ -86,77 +89,92 @@
 }
 
 .password_input_login_page {
-  padding-right: 10.45vh;
+  padding-right: 5.75rem;
 }
 
 /* Кнопка показа/скрытия пароля с текстом */
 .password_toggle_btn_login_page {
   position: absolute;
-  right: 0.88vh; /* 8.8px (было 8px) */
+  right: 0.5rem;
   top: 50%;
   transform: translateY(-50%);
-  background: rgba(110, 220, 225, 0.3);
+  background: transparent;
   border: none;
   cursor: pointer;
-  padding: 0.88vh 1.32vh; /* 8.8px 13.2px (было 8px 12px) */
-  height: 3.52vh; /* 35.2px (было 32px) */
+  padding: 0.35rem 0.65rem;
+  height: auto;
+  min-height: 2rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4vh; /* 6.6px (было 6px) */
-  transition: all 0.3s ease;
-  min-width: 7.7vh; /* 77px (было 70px) */
+  border-radius: 9999px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  min-width: auto;
 }
 
 .password_toggle_btn_login_page:hover:not(:disabled) {
-  background: rgba(110, 220, 225, 0.5);
+  background: rgba(95, 179, 179, 0.12);
 }
 
 .password_toggle_btn_login_page:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  background: rgba(110, 220, 225, 0.2);
 }
 
 .password_toggle_text_login_page {
-  font-size: 1.43vh;
-  color: #122E3A;
-  font-weight: 500;
+  font-size: 0.8125rem;
+  color: #5fb3b3;
+  font-weight: 600;
   white-space: nowrap;
 }
 
 /* Сообщение об ошибке */
 .login_error_login_page {
-  background-color: #FFEBEE;
-  color: #D32F2F;
-  padding: 1.32vh 1.76vh;
-  border-radius: 0.66vh;
-  font-size: 1.54vh;
+  background-color: #fff1f2;
+  color: #b91c1c;
+  padding: 0.85rem 1rem;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
   text-align: center;
 }
 
 /* Кнопка входа */
 .login_button_login_page {
-  background-color: #5CB6BA;
-  color: #D5FBFF;
+  background-color: #5fb3b3;
+  color: #ffffff;
   border: none;
-  border-radius: 4vh;
-  padding: 1.76vh 2.2vh;
-  font-size: 1.76vh; 
-  font-weight: 600;
+  border-radius: 9999px;
+  padding: 0.9rem 1.25rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background-color 0.2s ease, transform 0.15s ease;
   width: 100%;
-  margin-top: 1.1vh; 
+  margin-top: 0.35rem;
 }
 
 .login_button_login_page:hover:not(:disabled) {
-  opacity: 0.9;
+  background-color: #4fa1a1;
 }
 
 .login_button_login_page:disabled {
   opacity: 0.7;
   cursor: not-allowed;
+}
+
+a.login_button_login_page {
+  text-decoration: none;
+  text-align: center;
+  box-sizing: border-box;
+  line-height: 1.35;
+}
+
+.login_button_login_page--sentence {
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 600;
 }
 
 /* Ссылки */
@@ -172,7 +190,7 @@
 }
 
 .login_register_link_login_page {
-  color: #122E3A;
+  color: #0f172a;
   font-weight: 700;
   text-decoration: none;
   transition: all 0.3s ease;
@@ -186,12 +204,12 @@
 .login_test_data_login_page {
   margin-top: 4.4vh; /* 44px (было 40px) */
   padding: 1.65vh 2.2vh; /* 16.5px 22px (было 15px 20px) */
-  background-color: rgba(110, 220, 225, 0.1);
+  background-color: #e6f7f8;
   border-radius: 0.88vh; /* 8.8px (было 8px) */
   font-size: 1.43vh; /* 14.3px (было 13px) */
-  color: #122E3A;
+  color: #0f172a;
   text-align: center;
-  max-width: 44vh; /* 440px (было 400px) */
+  max-width: min(100%, 22rem);
   width: 100%;
   box-sizing: border-box;
 }
@@ -213,58 +231,60 @@
 
 /* Контейнер регистрации */
 .register_container_register_page {
-  background-color: #F6F6FE;
+  background-color: #ffffff;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 4.4vh 2.2vh; /* 44px 22px (было 40px 20px) */
+  padding: 2rem 1.25rem 3rem;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 /* Заголовок регистрации */
 .register_title_register_page {
-  color: #122E3A;
-  font-size: 3.52vh; /* 35.2px (было 32px) */
-  font-weight: 600;
-  margin-bottom: 3.3vh; /* 33px (было 30px) */
+  color: #0f172a;
+  font-size: clamp(1.5rem, 3.2vh, 1.875rem);
+  font-weight: 700;
+  margin: 0 0 1.75rem;
   text-align: center;
+  letter-spacing: -0.02em;
 }
 
 /* Форма регистрации */
 .register_form_register_page {
   width: 100%;
-  max-width: 44vh; /* 440px (было 400px) */
+  max-width: min(100%, 28rem);
   display: flex;
   flex-direction: column;
-  gap: 2.2vh; /* 22px (было 20px) */
+  gap: 1.125rem;
 }
 
 /* Поля ввода регистрации */
 .register_input_register_page {
-  background-color: rgba(110, 220, 225, 0.2);
-  color: #122E3A;
+  background-color: #e6f7f8;
+  color: #0f172a;
   border: none;
-  border-radius: 0.88vh; /* 8.8px (было 8px) */
-  padding: 1.76vh 2.2vh; /* 17.6px 22px (было 16px 20px) */
-  font-size: 1.76vh; /* 17.6px (было 16px) */
+  border-radius: 9999px;
+  padding: 0.9rem 1.25rem;
+  font-size: 1rem;
   outline: none;
-  transition: all 0.3s ease;
+  transition: box-shadow 0.2s ease, background-color 0.2s ease;
   width: 100%;
   box-sizing: border-box;
 }
 
 /* Автозаполнение для полей регистрации */
 .register_input_register_page:-webkit-autofill {
-  -webkit-box-shadow: 0 0 0 110vh rgba(110, 220, 225, 0.2) inset !important;
-  -webkit-text-fill-color: #122E3A !important;
-  border-radius: 0.88vh !important;
+  -webkit-box-shadow: 0 0 0 100vh #e6f7f8 inset !important;
+  -webkit-text-fill-color: #0f172a !important;
+  border-radius: 9999px !important;
 }
 
 .register_input_register_page:-moz-autofill,
 .register_input_register_page:autofill {
-  background-color: rgba(110, 220, 225, 0.2) !important;
-  color: #122E3A !important;
-  border-radius: 0.88vh !important;
+  background-color: #e6f7f8 !important;
+  color: #0f172a !important;
+  border-radius: 9999px !important;
 }
 
 /* Двухколоночные поля */
@@ -290,27 +310,29 @@
 /* Подсказка под полями */
 .register_hint_register_page {
   font-size: 1.32vh; /* 13.2px (было 12px) */
-  color: rgba(18, 46, 58, 0.6);
+  color: rgba(15, 23, 42, 0.55);
   margin-top: 0.44vh; /* 4.4px (было 4px) */
 }
 
 /* Кнопка регистрации */
 .register_button_register_page {
-  background-color: #5CB6BA;
-  color: #D5FBFF;
+  background-color: #5fb3b3;
+  color: #ffffff;
   border: none;
-  border-radius: 0.88vh; /* 8.8px (было 8px) */
-  padding: 1.76vh 2.2vh; /* 17.6px 22px (было 16px 20px) */
-  font-size: 1.76vh; /* 17.6px (было 16px) */
-  font-weight: 600;
+  border-radius: 9999px;
+  padding: 0.9rem 1.25rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background-color 0.2s ease, transform 0.15s ease;
   width: 100%;
-  margin-top: 1.1vh; /* 11px (было 10px) */
+  margin-top: 0.35rem;
 }
 
 .register_button_register_page:hover:not(:disabled) {
-  opacity: 0.9;
+  background-color: #4fa1a1;
 }
 
 .register_button_register_page:disabled {
@@ -320,7 +342,7 @@
 
 /* Ссылка на вход */
 .register_login_link_register_page {
-  color: #122E3A;
+  color: #0f172a;
   font-weight: 700;
   text-decoration: none;
   transition: all 0.3s ease;
@@ -334,12 +356,12 @@
 .register_footer_register_page {
   margin-top: 4.4vh; /* 44px (было 40px) */
   padding: 1.65vh 2.2vh; /* 16.5px 22px (было 15px 20px) */
-  background-color: rgba(110, 220, 225, 0.1);
+  background-color: #e6f7f8;
   border-radius: 0.88vh; /* 8.8px (было 8px) */
   font-size: 1.43vh; /* 14.3px (было 13px) */
-  color: #122E3A;
+  color: #0f172a;
   text-align: center;
-  max-width: 44vh; /* 440px (было 400px) */
+  max-width: min(100%, 28rem);
   width: 100%;
   box-sizing: border-box;
 }
@@ -356,110 +378,93 @@
 /* Для планшетов и мобильных */
 @media (max-width: 52.8vh) { /* 528px (было 480px) */
   .login_container_login_page {
-    padding: 3.3vh 1.65vh; /* 33px 16.5px (было 30px 15px) */
+    padding: 1.5rem 1rem 2.5rem;
   }
   
   .login_logo_login_page {
-    width: 17.6vh; /* 176px (было 160px) */
-    margin-bottom: 3.3vh; /* 33px (было 30px) */
+    width: min(30vh, 280px);
+    margin-bottom: 1.5rem;
   }
   
   .login_title_login_page {
-    font-size: 3.08vh; /* 30.8px (было 28px) */
-    margin-bottom: 2.75vh; /* 27.5px (было 25px) */
-  }
-  
-  .login_form_login_page {
-    max-width: 39.6vh; /* 396px (было 360px) */
+    font-size: clamp(1.8rem, 3.8vh, 2.3rem);
+    margin-bottom: 1.5rem;
   }
   
   .password_input_login_page {
-    padding-right: 9.35vh; /* 93.5px (было 85px) */
-  }
-  
-  .password_toggle_btn_login_page {
-    min-width: 7.15vh; /* 71.5px (было 65px) */
-    padding: 0.66vh 1.1vh; /* 6.6px 11px (было 6px 10px) */
-    height: 3.3vh; /* 33px (было 30px) */
+    padding-right: 5.25rem;
   }
   
   .password_toggle_text_login_page {
-    font-size: 1.32vh; /* 13.2px (было 12px) */
+    font-size: 0.75rem;
   }
 }
 
 /* Для очень маленьких экранов по высоте */
 @media (max-height: 66vh) { /* 660px (было 600px) */
   .login_container_login_page {
-    padding: 2.2vh 1.65vh; /* 22px 16.5px (было 20px 15px) */
+    padding: 1rem 1rem 1.5rem;
   }
   
   .login_logo_login_page {
-    width: 13.2vh; /* 132px (было 120px) */
-    margin-bottom: 2.2vh; /* 22px (было 20px) */
+    width: min(24vh, 220px);
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
   }
   
   .login_title_login_page {
-    font-size: 2.64vh; /* 26.4px (было 24px) */
-    margin-bottom: 2.2vh; /* 22px (было 20px) */
+    font-size: clamp(1.6rem, 3.2vh, 2rem);
+    margin-bottom: 1rem;
   }
   
   .login_input_login_page,
   .login_button_login_page {
-    padding: 1.32vh 1.76vh; /* 13.2px 17.6px (было 12px 16px) */
+    padding: 0.75rem 1rem;
   }
   
   .password_input_login_page {
-    padding-right: 8.25vh; /* 82.5px (было 75px) */
-  }
-  
-  .password_toggle_btn_login_page {
-    min-width: 6.6vh; /* 66px (было 60px) */
-    padding: 0.55vh 0.88vh; /* 5.5px 8.8px (было 5px 8px) */
-    height: 3.08vh; /* 30.8px (было 28px) */
+    padding-right: 4.75rem;
   }
   
   .password_toggle_text_login_page {
-    font-size: 1.21vh; /* 12.1px (было 11px) */
+    font-size: 0.7rem;
   }
 }
 
 /* Для экранов меньше 35.2px */
 @media (max-width: 35.2vh) { /* 352px (было 320px) */
   .login_container_login_page {
-    padding: 2.2vh 1.1vh; /* 22px 11px (было 20px 10px) */
+    padding: 1.25rem 0.75rem 2rem;
   }
   
   .login_logo_login_page {
-    width: 15.4vh; /* 154px (было 140px) */
+    width: min(24vh, 220px);
+  }
+
+  .login_title_login_page {
+    font-size: clamp(1.5rem, 3vh, 1.9rem);
   }
   
   .login_form_login_page {
-    gap: 1.65vh; /* 16.5px (было 15px) */
+    gap: 1rem;
   }
   
   .login_input_login_page {
-    padding: 1.32vh 1.54vh; /* 13.2px 15.4px (было 12px 14px) */
-    font-size: 1.54vh; /* 15.4px (было 14px) */
+    padding: 0.8rem 1rem;
+    font-size: 0.9375rem;
   }
   
   .login_button_login_page {
-    padding: 1.32vh 1.54vh; /* 13.2px 15.4px (было 12px 14px) */
-    font-size: 1.54vh; /* 15.4px (было 14px) */
+    padding: 0.8rem 1rem;
+    font-size: 0.875rem;
   }
   
   .password_input_login_page {
-    padding-right: 7.7vh; /* 77px (было 70px) */
-  }
-  
-  .password_toggle_btn_login_page {
-    min-width: 6.05vh; /* 60.5px (было 55px) */
-    padding: 0.44vh 0.66vh; /* 4.4px 6.6px (было 4px 6px) */
-    height: 2.86vh; /* 28.6px (было 26px) */
+    padding-right: 4.5rem;
   }
   
   .password_toggle_text_login_page {
-    font-size: 1.1vh; /* 11px (было 10px) */
+    font-size: 0.65rem;
   }
   
   .login_links_login_page {
@@ -474,38 +479,38 @@
 
 /* Контейнер для поля подтверждения пароля (без кнопки показа) */
 .confirm_password_input_login_page {
-  background-color: rgba(110, 220, 225, 0.2);
-  color: #122E3A;
+  background-color: #e6f7f8;
+  color: #0f172a;
   border: none;
-  border-radius: 4vh;
-  padding: 1.76vh 2.2vh;
-  font-size: 1.76vh;
+  border-radius: 9999px;
+  padding: 0.9rem 1.25rem;
+  font-size: 1rem;
   outline: none;
-  transition: all 0.3s ease;
+  transition: box-shadow 0.2s ease, background-color 0.2s ease;
   width: 100%;
   box-sizing: border-box;
 }
 
 /* Автозаполнение для поля подтверждения пароля */
 .confirm_password_input_login_page:-webkit-autofill {
-  -webkit-box-shadow: 0 0 0 110vh rgba(110, 220, 225, 0.2) inset !important;
-  -webkit-text-fill-color: #122E3A !important;
-  border-radius: 4vh !important;
+  -webkit-box-shadow: 0 0 0 100vh #e6f7f8 inset !important;
+  -webkit-text-fill-color: #0f172a !important;
+  border-radius: 9999px !important;
 }
 
 .confirm_password_input_login_page:-moz-autofill,
 .confirm_password_input_login_page:autofill {
-  background-color: rgba(110, 220, 225, 0.2) !important;
-  color: #122E3A !important;
-  border-radius: 4vh !important;
+  background-color: #e6f7f8 !important;
+  color: #0f172a !important;
+  border-radius: 9999px !important;
 }
 
 .confirm_password_input_login_page:focus {
-  box-shadow: 0 0 0 0.22vh rgba(110, 220, 225, 0.3);
+  box-shadow: 0 0 0 2px rgba(95, 179, 179, 0.45);
 }
 
 .confirm_password_input_login_page::placeholder {
-  color: rgba(18, 46, 58, 0.6);
+  color: rgba(15, 23, 42, 0.45);
 }
 
 /* ============================================ */
@@ -514,12 +519,13 @@
 
 /* Контейнер регистрации шаг 2 */
 .register_end_container_register_page {
-  background-color: #F6F6FE;
+  background-color: #ffffff;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 4.4vh 2.2vh;
+  padding: 2rem 1.25rem 3rem;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 /* Ссылка "Вернуться" */
@@ -542,20 +548,20 @@
 
 .back_arrow_register_page {
   font-size: 1.54vh;
-  color: #122E3A;
+  color: #0f172a;
 }
 
 .back_text_register_page {
   font-size: 1.32vh;
-  color: #122E3A;
+  color: #0f172a;
   font-weight: 400;
 }
 
 /* Отображение логина */
 .username_display_register_page {
-  background-color: rgba(110, 220, 225, 0.1);
-  border-radius: 0.88vh;
-  padding: 1.32vh 2.2vh;
+  background-color: #e6f7f8;
+  border-radius: 9999px;
+  padding: 0.9rem 1.25rem;
   width: 100%;
   display: flex;
   align-items: center;
@@ -571,30 +577,30 @@
 
 .username_value_register_page {
   font-size: 1.54vh;
-  color: #122E3A;
+  color: #0f172a;
   font-weight: 600;
 }
 
 /* Поля ввода для второго шага регистрации */
 .register_end_input_register_page {
-  background-color: rgba(110, 220, 225, 0.2);
-  color: #122E3A;
+  background-color: #e6f7f8;
+  color: #0f172a;
   border: none;
-  border-radius: 4vh;
-  padding: 1.76vh 2.2vh;
-  font-size: 1.76vh;
+  border-radius: 9999px;
+  padding: 0.9rem 1.25rem;
+  font-size: 1rem;
   outline: none;
-  transition: all 0.3s ease;
+  transition: box-shadow 0.2s ease, background-color 0.2s ease;
   width: 100%;
   box-sizing: border-box;
 }
 
 .register_end_input_register_page:focus {
-  box-shadow: 0 0 0 0.22vh rgba(110, 220, 225, 0.3);
+  box-shadow: 0 0 0 2px rgba(95, 179, 179, 0.45);
 }
 
 .register_end_input_register_page::placeholder {
-  color: rgba(18, 46, 58, 0.6);
+  color: rgba(15, 23, 42, 0.45);
 }
 
 /* Строки с двумя полями */
@@ -632,19 +638,19 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #F6F6FE;
+  background-color: #ffffff;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   z-index: 9999;
   padding: 4.4vh 2.2vh;
-  font-family: 'Arial', sans-serif;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 /* Логотип заглушки */
 .access_denied_logo_123net_prav {
-  width: 22vh;
+  width: 30vh;
   height: auto;
   margin-bottom: 4.4vh;
 }
@@ -663,9 +669,9 @@
 
 /* Заголовок заглушки */
 .access_denied_title_123net_prav {
-  color: #5B5B5B;
+  color: #0f172a;
   font-size: 3.08vh;
-  font-weight: 600;
+  font-weight: 700;
   margin-bottom: 2.2vh;
   line-height: 1.3;
 }
@@ -699,23 +705,24 @@
 
 /* Кнопка возврата */
 .access_denied_button_123net_prav {
-  padding: 1.32vh 3.3vh;
-  background-color: #5ac5d8;
-  color: white;
+  padding: 0.9rem 1.5rem;
+  background-color: #5fb3b3;
+  color: #ffffff;
   border: none;
-  border-radius: 0.66vh;
-  font-size: 1.76vh;
-  font-weight: 500;
+  border-radius: 9999px;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
   cursor: pointer;
-  transition: background-color 0.3s, transform 0.2s;
+  transition: background-color 0.2s ease, transform 0.15s ease;
   width: 100%;
-  max-width: 22vh;
+  max-width: min(100%, 22rem);
   margin-bottom: 2.2vh;
   display: inline-block;
 }
 
 .access_denied_button_123net_prav:hover {
-  background-color: #5ac5d8;
+  background-color: #4fa1a1;
   transform: translateY(-0.1vh);
 }
 
@@ -750,7 +757,7 @@
   }
   
   .access_denied_logo_123net_prav {
-    width: 18vh;
+    width: 24vh;
     margin-bottom: 3vh;
   }
   
@@ -796,7 +803,7 @@
   }
   
   .access_denied_logo_123net_prav {
-    width: 14vh;
+    width: 19vh;
     margin-bottom: 2.5vh;
   }
   

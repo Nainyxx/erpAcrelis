@@ -204,6 +204,18 @@
   margin-bottom: 1.2vh;
 }
 
+.project-dates-hours-grid_project_card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 3vh;
+}
+
+.project-dates-column_project_card,
+.project-hours-column_project_card {
+  display: flex;
+  flex-direction: column;
+}
+
 .date-label_project_card {
   font-size: 1.5vh;
   color: #6C757D;

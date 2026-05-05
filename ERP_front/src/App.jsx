@@ -304,10 +304,11 @@ function App() {
                   />
                 } />
                 
-                {/* Бухгалтерия */}
-                <Route path="/accounting" element={
-                  <AccountingPage showNotification={() => {}} />
+                {/* Операции */}
+                <Route path="/operations" element={
+                  <OperationsPage showNotification={() => {}} />
                 } />
+                <Route path="/accounting" element={<Navigate to="/operations" replace />} />
                 
                 {/* Список сотрудников */}
                 <Route path="/staff" element={
@@ -336,8 +337,8 @@ function App() {
   );
 }
 
-// Страница Бухгалтерия
-function AccountingPage({ showNotification }) {
+// Страница «Операции»
+function OperationsPage({ showNotification }) {
   return (
     <div style={{
       padding: '30px',
@@ -349,7 +350,7 @@ function AccountingPage({ showNotification }) {
         fontSize: '24px',
         fontWeight: 600,
         marginBottom: '20px'
-      }}>Бухгалтерия</h1>
+      }}>Операции</h1>
       <div style={{
         background: 'white',
         borderRadius: '10px',

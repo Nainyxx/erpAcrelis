@@ -1,15 +1,16 @@
 // ERP_front/src/components/main-comps/InviteRegistrationStart.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
+import { validateInviteToken } from '../../services/api/api';
 import './AuthPages.css';
-import AcrelisLogo from '../../assets/acrelis-logo.svg';
+import AcrelisLogo from '../../assets/acrelis-logo2.svg';
 
 function InviteRegistrationStart() {
   const navigate = useNavigate();
   const { token } = useParams();
-  
+
   const safeToken = token ? encodeURIComponent(token) : '';
-  
+
   const [formData, setFormData] = useState(() => {
     if (!safeToken) return {
       username: '',
@@ -17,7 +18,7 @@ function InviteRegistrationStart() {
       password: '',
       password_confirm: ''
     };
-    
+
     const saved = localStorage.getItem(`invite_step1_${safeToken}`);
     return saved ? JSON.parse(saved) : {
       username: '',
@@ -26,19 +27,19 @@ function InviteRegistrationStart() {
       password_confirm: ''
     };
   });
-  
+
   const [showPassword, setShowPassword] = useState(false);
   const [validatingToken, setValidatingToken] = useState(true);
   const [tokenError, setTokenError] = useState('');
   const [formError, setFormError] = useState('');
   const [inviteData, setInviteData] = useState(null);
-  
+
   useEffect(() => {
     if (safeToken && (formData.username || formData.email || formData.password || formData.password_confirm)) {
       localStorage.setItem(`invite_step1_${safeToken}`, JSON.stringify(formData));
     }
   }, [formData, safeToken]);
-  
+
   useEffect(() => {
     const checkToken = async () => {
       if (!token) {
@@ -46,57 +47,16 @@ function InviteRegistrationStart() {
         setValidatingToken(false);
         return;
       }
-      
+
       try {
-        
-        const response = await fetch(`https://api.acrelis.ru/staff/register/invite/${token}/`, {
-          method: 'POST',
-          headers: {
-            'accept': 'application/json',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            username: 'testuser',
-            email: 'test@test.com',
-            password: 'testpassword123',
-            password_confirm: 'testpassword123',
-            staff_data: {}
-          })
-        });
+        const validationResult = await validateInviteToken(token);
 
-
-      
-        if (response.status === 400) {
-          const errorText = await response.text();
-
-
-          try {
-            const errorData = JSON.parse(errorText);
-            
-            const isTokenError = errorData.detail && (
-              errorData.detail.toLowerCase().includes('token') || 
-              errorData.detail.toLowerCase().includes('приглаш') ||
-              errorData.detail.toLowerCase().includes('invite') ||
-              errorData.detail.toLowerCase().includes('не найден') ||
-              errorData.detail.toLowerCase().includes('not found')
-            );
-            
-            if (isTokenError) {
-              localStorage.removeItem(`invite_step1_${safeToken}`);
-              localStorage.removeItem(`invite_step2_${safeToken}`);
-              setTokenError('Неверный или просроченный токен приглашения');
-            } else {
-              setInviteData({ valid: true });
-            }
-          } catch (parseError) {
-            setInviteData({ valid: true });
-          }
-        } else if (response.ok) {
+        if (!validationResult.valid) {
           localStorage.removeItem(`invite_step1_${safeToken}`);
           localStorage.removeItem(`invite_step2_${safeToken}`);
-          setTokenError('Токен уже использован');
+          navigate('/login', { replace: true });
         } else {
-          setTokenError('Ошибка при проверке приглашения');
+          setInviteData({ valid: true });
         }
       } catch (error) {
         setTokenError('Не удалось проверить приглашение. Попробуйте позже.');
@@ -104,98 +64,98 @@ function InviteRegistrationStart() {
         setValidatingToken(false);
       }
     };
-    
+
     checkToken();
   }, [token, safeToken]);
-  
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     const newFormData = {
       ...formData,
       [name]: value
     };
-    
+
     setFormData(newFormData);
-    
+
     if (safeToken) {
       localStorage.setItem(`invite_step1_${safeToken}`, JSON.stringify(newFormData));
     }
-    
+
     if (formError) setFormError('');
   };
-  
+
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
-  
+
   const validateForm = () => {
     if (!formData.username.trim()) {
       setFormError('Введите имя пользователя');
       return false;
     }
-    
+
     const usernameRegex = /^[\w.@+-]+$/;
     if (!usernameRegex.test(formData.username)) {
       setFormError('Имя пользователя может содержать только буквы, цифры и символы @/./+/-/_');
       return false;
     }
-    
+
     if (formData.username.length > 150) {
       setFormError('Имя пользователя не должно превышать 150 символов');
       return false;
     }
-    
+
     if (formData.username.length < 1) {
       setFormError('Имя пользователя должно содержать хотя бы 1 символ');
       return false;
     }
-    
+
     if (!formData.email) {
       setFormError('Введите email');
       return false;
     }
-    
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
       setFormError('Введите корректный email');
       return false;
     }
-    
+
     if (formData.email.length > 254) {
       setFormError('Email не должен превышать 254 символа');
       return false;
     }
-    
+
     if (!formData.password) {
       setFormError('Введите пароль');
       return false;
     }
-    
+
     if (formData.password.length < 6) {
       setFormError('Пароль должен содержать минимум 6 символов');
       return false;
     }
-    
+
     if (!formData.password_confirm) {
       setFormError('Подтвердите пароль');
       return false;
     }
-    
+
     if (formData.password !== formData.password_confirm) {
       setFormError('Пароли не совпадают');
       return false;
     }
-    
+
     return true;
   };
-  
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
-    
+
     const registrationData = {
       token: token,
       username: formData.username,
@@ -203,17 +163,17 @@ function InviteRegistrationStart() {
       password: formData.password,
       password_confirm: formData.password_confirm
     };
-    
+
     localStorage.setItem('invite_registration_data', JSON.stringify(registrationData));
-    
+
     navigate(`/staff/register/invite/${token}/step2`);
   };
-  
+
   const handleConfirmPasswordPaste = (e) => {
     e.preventDefault();
     return false;
   };
-  
+
   if (validatingToken) {
     return (
       <div className="register_container_register_page">
@@ -233,7 +193,7 @@ function InviteRegistrationStart() {
       </div>
     );
   }
-  
+
   if (tokenError || !inviteData) {
     return (
       <div className="register_container_register_page">
@@ -242,9 +202,9 @@ function InviteRegistrationStart() {
         <div className="login_error_login_page" style={{ textAlign: 'center' }}>
           {tokenError || 'Неверная ссылка приглашения'}
         </div>
-        <Link to="/login" className="login_button_login_page" style={{ 
-          textDecoration: 'none', 
-          display: 'block', 
+        <Link to="/login" className="login_button_login_page login_button_login_page--sentence" style={{
+          textDecoration: 'none',
+          display: 'block',
           textAlign: 'center',
           marginTop: '20px'
         }}>
@@ -253,20 +213,20 @@ function InviteRegistrationStart() {
       </div>
     );
   }
-  
+
   return (
     <div className="register_container_register_page">
       <img src={AcrelisLogo} alt="Acrelis Logo" className="login_logo_login_page" />
-      
+
       <h1 className="login_title_login_page">Регистрация</h1>
-      <p style={{ 
-        textAlign: 'center', 
-        color: '#666', 
+      <p style={{
+        textAlign: 'center',
+        color: '#666',
         marginBottom: '20px',
         fontSize: '14px'
       }}>
       </p>
-      
+
       <form onSubmit={handleSubmit} className="login_form_login_page">
         <input
           type="text"
@@ -279,7 +239,7 @@ function InviteRegistrationStart() {
           required
           maxLength={150}
         />
-        
+
         <input
           type="email"
           name="email"
@@ -291,7 +251,7 @@ function InviteRegistrationStart() {
           required
           maxLength={254}
         />
-        
+
         <div className="password_input_container_login_page">
           <input
             type={showPassword ? "text" : "password"}
@@ -315,7 +275,7 @@ function InviteRegistrationStart() {
             </span>
           </button>
         </div>
-        
+
         <input
           type="password"
           name="password_confirm"
@@ -328,21 +288,21 @@ function InviteRegistrationStart() {
           required
           minLength={6}
         />
-        
+
         {formError && (
           <div className="login_error_login_page">
             {formError}
           </div>
         )}
-        
-        <button 
-          type="submit" 
+
+        <button
+          type="submit"
           className="login_button_login_page"
         >
           Продолжить
         </button>
-        
-        
+
+
       </form>
     </div>
   );

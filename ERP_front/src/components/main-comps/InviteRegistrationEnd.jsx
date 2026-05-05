@@ -3,14 +3,14 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { registerByInvite } from '../../services/api/api';
 import './AuthPages.css';
-import AcrelisLogo from '../../assets/acrelis-logo.svg';
+import AcrelisLogo from '../../assets/acrelis-logo2.svg';
 
 function InviteRegistrationEnd() {
   const navigate = useNavigate();
   const { token } = useParams();
-  
+
   const safeToken = token ? encodeURIComponent(token) : '';
-  
+
   const [formData, setFormData] = useState(() => {
     if (!safeToken) return {
       name: '',
@@ -18,7 +18,7 @@ function InviteRegistrationEnd() {
       telegram: '',
       birthday: ''
     };
-    
+
     const saved = localStorage.getItem(`invite_step2_${safeToken}`);
     return saved ? JSON.parse(saved) : {
       name: '',
@@ -27,28 +27,28 @@ function InviteRegistrationEnd() {
       birthday: ''
     };
   });
-  
+
   const [loading, setLoading] = useState(false);
   const [formError, setFormError] = useState('');
   const [inviteData, setInviteData] = useState(null);
-  
+
   useEffect(() => {
     if (safeToken && (formData.name || formData.phone || formData.telegram || formData.birthday)) {
       localStorage.setItem(`invite_step2_${safeToken}`, JSON.stringify(formData));
     }
   }, [formData, safeToken]);
-  
+
   useEffect(() => {
     const savedData = localStorage.getItem('invite_registration_data');
-    
+
     if (!savedData) {
       navigate(`/staff/register/invite/${token}`);
       return;
     }
-    
+
     try {
       const parsedData = JSON.parse(savedData);
-      
+
       if (parsedData.token !== token) {
         localStorage.removeItem('invite_registration_data');
         if (safeToken) {
@@ -58,9 +58,9 @@ function InviteRegistrationEnd() {
         navigate(`/staff/register/invite/${token}`);
         return;
       }
-      
+
       setInviteData(parsedData);
-      
+
     } catch (error) {
       localStorage.removeItem('invite_registration_data');
       if (safeToken) {
@@ -70,28 +70,28 @@ function InviteRegistrationEnd() {
       navigate(`/staff/register/invite/${token}`);
     }
   }, [token, safeToken, navigate]);
-  
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     const newFormData = {
       ...formData,
       [name]: value
     };
-    
+
     setFormData(newFormData);
-    
+
     if (safeToken) {
       localStorage.setItem(`invite_step2_${safeToken}`, JSON.stringify(newFormData));
     }
-    
+
     if (formError) setFormError('');
   };
-  
+
   const handlePhoneChange = (e) => {
     const value = e.target.value;
     const cleaned = value.replace(/\D/g, '');
     let formatted = cleaned;
-    
+
     if (cleaned.length > 0) {
       formatted = '+7 (' + cleaned.substring(1, 4);
     }
@@ -104,62 +104,62 @@ function InviteRegistrationEnd() {
     if (cleaned.length >= 9) {
       formatted += '-' + cleaned.substring(9, 11);
     }
-    
+
     const newFormData = {
       ...formData,
       phone: formatted
     };
-    
+
     setFormData(newFormData);
     if (safeToken) {
       localStorage.setItem(`invite_step2_${safeToken}`, JSON.stringify(newFormData));
     }
-    
+
     if (formError) setFormError('');
   };
-  
+
   const handleBirthdayChange = (e) => {
     const value = e.target.value;
     const cleaned = value.replace(/\D/g, '');
     let formatted = cleaned;
-    
+
     if (cleaned.length > 2) {
       formatted = cleaned.substring(0, 2) + '.' + cleaned.substring(2, 4);
     }
     if (cleaned.length > 4) {
       formatted += '.' + cleaned.substring(4, 8);
     }
-    
+
     const newFormData = {
       ...formData,
       birthday: formatted
     };
-    
+
     setFormData(newFormData);
     if (safeToken) {
       localStorage.setItem(`invite_step2_${safeToken}`, JSON.stringify(newFormData));
     }
-    
+
     if (formError) setFormError('');
   };
-  
+
   const validateForm = () => {
     if (!formData.name.trim()) {
       setFormError('Введите ФИО');
       return false;
     }
-    
+
     if (!formData.phone) {
       setFormError('Введите телефон');
       return false;
     }
-    
+
     const phoneDigits = formData.phone.replace(/\D/g, '');
     if (phoneDigits.length < 11) {
       setFormError('Введите корректный телефон (минимум 11 цифр)');
       return false;
     }
-    
+
     if (formData.birthday) {
       const [day, month, year] = formData.birthday.split('.');
       if (!day || !month || !year || year.length !== 4) {
@@ -167,25 +167,25 @@ function InviteRegistrationEnd() {
         return false;
       }
     }
-    
+
     return true;
   };
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
-    
+
     if (!inviteData) {
       setFormError('Данные регистрации не найдены');
       return;
     }
-    
+
     setLoading(true);
     setFormError('');
-    
+
     try {
       let birthdayFormatted = '';
       if (formData.birthday) {
@@ -194,9 +194,9 @@ function InviteRegistrationEnd() {
           birthdayFormatted = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
         }
       }
-      
+
       const phoneFormatted = formData.phone.replace(/\D/g, '');
-      
+
       const registrationData = {
         username: inviteData.username,
         email: inviteData.email,
@@ -209,30 +209,30 @@ function InviteRegistrationEnd() {
           birthday: birthdayFormatted || null
         }
       };
-      
-      
+
+
       await registerByInvite(token, registrationData);
-      
+
       localStorage.removeItem('invite_registration_data');
       if (safeToken) {
         localStorage.removeItem(`invite_step1_${safeToken}`);
         localStorage.removeItem(`invite_step2_${safeToken}`);
       }
-      
+
       setTimeout(() => {
         navigate('/');
       }, 1500);
-      
+
     } catch (err) {
-      
+
       // Проверяем тип ошибки
       const errorMessage = err.message.toLowerCase();
-      
+
       // Проверяем все возможные ошибки токена
-      const isTokenError = 
-        errorMessage.includes('токен') || 
-        errorMessage.includes('token') || 
-        errorMessage.includes('приглаш') || 
+      const isTokenError =
+        errorMessage.includes('токен') ||
+        errorMessage.includes('token') ||
+        errorMessage.includes('приглаш') ||
         errorMessage.includes('invite') ||
         errorMessage.includes('не найден') ||
         errorMessage.includes('not found') ||
@@ -247,16 +247,20 @@ function InviteRegistrationEnd() {
         errorMessage.includes('expired') ||
         errorMessage.includes('просрочен') ||
         errorMessage.includes('уже использова');
-      
-      if (isTokenError) {
+
+      const isBadRequestError =
+        errorMessage.includes('400') ||
+        errorMessage.includes('bad request');
+
+      if (isTokenError || isBadRequestError) {
         // Очищаем все данные
         localStorage.removeItem('invite_registration_data');
         if (safeToken) {
           localStorage.removeItem(`invite_step1_${safeToken}`);
           localStorage.removeItem(`invite_step2_${safeToken}`);
         }
-        // Показываем оригинальное сообщение об ошибке
-        setFormError(err.message);
+        navigate('/login', { replace: true });
+        return;
       } else {
         // Ошибки валидации данных
         setFormError(err.message || 'Ошибка регистрации по приглашению. Проверьте введенные данные.');
@@ -265,11 +269,11 @@ function InviteRegistrationEnd() {
       setLoading(false);
     }
   };
-  
+
   const handleBack = () => {
     navigate(`/staff/register/invite/${token}`);
   };
-  
+
   if (!inviteData) {
     return (
       <div className="register_container_register_page">
@@ -289,14 +293,14 @@ function InviteRegistrationEnd() {
       </div>
     );
   }
-  
+
   return (
     <div className="register_container_register_page">
       <img src={AcrelisLogo} alt="Acrelis Logo" className="login_logo_login_page" />
-      
+
       <h1 className="login_title_login_page">Регистрация</h1>
-      
-      <button 
+
+      <button
         onClick={handleBack}
         style={{
           background: 'none',
@@ -313,15 +317,15 @@ function InviteRegistrationEnd() {
         <span style={{ marginRight: '5px' }}>←</span>
         <span>Вернуться на предыдущую страницу</span>
       </button>
-      
-      <p style={{ 
-        textAlign: 'center', 
-        color: '#666', 
+
+      <p style={{
+        textAlign: 'center',
+        color: '#666',
         marginBottom: '20px',
         fontSize: '14px'
       }}>
       </p>
-      
+
       <form onSubmit={handleSubmit} className="register_form_register_page">
         {/* Поле ФИО */}
         <input
@@ -334,7 +338,7 @@ function InviteRegistrationEnd() {
           autoComplete="name"
           required
         />
-        
+
         {/* Строка с Телефоном и Telegram */}
         <div className="register_row_register_page">
           <div className="register_half_register_page">
@@ -350,7 +354,7 @@ function InviteRegistrationEnd() {
             />
           </div>
         </div>
-        
+
         {/* Поле Дата рождения */}
         <input
           type="text"
@@ -361,25 +365,25 @@ function InviteRegistrationEnd() {
           className="login_input_login_page"
           autoComplete="off"
         />
-        
+
         {/* Сообщение об ошибке формы */}
         {formError && (
           <div className="login_error_login_page">
             {formError}
           </div>
         )}
-        
+
         {/* Кнопка Завершить регистрацию */}
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           className="login_button_login_page"
           disabled={loading}
         >
           {loading ? 'Регистрация...' : 'Завершить регистрацию'}
         </button>
-        
+
         {/* Ссылка на вход */}
-        
+
       </form>
     </div>
   );

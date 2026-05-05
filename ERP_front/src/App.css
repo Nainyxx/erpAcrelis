@@ -75,6 +75,7 @@ body {
     transform: translateX(5vh);
     opacity: 0;
   }
+
   to {
     transform: translateX(0);
     opacity: 1;
@@ -89,6 +90,7 @@ body {
   from {
     opacity: 1;
   }
+
   to {
     opacity: 0;
   }
@@ -102,7 +104,7 @@ body {
     max-width: calc(100% - 2vh);
     align-items: stretch;
   }
-  
+
   .notification-wrapper {
     margin-bottom: 0.8vh;
   }
@@ -110,6 +112,11 @@ body {
 
 /* Стиль для спиннера загрузки */
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }

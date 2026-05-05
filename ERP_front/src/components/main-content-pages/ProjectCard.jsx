@@ -1,11 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import './ProjectCard.css';
 import { getProjectById, updateProject, uploadFileToProject, addPerformerToProject, getProjectLogs, getStaffList } from '../../services/api/api';
+import { PROJECT_ACTIONS_ALLOWED_ROLES } from '../../constants/roles';
 
 const ProjectCard = ({ useMockData = false }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { projectId } = useParams();
+
+  const navigateToProjectsPreservingQuery = useCallback(() => {
+    navigate(`/projects${location.search || ''}`);
+  }, [navigate, location.search]);
 
   // Константы с ограничениями по количеству символов
   const CUSTOMER_NAME_MAX_LENGTH = 20; // Максимум 20 символов для заказчика
@@ -19,6 +25,7 @@ const ProjectCard = ({ useMockData = false }) => {
   const [price, setPrice] = useState('');
   const [customer, setCustomer] = useState('');
   const [projectHours, setProjectHours] = useState('');
+  const [projectHoursDone, setProjectHoursDone] = useState('0');
   const [projectStatus, setProjectStatus] = useState('');
   const [changes, setChanges] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,6 +44,8 @@ const ProjectCard = ({ useMockData = false }) => {
 
   const fileInputRef = useRef(null);
   const suggestionsRef = useRef(null);
+  const userRole = localStorage.getItem('role');
+  const canManageProjectActions = PROJECT_ACTIONS_ALLOWED_ROLES.includes(userRole);
 
   // Обновленные статусы согласно требованиям
   const statusOptions = [
@@ -605,6 +614,7 @@ const ProjectCard = ({ useMockData = false }) => {
       setPrice(projectData.price || '');
       setCustomer(projectData.customer || '');
       setProjectHours(projectData.hours?.toString() || '0');
+      setProjectHoursDone(projectData.hoursDone?.toString() || '0');
 
       const statusLabel = projectData.status_display || getStatusDisplay(projectData.status);
       setProjectStatus(statusLabel);
@@ -657,7 +667,7 @@ const ProjectCard = ({ useMockData = false }) => {
             <h4>Проект не найден</h4>
             <p>Запрошенный проект не существует или был удален</p>
             <button
-              onClick={() => navigate('/projects')}
+              onClick={navigateToProjectsPreservingQuery}
               className="gantt-back-btn_gantt_class"
               style={{ marginTop: '2vh' }}
             >
@@ -690,7 +700,7 @@ const ProjectCard = ({ useMockData = false }) => {
         <h1 className="projectcard-title_project_card">
           <span
             className="projects-link_project_card"
-            onClick={() => navigate('/projects')}
+            onClick={navigateToProjectsPreservingQuery}
             style={{ cursor: 'pointer' }}
           >
             Проекты
@@ -700,13 +710,15 @@ const ProjectCard = ({ useMockData = false }) => {
             {projectName}
           </span>
         </h1>
-        <button
-          className="save-changes-btn_project_card"
-          onClick={handleSaveChanges}
-          disabled={isSaving}
-        >
-          {isSaving ? 'Сохранение...' : 'Сохранить изменения'}
-        </button>
+        {canManageProjectActions && (
+          <button
+            className="save-changes-btn_project_card"
+            onClick={handleSaveChanges}
+            disabled={isSaving}
+          >
+            {isSaving ? 'Сохранение...' : 'Сохранить изменения'}
+          </button>
+        )}
       </div>
 
       <div className="projectcard-main-content_project_card">
@@ -714,55 +726,71 @@ const ProjectCard = ({ useMockData = false }) => {
           <div className="main-cards-section_project_card">
             <div className="top-row_project_card">
               <div className="projectcard-tile_project_card">
-                <div className="date-item_project_card">
-                  <span className="date-label_project_card">Начало проекта</span>
-                  <span
-                    className="date-value1_project_card editable_project_card"
-                    contentEditable
-                    suppressContentEditableWarning
-                    onBlur={(e) => setStartDate(e.target.textContent)}
-                  >
-                    {formatDateForDisplay(startDate)}
-                  </span>
-                </div>
-                <div className="date-item_project_card">
-                  <span className="date-label_project_card">Дедлайн</span>
-                  <span
-                    className="date-value_project_card deadline_project_card editable_project_card"
-                    contentEditable
-                    suppressContentEditableWarning
-                    onBlur={(e) => setDeadline(e.target.textContent)}
-                  >
-                    {formatDateForDisplay(deadline)}
-                  </span>
+                <div className="project-dates-hours-grid_project_card">
+                  <div className="project-dates-column_project_card">
+                    <div className="date-item_project_card">
+                      <span className="date-label_project_card">Начало проекта</span>
+                      <span
+                        className="date-value1_project_card editable_project_card"
+                        contentEditable
+                        suppressContentEditableWarning
+                        onBlur={(e) => setStartDate(e.target.textContent)}
+                      >
+                        {formatDateForDisplay(startDate)}
+                      </span>
+                    </div>
+                    <div className="date-item_project_card">
+                      <span className="date-label_project_card">Дедлайн</span>
+                      <span
+                        className="date-value_project_card deadline_project_card editable_project_card"
+                        contentEditable
+                        suppressContentEditableWarning
+                        onBlur={(e) => setDeadline(e.target.textContent)}
+                      >
+                        {formatDateForDisplay(deadline)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="project-hours-column_project_card">
+                    <div className="date-item_project_card">
+                      <span className="date-label_project_card">Выделено:</span>
+                      <span className="date-value1_project_card">{projectHours || '0'} ч</span>
+                    </div>
+                    <div className="date-item_project_card">
+                      <span className="date-label_project_card">Использовано:</span>
+                      <span className="date-value_project_card deadline_project_card">{projectHoursDone || '0'} ч</span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
               <div className="projectcard-tile_project_card performers-tile_project_card">
                 <div className="performers-header_project_card">
                   <h3>Исполнители</h3>
-                  <button
-                    type="button"
-                    className="performers-add-btn_project_card"
-                    onClick={handleAddTeamMember}
-                    aria-label="Добавить исполнителя"
-                    title="Добавить исполнителя"
-                  >
-                    <span className="performers-add-icon_project_card" aria-hidden="true">+</span>
-                  </button>
+                  {canManageProjectActions && (
+                    <button
+                      type="button"
+                      className="performers-add-btn_project_card"
+                      onClick={handleAddTeamMember}
+                      aria-label="Добавить исполнителя"
+                      title="Добавить исполнителя"
+                    >
+                      <span className="performers-add-icon_project_card" aria-hidden="true">+</span>
+                    </button>
+                  )}
                 </div>
                 <div className="performers-body_project_card">
                   <div className="team-container_project_card performers-team-container_project_card">
                     {renderTeamAvatars(project.performers || project.team || [])}
                   </div>
                 </div>
-                <button
+                {/* <button
                   type="button"
                   className="performers-schedule-btn_project_card"
                   onClick={() => navigate('/schedule')}
                 >
                   График
-                </button>
+                </button> */}
               </div>
             </div>
 
@@ -909,13 +937,15 @@ const ProjectCard = ({ useMockData = false }) => {
                 >
                   Диаграмма Ганта
                 </button>
-                <button
-                  type="button"
-                  className="action-btn_project_card finances-btn_project_card"
-                  onClick={() => navigate(`/projects/finans/${project.id}`)}
-                >
-                  Финансы
-                </button>
+                {canManageProjectActions && (
+                  <button
+                    type="button"
+                    className="action-btn_project_card finances-btn_project_card"
+                    onClick={() => navigate(`/projects/finans/${project.id}`)}
+                  >
+                    Финансы
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -955,13 +985,15 @@ const ProjectCard = ({ useMockData = false }) => {
               <div className="files-content_project_card">
                 <div className="files-header_project_card">
                   <h3>Файлы проекта</h3>
-                  <button
-                    className="add-btn_project_card"
-                    onClick={handleAddFile}
-                    disabled={uploadingFile}
-                  >
-                    {uploadingFile ? 'Загрузка...' : '+ Загрузить файлы'}
-                  </button>
+                  {canManageProjectActions && (
+                    <button
+                      className="add-btn_project_card"
+                      onClick={handleAddFile}
+                      disabled={uploadingFile}
+                    >
+                      {uploadingFile ? 'Загрузка...' : '+ Загрузить файлы'}
+                    </button>
+                  )}
                 </div>
                 <div className="files-list_project_card">
                   {project.files?.map(file => {

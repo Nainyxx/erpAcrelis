@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import './AuthPages.css';
-import AcrelisLogo from '../../assets/acrelis-logo.svg';
+import AcrelisLogo from '../../assets/acrelis-logo2.svg';
 
 function RegistrationPageStart() {
   const navigate = useNavigate();

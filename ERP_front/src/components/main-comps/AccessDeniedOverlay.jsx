@@ -18,7 +18,7 @@ function AccessDeniedOverlay() {
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: '#F6F6FE',
+      backgroundColor: '#ffffff',
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'center',

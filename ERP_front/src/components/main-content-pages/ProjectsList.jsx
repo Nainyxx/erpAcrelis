@@ -1,7 +1,8 @@
 // ERP_front/src/components/main-content-pages/ProjectsList.jsx
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { getProjects, createProject } from '../../services/api/api';
+import { PROJECTS_NAV_QUERY_STORAGE_KEY } from '../../constants/navigationKeys';
 import './ProjectsList.css';
 
 const PROJECTS_PER_PAGE = 20;
@@ -16,8 +17,45 @@ const PROJECT_STATUS = [
   { id: 'cancelled', label: 'Отменен' },
 ];
 
+const TYPE_LABEL_MAP = {
+  website: 'Веб-сайт',
+  mobile: 'Мобильное приложение',
+  dashboard: 'Дашборд',
+  ecommerce: 'Интернет-магазин',
+  system: 'Система',
+  other: 'Другой',
+};
+
+const normalizeQueryForCompare = (searchStr) => {
+  const raw = (searchStr || '').replace(/^\?/, '');
+  const p = new URLSearchParams(raw);
+  return [...p.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, v]) => `${k}=${v}`)
+    .join('&');
+};
+
+const buildProjectsQueryString = (selectedType, selectedStatus, searchQuery, projectTypes) => {
+  const params = new URLSearchParams();
+  if (selectedType && selectedType !== 'all') {
+    params.set('type', selectedType);
+    const fromApi = (projectTypes || []).find((t) => String(t.id) === String(selectedType));
+    const typeName = fromApi?.label || TYPE_LABEL_MAP[selectedType] || selectedType;
+    if (typeName) params.set('typeName', typeName);
+  }
+  if (selectedStatus && selectedStatus !== 'all') {
+    params.set('status', selectedStatus);
+    const st = PROJECT_STATUS.find((s) => s.id === selectedStatus);
+    if (st?.label) params.set('statusName', st.label);
+  }
+  const sq = searchQuery != null ? String(searchQuery).trim() : '';
+  if (sq) params.set('search', sq);
+  return params.toString();
+};
+
 const ProjectsList = ({ useMockData = true, showNotification }) => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -44,6 +82,57 @@ const ProjectsList = ({ useMockData = true, showNotification }) => {
   const [createError, setCreateError] = useState('');
 
   const searchTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const typeParam = params.get('type');
+    if (typeParam && typeParam !== 'all') {
+      setSelectedType(typeParam);
+    } else {
+      setSelectedType('all');
+    }
+    const statusParam = params.get('status');
+    if (statusParam && PROJECT_STATUS.some((s) => s.id === statusParam)) {
+      setSelectedStatus(statusParam);
+    } else {
+      setSelectedStatus('all');
+    }
+    const searchParam = params.get('search');
+    if (searchParam != null && searchParam !== '') {
+      setSearchQuery(searchParam);
+      setSearchInput(searchParam);
+    } else {
+      setSearchQuery('');
+      setSearchInput('');
+    }
+  }, [location.search]);
+
+  useEffect(() => {
+    const built = buildProjectsQueryString(
+      selectedType,
+      selectedStatus,
+      searchQuery,
+      projectTypes
+    );
+    const nextSearch = built ? `?${built}` : '';
+    if (normalizeQueryForCompare(location.search) === normalizeQueryForCompare(nextSearch)) {
+      try {
+        sessionStorage.setItem(PROJECTS_NAV_QUERY_STORAGE_KEY, nextSearch);
+      } catch (_) {}
+      return;
+    }
+    try {
+      sessionStorage.setItem(PROJECTS_NAV_QUERY_STORAGE_KEY, nextSearch);
+    } catch (_) {}
+    navigate({ pathname: '/projects', search: nextSearch }, { replace: true });
+  }, [
+    selectedType,
+    selectedStatus,
+    searchQuery,
+    projectTypes,
+    location.search,
+    navigate,
+  ]);
 
   // Загрузка проектов
   const loadProjects = async () => {
@@ -177,7 +266,7 @@ const ProjectsList = ({ useMockData = true, showNotification }) => {
 
   // Обработчик клика по проекту - переход на его карточку
   const handleProjectSelect = (project) => {
-    navigate(`/projects/${project.id}`);
+    navigate({ pathname: `/projects/${project.id}`, search: location.search });
   };
 
   // Функция для генерации аватарки
@@ -277,7 +366,7 @@ const ProjectsList = ({ useMockData = true, showNotification }) => {
       <button
         type="button"
         className="projects-breadcrumb__home"
-        onClick={() => navigate('/projects')}
+        onClick={() => navigate(`/projects${location.search || ''}`)}
       >
         Главная
       </button>

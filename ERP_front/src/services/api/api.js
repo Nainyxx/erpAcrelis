@@ -210,6 +210,7 @@ export function saveUserData(userData) {
     localStorage.setItem('email', userData.email || '');
     localStorage.setItem('post', userData.post || '');
     localStorage.setItem('department', userData.department || '');
+    localStorage.setItem('role', userData.role || userData.post || '');
   } catch (error) {
   }
 }
@@ -224,6 +225,7 @@ export function clearUserData() {
     localStorage.removeItem('email');
     localStorage.removeItem('post');
     localStorage.removeItem('department');
+    localStorage.removeItem('role');
   } catch (error) {
   }
 }
@@ -366,6 +368,17 @@ export async function authFetch(url, options = {}) {
     // Если это ошибка сети или другая ошибка - просто пробрасываем дальше
     throw error;
   }
+}
+
+/** Полный URL картинки сотрудника/медиа: путь с бэка или уже абсолютный URL. */
+export function getStaffMediaUrl(pathOrUrl) {
+  if (pathOrUrl == null || pathOrUrl === '') return null;
+  const v = String(pathOrUrl).trim();
+  if (!v) return null;
+  if (v.startsWith('http://') || v.startsWith('https://')) return v;
+  const base = API_CONFIG.BASE_URL.replace(/\/?$/, '');
+  const path = v.startsWith('/') ? v.slice(1) : v;
+  return `${base}/media/${path}`;
 }
 
 // Получение списка проектов

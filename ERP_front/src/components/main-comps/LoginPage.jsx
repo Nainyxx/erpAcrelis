@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { login, getProjects } from '../../services/api/api';
 import './AuthPages.css';
-import AcrelisLogo from '../../assets/acrelis-logo.svg';
+import AcrelisLogo from '../../assets/acrelis-logo2.svg';
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -166,7 +166,7 @@ function LoginPage() {
         
         {/* Кнопка Войти */}
         <button type="submit" className="login_button_login_page" disabled={loading}>
-          {loading ? 'Вход...' : 'Войти'}
+          {loading ? 'Вход...' : 'ВОЙТИ'}
         </button>
         
         {/* Ссылка на регистрацию */}
