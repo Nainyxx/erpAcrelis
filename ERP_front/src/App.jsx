@@ -28,6 +28,7 @@ import EmployeeCard from './components/main-content-pages/EmployeeCard';
 import AccountPage from './components/main-content-pages/AccountPage';
 import SchedulePage from './components/main-content-pages/SchedulePage';
 import OperationsPage from './components/main-content-pages/OperationsPage';
+import StaffFinancesPage from './components/main-content-pages/StaffFinancesPage';
 
 // Мок данные
 import { projectsData } from './MockData/projects.js';
@@ -305,7 +306,8 @@ function App() {
                   />
                 } />
                 
-                {/* Операции */}
+                {/* Операции — finans до /operations, иначе :staffId съестся */}
+                <Route path="/operations/finans/:staffId" element={<StaffFinancesPage />} />
                 <Route path="/operations" element={
                   <OperationsPage showNotification={() => {}} />
                 } />

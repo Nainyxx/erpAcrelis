@@ -1,4 +1,18 @@
+import { Navigate } from 'react-router-dom';
+import { OPERATIONS_HUB_ALLOWED_ROLES } from '../../constants/roles';
+
 function OperationsPage({ showNotification }) {
+  const userRole = localStorage.getItem('role');
+  const canAccessHub = userRole && OPERATIONS_HUB_ALLOWED_ROLES.includes(userRole);
+
+  if (!canAccessHub) {
+    const staffId = localStorage.getItem('staff_id');
+    if (staffId) {
+      return <Navigate to={`/operations/finans/${staffId}`} replace />;
+    }
+    return <Navigate to="/account" replace />;
+  }
+
   return (
     <div style={{
       padding: '30px',

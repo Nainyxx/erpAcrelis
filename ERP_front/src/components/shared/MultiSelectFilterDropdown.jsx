@@ -50,9 +50,8 @@ export function MultiSelectFilterDropdown({
   return (
     <div
       ref={menuRef}
-      className={`multi-select-filter-dropdown${isOpen ? ' is-menu-open' : ''}${
-        className ? ` ${className}` : ''
-      }`}
+      className={`multi-select-filter-dropdown${isOpen ? ' is-menu-open' : ''}${className ? ` ${className}` : ''
+        }`}
     >
       <div className="multi-select-filter-dropdown__inner">
         <button
@@ -66,16 +65,15 @@ export function MultiSelectFilterDropdown({
           onClick={toggleOpen}
         >
           <span
-            className={`multi-select-filter-dropdown__value${
-              selectedIds.length === 0 ? ' is-placeholder' : ''
-            }`}
+            className={`multi-select-filter-dropdown__value${selectedIds.length === 0 ? ' is-placeholder' : ''
+              }`}
           >
             {triggerText}
           </span>
           <span className="multi-select-filter-dropdown__chevron" aria-hidden="true">
             <svg
-              width="12"
-              height="12"
+              width="24"
+              height="24"
               viewBox="0 0 12 12"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
@@ -115,9 +113,8 @@ export function MultiSelectFilterDropdown({
                     }}
                   >
                     <span
-                      className={`multi-select-filter-dropdown__checkbox${
-                        selected ? ' is-checked' : ''
-                      }`}
+                      className={`multi-select-filter-dropdown__checkbox${selected ? ' is-checked' : ''
+                        }`}
                       aria-hidden="true"
                     />
                     <span className="multi-select-filter-dropdown__option-text">{opt.label}</span>

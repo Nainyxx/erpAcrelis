@@ -226,6 +226,16 @@
     width: auto;
 }
 
+/* Выравнивание высоты фильтров списка с другими страницами (Staff / Projects) */
+.filters-container .filter-select,
+.filters-container .search-input {
+    min-height: 38px;
+    height: 38px;
+    padding-top: 0;
+    padding-bottom: 0;
+    box-sizing: border-box;
+}
+
 /* Стили для модального окна создания задачи */
 .modal-overlay123 {
     position: fixed;

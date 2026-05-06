@@ -1,4 +1,7 @@
 .staff-container {
+    /* Высота вкладок; ширина отступы и высота поля поиска — токены из MultiSelectFilterDropdown.css */
+    --staff-nav-size-h: 42px;
+
     padding: 3vh;
     width: 100%;
     max-width: 100%;
@@ -24,27 +27,41 @@
 
 .staff-tab {
     margin: 0;
-    padding: 1vh 2vh;
-    border: none;
-    border-radius: 8px;
-    background: #f0f4f8;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--msfd-width);
+    min-width: var(--msfd-width);
+    max-width: var(--msfd-width);
+    height: var(--staff-nav-size-h);
+    min-height: var(--staff-nav-size-h);
+    padding: 0 var(--msfd-pad-x);
+    box-sizing: border-box;
+    border: 1px solid #d8e4ec;
+    border-radius: 10px;
+    background: #eaf6f7;
     color: #6b7a88;
     font-family: inherit;
     font-size: 1.6vh;
     font-weight: 400;
     line-height: 1.2;
     cursor: pointer;
-    transition: background 0.2s ease, color 0.2s ease;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .staff-tab:hover:not(.is-active) {
-    background: #e4eaf0;
+    background: #d8ecf0;
     color: #556070;
 }
 
 .staff-tab.is-active {
     background: #B2E9EF;
     color: #5B5B5B;
+    border-color: #9dd8e4;
     cursor: default;
 }
 
@@ -70,15 +87,18 @@
     display: inline-flex;
     flex-direction: row;
     align-items: center;
-    gap: 1vh;
+    gap: 8px;
     min-width: 0;
     max-width: 100%;
     margin: 0;
-    padding: 1vh 1.6vh;
+    padding: 0 var(--msfd-pad-x);
     box-sizing: border-box;
+    height: var(--msfd-trigger-h);
+    min-height: var(--msfd-trigger-h);
+    max-height: var(--msfd-trigger-h);
     background: #f0f4f8;
     border: 0.1vh solid #d8e4ec;
-    border-radius: 8px;
+    border-radius: 10px;
     transition: border-color 0.2s ease;
 }
 
@@ -259,7 +279,7 @@
     background: #4ECDC4;
     color: white;
     border: none;
-    border-radius: 0.8vh;
+    border-radius: 10px;
     cursor: pointer;
     font-size: 1.6vh;
 }
@@ -365,7 +385,7 @@
     color: white;
     border: none;
     padding: 1vh 2vh;
-    border-radius: 0.8vh;
+    border-radius: 10px;
     font-size: 1.4vh;
     cursor: pointer;
     transition: background 0.3s;

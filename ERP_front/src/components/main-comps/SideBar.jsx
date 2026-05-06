@@ -13,7 +13,7 @@ import StaffIcon from "../../assets/sidebar-staff.svg";
 
 function SideBar() {
   const navigate = useNavigate();
-  
+
   const menuItems = [
     { id: "projects", name: "Проекты", icon: ProjectsIcon, path: "/projects" },
     { id: "mytasks", name: "Мои задачи", icon: MyTasksIcon, path: "/my-tasks" },
@@ -24,10 +24,10 @@ function SideBar() {
   const getActivePage = () => {
     // Получаем текущий URL целиком
     const currentUrl = window.location.href;
-    
+
     // Извлекаем часть после домена
     const urlPath = currentUrl.split(window.location.origin)[1] || '';
-    
+
     // Проверяем каждый возможный путь
     if (urlPath.includes('/my-tasks') || urlPath.includes('/tasks/')) {
       return 'mytasks';
@@ -44,7 +44,7 @@ function SideBar() {
     else if (urlPath === '/' || urlPath === '' || urlPath === '/#' || urlPath === '#/') {
       return 'projects';
     }
-    
+
     return '';
   };
 
@@ -53,14 +53,14 @@ function SideBar() {
     if (itemId === "projects") {
       try {
         sessionStorage.removeItem(PROJECTS_NAV_QUERY_STORAGE_KEY);
-      } catch (_) {}
+      } catch (_) { }
       navigate("/projects");
       return;
     }
     if (itemId === "mytasks") {
       try {
         sessionStorage.removeItem(MY_TASKS_NAV_QUERY_STORAGE_KEY);
-      } catch (_) {}
+      } catch (_) { }
       navigate("/my-tasks");
       return;
     }
@@ -80,9 +80,9 @@ function SideBar() {
           className={`sidebar-item ${activePage === item.id ? 'active' : ''}`}
           onClick={() => handleItemClick(item.path, item.id)}
         >
-          <img 
-            src={item.icon} 
-            alt={item.name} 
+          <img
+            src={item.icon}
+            alt={item.name}
             className="sidebar-icon"
           />
           <span className="sidebar-text">{item.name}</span>
