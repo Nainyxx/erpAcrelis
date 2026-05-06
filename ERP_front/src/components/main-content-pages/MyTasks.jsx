@@ -711,10 +711,28 @@ const MyTasks = ({ useMockData = false }) => {
     }
   };
 
+  const breadcrumb = (
+    <nav className="projects-breadcrumb" aria-label="Навигация по разделам">
+      <button
+        type="button"
+        className="projects-breadcrumb__home"
+        onClick={() => navigate(`/my-tasks${location.search || ''}`)}
+      >
+        Главная
+      </button>
+      <span className="projects-breadcrumb__sep" aria-hidden="true">
+        {' '}
+        /{' '}
+      </span>
+      <span className="projects-breadcrumb__current">Мои задачи</span>
+    </nav>
+  );
+
   // ЗАГРУЗКА
   if (loading || selectedPerformer === '') {
     return (
       <div className="mytasks-container">
+        {breadcrumb}
         <div className="gantt-loading_gantt_class">
           <div className="loading-spinner_gantt_class"></div>
           <h3 style={{ color: 'black', margin: '1vh 0', fontSize: '2vh' }}>Загрузка задач...</h3>
@@ -730,7 +748,7 @@ const MyTasks = ({ useMockData = false }) => {
   if (error) {
     return (
       <div className="mytasks-container">
-        <h1 className="mytasks-title">Мои задачи</h1>
+        {breadcrumb}
         <div className="no-tasks-message_gantt_class">
           <div className="no-tasks-content_gantt_class">
             <span className="no-tasks-icon_gantt_class">⚠️</span>
@@ -759,8 +777,8 @@ const MyTasks = ({ useMockData = false }) => {
   ) {
     return (
       <div className="mytasks-container">
-        <h1 className="mytasks-title">Мои задачи</h1>
-        
+        {breadcrumb}
+
         <div className="filters-container">
           <div className="filters">
             <div className="filter-group">
@@ -857,8 +875,8 @@ const MyTasks = ({ useMockData = false }) => {
 
   return (
     <div className="mytasks-container">
-      <h1 className="mytasks-title">Мои задачи</h1>
-      
+      {breadcrumb}
+
       <div className="filters-container">
         <div className="filters">
           <div className="filter-group">

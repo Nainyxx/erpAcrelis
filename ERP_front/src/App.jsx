@@ -233,7 +233,10 @@ function App() {
                 
                 {/* Страница аккаунта */}
                 <Route path="/account" element={
-                  <AccountPage showNotification={() => {}} />
+                  <AccountPage
+                    useMockData={useMockData}
+                    showNotification={() => {}}
+                  />
                 } />
                 
                 {/* Список проектов */}

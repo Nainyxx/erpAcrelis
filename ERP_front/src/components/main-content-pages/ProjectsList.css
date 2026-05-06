@@ -420,6 +420,7 @@
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
   gap: 0;
+  font-family: var(--font-sans, 'Inter Variable', 'Inter', ui-sans-serif, system-ui, sans-serif);
 }
 
 .projects-table>* {
@@ -431,10 +432,10 @@
 }
 
 .header-cell {
-  font-weight: 750;
+  font-size: clamp(1.55vh, 1.15vw, 2vh);
+  font-weight: 500;
   color: #333;
-  border-bottom: 0.2vh solid #E7F6F6;
-  font-size: 1.8vh;
+  border-bottom: 0.2vh solid #e7f6f6;
   white-space: nowrap;
   padding-left: 2vh;
 }
@@ -446,9 +447,10 @@
 .project-row>* {
   cursor: pointer;
   transition: all 0.3s;
-  border-bottom: 0.1vh dashed #E0E0E0;
+  border-bottom: 0.1vh dashed #e0e0e0;
   min-height: 6vh;
-  font-size: 1.6vh;
+  font-size: clamp(1.45vh, 1.05vw, 1.9vh);
+  font-weight: 300;
   display: flex;
   align-items: center;
 }
@@ -463,7 +465,7 @@
 }
 
 .project-name-text {
-  font-weight: 500;
+  font-weight: 300;
   color: #333;
   white-space: nowrap;
   overflow: hidden;
@@ -476,6 +478,7 @@
   display: flex;
   margin-left: 1.5vh;
   flex-wrap: nowrap;
+  font-weight: 300;
 }
 
 .avatar-wrapper {
@@ -510,8 +513,8 @@
   display: inline-block;
   padding: 0.6vh 0;
   padding-left: 3vh;
-  font-size: 1.4vh;
-  font-weight: 500;
+  font-size: inherit;
+  font-weight: 300;
   color: #333;
   white-space: nowrap;
 }
@@ -520,15 +523,15 @@
   display: inline-block;
   padding: 0.6vh 0;
   padding-left: 2.8vh;
-  font-size: 1.4vh;
-  font-weight: 500;
+  font-size: inherit;
+  font-weight: 300;
   color: #333;
   white-space: nowrap;
 }
 
 .project-hours {
-  font-size: 2vh;
-  font-weight: 600;
+  font-size: inherit;
+  font-weight: 300;
   padding-left: 2.5vh;
   color: #333;
   white-space: nowrap;

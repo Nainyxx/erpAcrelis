@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { getStaffList, getStaffDepartments } from '../../services/api/api';
 import { MultiSelectFilterDropdown } from '../shared/MultiSelectFilterDropdown';
 import './StaffList.css';
 
 const StaffList = ({ useMockData = false }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDepartmentIds, setSelectedDepartmentIds] = useState([]);
   const [employees, setEmployees] = useState([]);
@@ -229,9 +230,27 @@ const StaffList = ({ useMockData = false }) => {
     );
   };
 
+  const breadcrumb = (
+    <nav className="projects-breadcrumb" aria-label="Навигация по разделам">
+      <button
+        type="button"
+        className="projects-breadcrumb__home"
+        onClick={() => navigate(`/staff${location.search || ''}`)}
+      >
+        Главная
+      </button>
+      <span className="projects-breadcrumb__sep" aria-hidden="true">
+        {' '}
+        /{' '}
+      </span>
+      <span className="projects-breadcrumb__current">Сотрудники</span>
+    </nav>
+  );
+
   if (loading) {
     return (
       <div className="staff-container">
+        {breadcrumb}
         {renderStaffTabs()}
         {renderStaffToolbar()}
         <div className="gantt-loading_gantt_class">
@@ -256,6 +275,7 @@ const StaffList = ({ useMockData = false }) => {
   if (error) {
     return (
       <div className="staff-container">
+        {breadcrumb}
         {renderStaffTabs()}
         {renderStaffToolbar()}
         <div className="no-tasks-message_gantt_class">
@@ -280,6 +300,7 @@ const StaffList = ({ useMockData = false }) => {
   if (employees.length === 0) {
     return (
       <div className="staff-container">
+        {breadcrumb}
         {renderStaffTabs()}
         {renderStaffToolbar()}
         <div className="no-tasks-message_gantt_class">
@@ -295,6 +316,7 @@ const StaffList = ({ useMockData = false }) => {
 
   return (
     <div className="staff-container">
+      {breadcrumb}
       {renderStaffTabs()}
       {renderStaffToolbar()}
 

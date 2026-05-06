@@ -1,74 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getEmployeeById, authFetch, getStaffMediaUrl } from '../../services/api/api';
-import { jointProjectsFilterMock, jointProjectMembersMock } from '../../MockData/accountJointProjects';
-import { SelectFilterDropdown } from '../shared/SelectFilterDropdown';
+import { AccountProjectsPanel } from '../shared/AccountProjectsPanel';
 import './AccountPage.css';
 import './EmployeeCard.css';
 import BackgoundFrame from '../../assets/Frame-account.svg';
 import statisticDonutSrc from '../../assets/statistic-account.svg';
-
-const JOINT_PROJECT_FILTER_PLACEHOLDER = 'Проект';
-
-function jointMemberInitials(name) {
-  if (!name || typeof name !== 'string') return '?';
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return '?';
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return `${parts[0][0] || ''}${parts[parts.length - 1][0] || ''}`.toUpperCase();
-}
-
-function AccountJointProjectMemberRow({ member }) {
-  const handleAvatarError = (e) => {
-    e.target.style.display = 'none';
-    const fb = e.target.nextElementSibling;
-    if (fb) fb.style.display = 'flex';
-  };
-
-  return (
-    <li className="account-joint-projects-item">
-      <div className="account-joint-projects-avatar-wrap">
-        {member.avatarUrl ? (
-          <img
-            src={member.avatarUrl}
-            alt=""
-            className="account-joint-projects-avatar"
-            onError={handleAvatarError}
-          />
-        ) : null}
-        <span
-          className="account-joint-projects-avatar-fallback"
-          style={{ display: member.avatarUrl ? 'none' : 'flex' }}
-          aria-hidden="true"
-        >
-          {jointMemberInitials(member.name)}
-        </span>
-      </div>
-      <div className="account-joint-projects-meta">
-        <span className="account-joint-projects-name">{member.name}</span>
-        <span className="account-joint-projects-role">{member.role || '—'}</span>
-      </div>
-    </li>
-  );
-}
-
-function AccountJointProjectsList({ members }) {
-  return (
-    <div className="account-joint-projects-scroll-outer">
-      <ul className="account-joint-projects-list" role="list">
-        {members.length === 0 ? (
-          <li className="account-joint-projects-empty">
-            В этом проекте пока нет коллег в списке
-          </li>
-        ) : (
-          members.map((member) => (
-            <AccountJointProjectMemberRow key={member.id} member={member} />
-          ))
-        )}
-      </ul>
-    </div>
-  );
-}
 
 const EmployeeCard = ({ useMockData = false }) => {
   const { employeeId } = useParams();
@@ -97,10 +34,6 @@ const EmployeeCard = ({ useMockData = false }) => {
     birthdate: '',
     dream: ''
   });
-  const [jointProjectFilter, setJointProjectFilter] = useState(null);
-  const [jointProjectMembers, setJointProjectMembers] = useState(jointProjectMembersMock);
-  const [jointProjectMenuOpen, setJointProjectMenuOpen] = useState(false);
-  const jointProjectMenuRef = useRef(null);
   const [directorPhotoFailed, setDirectorPhotoFailed] = useState(false);
 
   useEffect(() => {
@@ -117,27 +50,6 @@ const EmployeeCard = ({ useMockData = false }) => {
     userData.director?.staff_image,
     userData.director?.img
   ]);
-
-  useEffect(() => {
-    if (!jointProjectMenuOpen) return undefined;
-    const onDocMouseDown = (e) => {
-      if (
-        jointProjectMenuRef.current &&
-        !jointProjectMenuRef.current.contains(e.target)
-      ) {
-        setJointProjectMenuOpen(false);
-      }
-    };
-    const onKeyDown = (e) => {
-      if (e.key === 'Escape') setJointProjectMenuOpen(false);
-    };
-    document.addEventListener('mousedown', onDocMouseDown);
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('mousedown', onDocMouseDown);
-      document.removeEventListener('keydown', onKeyDown);
-    };
-  }, [jointProjectMenuOpen]);
 
   const formatTelegramForDisplay = (telegram) => {
     if (!telegram) return '';
@@ -206,10 +118,6 @@ const EmployeeCard = ({ useMockData = false }) => {
       dream: employeeData.dream || ''
     };
     setProfileForm(nextProfileForm);
-    const team = employeeData.shared_project_team;
-    setJointProjectMembers(
-      Array.isArray(team) && team.length > 0 ? team : jointProjectMembersMock
-    );
   };
 
   const loadEmployeeData = async () => {
@@ -253,23 +161,6 @@ const EmployeeCard = ({ useMockData = false }) => {
       setIsLoading(false);
     }
   };
-
-  const jointProjectEffectiveFilter =
-    jointProjectFilter == null ? 'all' : jointProjectFilter;
-
-  const filteredJointMembers =
-    jointProjectEffectiveFilter === 'all'
-      ? jointProjectMembers
-      : jointProjectMembers.filter((m) =>
-        (m.projectIds || ['all']).includes(jointProjectEffectiveFilter)
-      );
-
-  const jointProjectShowPlaceholder = jointProjectFilter == null;
-  const jointProjectTriggerText = jointProjectShowPlaceholder
-    ? JOINT_PROJECT_FILTER_PLACEHOLDER
-    : jointProjectsFilterMock.find(
-      (o) => String(o.id) === String(jointProjectFilter)
-    )?.label ?? JOINT_PROJECT_FILTER_PLACEHOLDER;
 
   const renderAvatar = () => {
     if (userData.image || userData.image_url) {
@@ -432,31 +323,12 @@ const EmployeeCard = ({ useMockData = false }) => {
           <h2>{userData.name || 'Имя не указано'}</h2>
           <p className="user-info">{userData.post || 'Должность не указана'}</p>
 
-          <section
-            className="account-joint-projects-card"
-            aria-labelledby="employee-joint-projects-heading"
-          >
-            <div className="profile-card-header">
-              <h3 id="employee-joint-projects-heading">Совместные проекты</h3>
-              <SelectFilterDropdown
-                labelId="employee-joint-projects-heading"
-                menuRef={jointProjectMenuRef}
-                isOpen={jointProjectMenuOpen}
-                onToggle={() => setJointProjectMenuOpen((open) => !open)}
-                showPlaceholder={jointProjectShowPlaceholder}
-                triggerText={jointProjectTriggerText}
-                options={jointProjectsFilterMock}
-                selectedId={jointProjectFilter}
-                onSelectOption={(id) => {
-                  setJointProjectFilter(id);
-                  setJointProjectMenuOpen(false);
-                }}
-                triggerAriaLabel="Фильтр по проекту"
-              />
-            </div>
-            <div className="account-joint-projects-divider" aria-hidden="true" />
-            <AccountJointProjectsList members={filteredJointMembers} />
-          </section>
+          <AccountProjectsPanel
+            useMockData={useMockData}
+            navigate={navigate}
+            headingId="employee-projects-heading"
+            searchInputId="employee-projects-search"
+          />
         </div>
 
         <div className="account-column-center">

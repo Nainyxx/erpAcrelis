@@ -7,10 +7,34 @@
     box-sizing: border-box;
 }
 
-.mytasks-title {
-    color: #5B5B5B;
-    margin-bottom: 2.8vh;
-    font-size: clamp(2.4vh, 2vw, 3.2vh);
+/* Хлебные крошки — те же классы, что на списке проектов */
+.projects-breadcrumb {
+    margin: 0 0 1.2vh;
+    font-size: 1.5vh;
+    line-height: 1.4;
+}
+
+.projects-breadcrumb__home {
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: none;
+    font: inherit;
+    color: #8e8e95;
+    cursor: pointer;
+}
+
+.projects-breadcrumb__home:hover {
+    color: #5b5b5b;
+    text-decoration: underline;
+}
+
+.projects-breadcrumb__sep {
+    color: #c8c8d0;
+}
+
+.projects-breadcrumb__current {
+    color: #26262c;
     font-weight: 600;
 }
 
@@ -96,6 +120,7 @@
     display: grid;
     grid-template-columns: 2fr 1.5fr 1.5fr 2fr 2fr;
     gap: 0;
+    font-family: var(--font-sans, 'Inter Variable', 'Inter', ui-sans-serif, system-ui, sans-serif);
 }
 
 .tasks-table > * {
@@ -107,10 +132,10 @@
 }
 
 .header-cell {
-    font-weight: 750;
+    font-size: clamp(1.55vh, 1.15vw, 2vh);
+    font-weight: 500;
     color: #333;
-    border-bottom: 0.2vh solid #E7F6F6;
-    font-size: clamp(1.4vh, 1.1vw, 1.8vh);
+    border-bottom: 0.2vh solid #e7f6f6;
     white-space: nowrap;
     padding-left: 2vh;
 }
@@ -118,8 +143,9 @@
 .task-cell {
     padding: 2vh 3vh;
     padding-left: 3vh;
-    border-bottom: 0.1vh dashed #E0E0E0;
-    font-size: clamp(1.3vh, 1vw, 1.6vh);
+    border-bottom: 0.1vh dashed #e0e0e0;
+    font-size: clamp(1.45vh, 1.05vw, 1.9vh);
+    font-weight: 300;
     display: flex;
     align-items: center;
     cursor: pointer;
@@ -143,7 +169,7 @@
 }
 
 .task-name-text {
-    font-weight: 500;
+    font-weight: 300;
     color: #333;
     white-space: nowrap;
     overflow: hidden;
@@ -153,9 +179,9 @@
 }
 
 .deadline {
-    font-weight: 500;
+    font-weight: 300;
     color: #333;
-    font-size: clamp(1.4vh, 1vw, 1.6vh);
+    font-size: inherit;
     white-space: nowrap;
 }
 
@@ -166,8 +192,8 @@
 /* Стили для статусов задач */
 .task-status-badge {
     display: inline-block;
-    font-size: clamp(1.2vh, 0.9vw, 1.4vh);
-    font-weight: 500;
+    font-size: inherit;
+    font-weight: 300;
     white-space: nowrap;
     min-width: 8vh;
     max-width: 15vh;
@@ -183,7 +209,7 @@
 }
 
 .project-name {
-    font-weight: 500;
+    font-weight: 300;
     color: #333;
     white-space: nowrap;
     overflow: hidden;
@@ -198,7 +224,7 @@
 }
 
 .manager-name {
-    font-weight: 500;
+    font-weight: 300;
     color: #333;
     white-space: nowrap;
     overflow: hidden;

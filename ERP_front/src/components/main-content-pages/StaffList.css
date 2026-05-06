@@ -8,6 +8,37 @@
     box-sizing: border-box;
 }
 
+/* Хлебные крошки — как на списке проектов */
+.projects-breadcrumb {
+    margin: 0 0 1.2vh;
+    font-size: 1.5vh;
+    line-height: 1.4;
+}
+
+.projects-breadcrumb__home {
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: none;
+    font: inherit;
+    color: #8e8e95;
+    cursor: pointer;
+}
+
+.projects-breadcrumb__home:hover {
+    color: #5b5b5b;
+    text-decoration: underline;
+}
+
+.projects-breadcrumb__sep {
+    color: #c8c8d0;
+}
+
+.projects-breadcrumb__current {
+    color: #26262c;
+    font-weight: 600;
+}
+
 /* Верхнее меню: вкладки (карточка) */
 .staff-tabs-bar {
     display: flex;
@@ -142,6 +173,7 @@
     display: grid;
     grid-template-columns: 2fr 1fr 1fr;
     gap: 0;
+    font-family: var(--font-sans, 'Inter Variable', 'Inter', ui-sans-serif, system-ui, sans-serif);
 }
 
 .staff-table>* {
@@ -153,11 +185,12 @@
 }
 
 .header-cell {
-    font-weight: 750;
+    font-size: clamp(1.55vh, 1.15vw, 2vh);
+    font-weight: 500;
     color: #333;
-    border-bottom: 0.2vh solid #E7F6F6;
-    font-size: 1.8vh;
+    border-bottom: 0.2vh solid #e7f6f6;
     white-space: nowrap;
+    padding-left: 2vh;
 }
 
 .employee-row {
@@ -167,9 +200,10 @@
 .employee-row>* {
     cursor: pointer;
     transition: all 0.3s;
-    border-bottom: 0.1vh dashed #E0E0E0;
+    border-bottom: 0.1vh dashed #e0e0e0;
     min-height: 6vh;
-    font-size: 1.6vh;
+    font-size: clamp(1.45vh, 1.05vw, 1.9vh);
+    font-weight: 300;
     display: flex;
     align-items: center;
 }
@@ -218,7 +252,7 @@
 }
 
 .employee-name-text {
-    font-weight: 500;
+    font-weight: 300;
     color: #333;
     white-space: nowrap;
     overflow: hidden;
@@ -229,8 +263,8 @@
 .employee-position {
     display: inline-block;
     padding: 0.6vh 0;
-    font-size: 1.4vh;
-    font-weight: 500;
+    font-size: inherit;
+    font-weight: 300;
     color: #333;
     white-space: nowrap;
 }
@@ -238,8 +272,8 @@
 .employee-department {
     display: inline-block;
     padding: 0.6vh 0;
-    font-size: 1.4vh;
-    font-weight: 500;
+    font-size: inherit;
+    font-weight: 300;
     color: #333;
     white-space: nowrap;
 }
