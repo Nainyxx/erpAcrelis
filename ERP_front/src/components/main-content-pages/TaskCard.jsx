@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams, Link, useLocation } from 'react-router-dom';
+import { useDropzone } from 'react-dropzone';
+import uploadCloudIcon from '../../assets/download-files.svg';
 import {
     getTaskById,
     updateTask,
@@ -57,6 +59,7 @@ const TaskCard = ({ useMockData = false }) => {
     const [replyToCommentId, setReplyToCommentId] = useState(null);
     const [commentsList, setCommentsList] = useState([]);
     const [files, setFiles] = useState([]);
+    const [isUploadingFiles_task_card, setIsUploadingFiles_task_card] = useState(false);
 
     // Для оптимистичного обновления UI
     const [pendingComments, setPendingComments] = useState([]);
@@ -929,13 +932,45 @@ const TaskCard = ({ useMockData = false }) => {
         );
     };
 
-    const handleFileUpload_task_card = async (e) => {
-        const files = e.target.files;
-        if (files.length === 0) return;
+    const uploadTaskFiles_task_card = useCallback(async (inputFiles) => {
+        if (!inputFiles || inputFiles.length === 0) return;
 
-        await postFileUpload_task_card(files[0]);
+        setIsUploadingFiles_task_card(true);
+        try {
+            for (const file of inputFiles) {
+                await postFileUpload_task_card(file);
+            }
+        } finally {
+            setIsUploadingFiles_task_card(false);
+        }
+    }, [task, useMockData]);
+
+    const handleFileUpload_task_card = async (e) => {
+        const selectedFiles = Array.from(e.target.files || []);
+        await uploadTaskFiles_task_card(selectedFiles);
         e.target.value = null;
     };
+
+    const onTaskFileDrop_task_card = useCallback(async (acceptedFiles) => {
+        await uploadTaskFiles_task_card(acceptedFiles);
+    }, [uploadTaskFiles_task_card]);
+
+    const handleAddFile_task_card = () => {
+        if (fileInputRef_task_card.current) {
+            fileInputRef_task_card.current.click();
+        }
+    };
+
+    const {
+        getRootProps: getTaskDropzoneRootProps_task_card,
+        getInputProps: getTaskDropzoneInputProps_task_card,
+        isDragActive: isTaskFileDragActive_task_card
+    } = useDropzone({
+        onDrop: onTaskFileDrop_task_card,
+        noClick: true,
+        noKeyboard: true,
+        disabled: isUploadingFiles_task_card || !canManageTaskActions
+    });
 
     const postFileUpload_task_card = async (file) => {
         if (!file || !task) return;
@@ -1276,28 +1311,29 @@ const TaskCard = ({ useMockData = false }) => {
 
                     {/* Колонка 2: Файлы */}
                     <div className="column-section_task_card">
-                        <div className="column-rectangle_task_card files-column_task_card">
+                        <div
+                            className={`column-rectangle_task_card files-column_task_card ${isTaskFileDragActive_task_card ? 'files-drop-active_task_card' : ''}`}
+                            {...getTaskDropzoneRootProps_task_card()}
+                        >
+                            <input {...getTaskDropzoneInputProps_task_card()} />
                             <div className="files-header_task_card">
                                 <h3 className="column-title_task_card">Файлы проекта</h3>
-                                {canManageTaskActions && (
-                                    <label className="upload-file-btn_task_card">
-                                        + Загрузить файлы
-                                        <input
-                                            type="file"
-                                            ref={fileInputRef_task_card}
-                                            multiple
-                                            onChange={handleFileUpload_task_card}
-                                            style={{ display: 'none' }}
-                                        />
-                                    </label>
-                                )}
                             </div>
+                            <input
+                                type="file"
+                                ref={fileInputRef_task_card}
+                                multiple
+                                onChange={handleFileUpload_task_card}
+                                style={{ display: 'none' }}
+                                disabled={isUploadingFiles_task_card}
+                            />
                             <div className="files-list_task_card">
                                 {files.map(file => (
                                     <div
                                         key={file.id}
                                         className="file-item_task_card"
                                         title={file.fullName}
+                                        onClick={() => handleFileDownload_task_card(file)}
                                     >
                                         <div className="file-details_task_card">
                                             <span
@@ -1317,7 +1353,10 @@ const TaskCard = ({ useMockData = false }) => {
                                         <div className="file-info_task_card">
                                             <button
                                                 className="file-download_task_card"
-                                                onClick={() => handleFileDownload_task_card(file)}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleFileDownload_task_card(file);
+                                                }}
                                                 title="Скачать файл"
                                             >
                                                 ↓
@@ -1329,6 +1368,24 @@ const TaskCard = ({ useMockData = false }) => {
                             <div className="files-count_task_card">
                                 Всего файлов: {files.length}
                             </div>
+                            {canManageTaskActions && (
+                                <div className={`files-drop-hint_task_card ${isTaskFileDragActive_task_card ? 'is-active_task_card' : ''}`}>
+                                    <img
+                                        src={uploadCloudIcon}
+                                        alt="Загрузка файлов"
+                                        className="files-drop-icon_task_card"
+                                    />
+                                    <div className="files-drop-or_task_card">ИЛИ</div>
+                                    <button
+                                        type="button"
+                                        className="files-drop-btn_task_card"
+                                        onClick={handleAddFile_task_card}
+                                        disabled={isUploadingFiles_task_card}
+                                    >
+                                        {isUploadingFiles_task_card ? 'Загрузка...' : 'Загрузить файлы'}
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
 

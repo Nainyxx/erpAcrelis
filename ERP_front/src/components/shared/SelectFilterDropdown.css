@@ -151,11 +151,9 @@
 }
 
 .select-filter-dropdown__option.is-selected {
-    background: linear-gradient(
-        90deg,
-        rgb(61 111 216 / 8%) 0%,
-        rgb(61 111 216 / 3%) 100%
-    );
+    background: linear-gradient(90deg,
+            rgb(61 111 216 / 8%) 0%,
+            rgb(61 111 216 / 3%) 100%);
     color: #2c3140;
     font-weight: 600;
 }

@@ -21,7 +21,7 @@
     overflow-y: visible;
     border-radius: 30px;
     background: #fff;
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-sans);
     font-weight: 600;
     letter-spacing: 0;
 }

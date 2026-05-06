@@ -44,9 +44,11 @@
     background: #E7F6F6;
     border: 0.1vh solid #D1ECEC;
     border-radius: 1vh;
-    padding: 1.2vh 2vh;
+    padding: 0.45vh 2vh;
     font-size: clamp(1.3vh, 1vw, 1.6vh);
-    height: 4vh;
+    line-height: 1.35;
+    min-height: 4.8vh;
+    height: auto;
     outline: none;
     transition: border-color 0.3s;
     color: #333;
@@ -66,9 +68,9 @@
 }
 
 .create-task-btn {
-    background: #FFFFFF;
-    color: #333;
-    border: 0.1vh solid #ddd;
+    background: #6EDCE1;
+    color: #fff;
+    border: none;
     border-radius: 1vh;
     padding: 1.2vh clamp(2vh, 2vw, 3vh);
     font-size: clamp(1.3vh, 1vw, 1.6vh);
@@ -80,7 +82,7 @@
 }
 
 .create-task-btn:hover {
-    background: #f5f5f5;
+    background: #5dd0d5;
 }
 
 .tasks-table {
@@ -346,7 +348,7 @@
 
 .btn-create123 {
     padding: 1.2vh 2.5vh;
-    background: #4ECDC4;
+    background: #6EDCE1;
     color: white;
     border: none;
     border-radius: 1vh;
@@ -355,7 +357,7 @@
 }
 
 .btn-create123:hover:not(:disabled) {
-    background: #3db8af;
+    background: #5dd0d5;
 }
 
 .btn-create123:disabled,
@@ -679,7 +681,7 @@
 
 .gantt-back-btn_gantt_class {
     padding: 1vh 2vh;
-    background: #4ECDC4;
+    background: #6EDCE1;
     color: white;
     border: none;
     border-radius: 0.8vh;
@@ -690,5 +692,5 @@
 }
 
 .gantt-back-btn_gantt_class:hover {
-    background: #3db8af;
+    background: #5dd0d5;
 }

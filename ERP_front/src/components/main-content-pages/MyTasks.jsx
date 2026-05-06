@@ -1,5 +1,5 @@
 // MyTasks.jsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   getTasks, 
@@ -34,8 +34,16 @@ const normalizeQueryForCompare = (searchStr) => {
     .join('&');
 };
 
-/** Собирает query для /my-tasks (performer, performerName, status, search) */
-const buildMyTasksQueryString = (selectedPerformer, selectedStatus, searchQuery, performers) => {
+/** Собирает query для /my-tasks (performer, performerName, status, director, project, …) */
+const buildMyTasksQueryString = (
+  selectedPerformer,
+  selectedStatus,
+  selectedDirector,
+  selectedProject,
+  performers,
+  directorOptions,
+  projectOptions
+) => {
   const params = new URLSearchParams();
   if (selectedPerformer === '' || selectedPerformer == null) return '';
   if (String(selectedPerformer) === 'all') {
@@ -48,8 +56,16 @@ const buildMyTasksQueryString = (selectedPerformer, selectedStatus, searchQuery,
   if (selectedStatus && selectedStatus !== 'all') {
     params.set('status', selectedStatus);
   }
-  const sq = searchQuery != null ? String(searchQuery).trim() : '';
-  if (sq) params.set('search', sq);
+  if (selectedDirector && selectedDirector !== 'all') {
+    params.set('director', String(selectedDirector));
+    const d = directorOptions.find((x) => String(x.id) === String(selectedDirector));
+    if (d?.label) params.set('directorName', d.label);
+  }
+  if (selectedProject && selectedProject !== 'all') {
+    params.set('project', String(selectedProject));
+    const pr = projectOptions.find((x) => String(x.id) === String(selectedProject));
+    if (pr?.label) params.set('projectName', pr.label);
+  }
   return params.toString();
 };
 
@@ -63,21 +79,18 @@ const savePageToStorage = (page) => {
   localStorage.setItem('my-tasks-page', page.toString());
 };
 
-const MyTasks = ({ useMockData = true }) => {
+const MyTasks = ({ useMockData = false }) => {
   const navigate = useNavigate();
   const location = useLocation();
   
   // Получаем текущего пользователя
   const [currentUser, setCurrentUser] = useState(null);
   
-  // Поиск с дебаунсом
-  const [searchInput, setSearchInput] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const searchTimeoutRef = useRef(null);
-  
   // Фильтры
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedPerformer, setSelectedPerformer] = useState('');
+  const [selectedDirector, setSelectedDirector] = useState('all');
+  const [selectedProject, setSelectedProject] = useState('all');
   
   // Пагинация через localStorage
   const [currentPage, setCurrentPage] = useState(getStoredPage());
@@ -131,6 +144,19 @@ const MyTasks = ({ useMockData = true }) => {
     loadStaffList();
   }, [useMockData]);
 
+  const directorFilterOptions = useMemo(
+    () => [{ id: 'all', label: 'Все руководители' }, ...performers.slice(1)],
+    [performers]
+  );
+
+  const projectFilterOptions = useMemo(
+    () => [
+      { id: 'all', label: 'Все проекты' },
+      ...allProjects.map((p) => ({ id: String(p.id), label: p.name }))
+    ],
+    [allProjects]
+  );
+
   // Парсим query при смене URL (в т.ч. после синхронизации фильтров)
   useEffect(() => {
     const user = getCurrentUser();
@@ -152,14 +178,11 @@ const MyTasks = ({ useMockData = true }) => {
     const statusParam = params.get('status');
     setSelectedStatus(statusParam && TASK_STATUS_MAP[statusParam] ? statusParam : 'all');
 
-    const searchParam = params.get('search');
-    if (searchParam != null && searchParam !== '') {
-      setSearchQuery(searchParam);
-      setSearchInput(searchParam);
-    } else {
-      setSearchQuery('');
-      setSearchInput('');
-    }
+    const directorParam = params.get('director');
+    setSelectedDirector(directorParam != null && directorParam !== '' ? directorParam : 'all');
+
+    const projectParam = params.get('project');
+    setSelectedProject(projectParam != null && projectParam !== '' ? projectParam : 'all');
   }, [location.search]);
 
   // Держим адрес в соответствии с фильтрами (как в ссылке performer + performerName + …)
@@ -169,8 +192,11 @@ const MyTasks = ({ useMockData = true }) => {
     const built = buildMyTasksQueryString(
       selectedPerformer,
       selectedStatus,
-      searchQuery,
-      performers
+      selectedDirector,
+      selectedProject,
+      performers,
+      directorFilterOptions,
+      projectFilterOptions
     );
     const nextSearch = built ? `?${built}` : '';
     if (normalizeQueryForCompare(location.search) === normalizeQueryForCompare(nextSearch)) {
@@ -186,8 +212,11 @@ const MyTasks = ({ useMockData = true }) => {
   }, [
     selectedPerformer,
     selectedStatus,
-    searchQuery,
+    selectedDirector,
+    selectedProject,
     performers,
+    directorFilterOptions,
+    projectFilterOptions,
     location.search,
     navigate
   ]);
@@ -197,7 +226,14 @@ const MyTasks = ({ useMockData = true }) => {
     if (selectedPerformer !== '') {
       loadTasks();
     }
-  }, [useMockData, selectedStatus, selectedPerformer, searchQuery, currentPage]);
+  }, [
+    useMockData,
+    selectedStatus,
+    selectedPerformer,
+    selectedDirector,
+    selectedProject,
+    currentPage
+  ]);
 
   // Сохраняем страницу в localStorage при изменении
   useEffect(() => {
@@ -207,16 +243,7 @@ const MyTasks = ({ useMockData = true }) => {
   // Сброс страницы при изменении фильтров
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedStatus, selectedPerformer, searchQuery]);
-
-  // Очищаем таймер при размонтировании
-  useEffect(() => {
-    return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-    };
-  }, []);
+  }, [selectedStatus, selectedPerformer, selectedDirector, selectedProject]);
 
   // Загрузка списка сотрудников
   const loadStaffList = async () => {
@@ -240,37 +267,6 @@ const MyTasks = ({ useMockData = true }) => {
     }
   };
 
-  // Обработчик изменения поиска с дебаунсом
-  const handleSearchChange = (e) => {
-    const value = e.target.value;
-    setSearchInput(value);
-    
-    // Очищаем предыдущий таймер
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-    
-    // Устанавливаем новый таймер на 1.5 секунды
-    searchTimeoutRef.current = setTimeout(() => {
-      if (value !== searchQuery) {
-        setSearchQuery(value);
-      }
-    }, 1500);
-  };
-
-  // При потере фокуса - сразу делаем поиск (если текст изменился)
-  const handleSearchBlur = () => {
-    // Очищаем таймер дебаунса
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-    
-    // Если текст изменился - делаем поиск сразу
-    if (searchInput !== searchQuery) {
-      setSearchQuery(searchInput);
-    }
-  };
-
   // Загрузка задач с фильтрацией на бэкенде
   const loadTasks = async () => {
     setLoading(true);
@@ -288,9 +284,13 @@ const MyTasks = ({ useMockData = true }) => {
       if (selectedPerformer && selectedPerformer !== 'all') {
         filters.performer = selectedPerformer;
       }
-      
-      if (searchQuery) {
-        filters.search = searchQuery;
+
+      if (selectedDirector && selectedDirector !== 'all') {
+        filters.director = selectedDirector;
+      }
+
+      if (selectedProject && selectedProject !== 'all') {
+        filters.project = selectedProject;
       }
       
       // Добавляем пагинацию в фильтры
@@ -357,6 +357,10 @@ const MyTasks = ({ useMockData = true }) => {
     } catch (error) {
     }
   };
+
+  useEffect(() => {
+    loadProjectsAndStaff();
+  }, [useMockData]);
 
   // Обновление задач
   const handleRefresh = () => {
@@ -746,7 +750,13 @@ const MyTasks = ({ useMockData = true }) => {
   }
 
   // НЕТ ЗАДАЧ
-  if (tasks.length === 0 && !searchQuery && selectedStatus === 'all' && selectedPerformer === 'all') {
+  if (
+    tasks.length === 0 &&
+    selectedStatus === 'all' &&
+    selectedPerformer === 'all' &&
+    selectedDirector === 'all' &&
+    selectedProject === 'all'
+  ) {
     return (
       <div className="mytasks-container">
         <h1 className="mytasks-title">Мои задачи</h1>
@@ -787,15 +797,38 @@ const MyTasks = ({ useMockData = true }) => {
               </select>
             </div>
 
-            <div className="filter-group search-group">
-              <input
-                type="text"
-                placeholder="Поиск задач..."
-                className="search-input"
-                value={searchInput}
-                onChange={handleSearchChange}
-                onBlur={handleSearchBlur}
-              />
+            <div className="filter-group">
+              <select
+                className="filter-select"
+                value={selectedDirector}
+                onChange={(e) => setSelectedDirector(e.target.value)}
+              >
+                {directorFilterOptions.map((d) => {
+                  const isCurrentUser =
+                    currentUser &&
+                    ((currentUser.staff_id && d.id === currentUser.staff_id.toString()) ||
+                      (currentUser.user_id && d.id === currentUser.user_id.toString()));
+                  return (
+                    <option key={d.id} value={d.id}>
+                      {d.label} {isCurrentUser && d.id !== 'all' && '(Вы)'}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+
+            <div className="filter-group">
+              <select
+                className="filter-select"
+                value={selectedProject}
+                onChange={(e) => setSelectedProject(e.target.value)}
+              >
+                {projectFilterOptions.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
           
@@ -863,15 +896,38 @@ const MyTasks = ({ useMockData = true }) => {
             </select>
           </div>
 
-          <div className="filter-group search-group">
-            <input
-              type="text"
-              placeholder="Поиск задач..."
-              className="search-input"
-              value={searchInput}
-              onChange={handleSearchChange}
-              onBlur={handleSearchBlur}
-            />
+          <div className="filter-group">
+            <select
+              className="filter-select"
+              value={selectedDirector}
+              onChange={(e) => setSelectedDirector(e.target.value)}
+            >
+              {directorFilterOptions.map((d) => {
+                const isCurrentUser =
+                  currentUser &&
+                  ((currentUser.staff_id && d.id === currentUser.staff_id.toString()) ||
+                    (currentUser.user_id && d.id === currentUser.user_id.toString()));
+                return (
+                  <option key={d.id} value={d.id}>
+                    {d.label} {isCurrentUser && d.id !== 'all' && '(Вы)'}
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+
+          <div className="filter-group">
+            <select
+              className="filter-select"
+              value={selectedProject}
+              onChange={(e) => setSelectedProject(e.target.value)}
+            >
+              {projectFilterOptions.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
         
@@ -890,8 +946,11 @@ const MyTasks = ({ useMockData = true }) => {
 
         {tasks.length === 0 ? (
           <div className="no-tasks">
-            {searchQuery || selectedStatus !== 'all' || selectedPerformer !== 'all'
-              ? 'Задачи не найдены по заданным фильтрам' 
+            {selectedStatus !== 'all' ||
+            selectedPerformer !== 'all' ||
+            selectedDirector !== 'all' ||
+            selectedProject !== 'all'
+              ? 'Задачи не найдены по заданным фильтрам'
               : 'Задачи не найдены'}
           </div>
         ) : (

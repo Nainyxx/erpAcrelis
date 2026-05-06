@@ -17,13 +17,21 @@ const PROJECT_STATUS = [
   { id: 'cancelled', label: 'Отменен' },
 ];
 
-const TYPE_LABEL_MAP = {
-  website: 'Веб-сайт',
+/** Справочник типов для фильтра и query typeName — не зависит от ответа API */
+const PROJECT_TYPE_OPTIONS = [
+  { id: 'website', label: 'Веб-сайт' },
+  { id: 'bot', label: 'Бот' },
+  { id: 'app', label: 'Приложение' },
+  { id: 'miniapp', label: 'Мини-приложение' },
+  { id: 'design', label: 'Дизайн' },
+  { id: 'other', label: 'Другое' },
+];
+
+const LEGACY_TYPE_LABELS = {
   mobile: 'Мобильное приложение',
   dashboard: 'Дашборд',
   ecommerce: 'Интернет-магазин',
   system: 'Система',
-  other: 'Другой',
 };
 
 const normalizeQueryForCompare = (searchStr) => {
@@ -35,12 +43,13 @@ const normalizeQueryForCompare = (searchStr) => {
     .join('&');
 };
 
-const buildProjectsQueryString = (selectedType, selectedStatus, searchQuery, projectTypes) => {
+const buildProjectsQueryString = (selectedType, selectedStatus, searchQuery) => {
   const params = new URLSearchParams();
   if (selectedType && selectedType !== 'all') {
     params.set('type', selectedType);
-    const fromApi = (projectTypes || []).find((t) => String(t.id) === String(selectedType));
-    const typeName = fromApi?.label || TYPE_LABEL_MAP[selectedType] || selectedType;
+    const fromList = PROJECT_TYPE_OPTIONS.find((t) => String(t.id) === String(selectedType));
+    const typeName =
+      fromList?.label || LEGACY_TYPE_LABELS[selectedType] || selectedType;
     if (typeName) params.set('typeName', typeName);
   }
   if (selectedStatus && selectedStatus !== 'all') {
@@ -53,7 +62,7 @@ const buildProjectsQueryString = (selectedType, selectedStatus, searchQuery, pro
   return params.toString();
 };
 
-const ProjectsList = ({ useMockData = true, showNotification }) => {
+const ProjectsList = ({ useMockData = false, showNotification }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -62,7 +71,6 @@ const ProjectsList = ({ useMockData = true, showNotification }) => {
   const [selectedType, setSelectedType] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all'); // Новый фильтр по статусу
   const [projects, setProjects] = useState([]);
-  const [projectTypes, setProjectTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -111,25 +119,23 @@ const ProjectsList = ({ useMockData = true, showNotification }) => {
     const built = buildProjectsQueryString(
       selectedType,
       selectedStatus,
-      searchQuery,
-      projectTypes
+      searchQuery
     );
     const nextSearch = built ? `?${built}` : '';
     if (normalizeQueryForCompare(location.search) === normalizeQueryForCompare(nextSearch)) {
       try {
         sessionStorage.setItem(PROJECTS_NAV_QUERY_STORAGE_KEY, nextSearch);
-      } catch (_) {}
+      } catch (_) { }
       return;
     }
     try {
       sessionStorage.setItem(PROJECTS_NAV_QUERY_STORAGE_KEY, nextSearch);
-    } catch (_) {}
+    } catch (_) { }
     navigate({ pathname: '/projects', search: nextSearch }, { replace: true });
   }, [
     selectedType,
     selectedStatus,
     searchQuery,
-    projectTypes,
     location.search,
     navigate,
   ]);
@@ -158,12 +164,10 @@ const ProjectsList = ({ useMockData = true, showNotification }) => {
       const result = await getProjects(useMockData, filters);
 
       setProjects(result.projects || []);
-      setProjectTypes(result.projectTypes || []);
 
     } catch (error) {
       setError('Не удалось загрузить проекты. Проверьте подключение.');
       setProjects([]);
-      setProjectTypes([]);
     } finally {
       setLoading(false);
     }
@@ -202,15 +206,9 @@ const ProjectsList = ({ useMockData = true, showNotification }) => {
   }, [useMockData, selectedType, selectedStatus, searchQuery]);
 
   const getTypeLabel = (type) => {
-    const typeMap = {
-      'website': 'Веб-сайт',
-      'mobile': 'Мобильное приложение',
-      'dashboard': 'Дашборд',
-      'ecommerce': 'Интернет-магазин',
-      'system': 'Система',
-      'other': 'Другой'
-    };
-    return typeMap[type] || 'Проект';
+    const opt = PROJECT_TYPE_OPTIONS.find((t) => t.id === type);
+    if (opt) return opt.label;
+    return LEGACY_TYPE_LABELS[type] || 'Проект';
   };
 
   // Функция для получения отображаемого названия статуса
@@ -416,9 +414,9 @@ const ProjectsList = ({ useMockData = true, showNotification }) => {
               onChange={(e) => setSelectedType(e.target.value)}
             >
               <option value="all">Все проекты</option>
-              {projectTypes.map(type => (
+              {PROJECT_TYPE_OPTIONS.map((type) => (
                 <option key={type.id} value={type.id}>
-                  {type.label} ({type.count || 0})
+                  {type.label}
                 </option>
               ))}
             </select>
@@ -467,11 +465,11 @@ const ProjectsList = ({ useMockData = true, showNotification }) => {
             type="button"
             className="projects-toolbar-btn-primary"
             onClick={() => setShowCreateModal(true)}
-            
+
           >
             Создать проект
           </button>
-          <button type="button" className="btn-operations">
+          <button type="button" className="btn-operations" onClick={() => navigate('/operations')}>
             Операции
           </button>
         </div>

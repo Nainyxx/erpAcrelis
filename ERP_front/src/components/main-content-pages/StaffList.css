@@ -5,73 +5,109 @@
     box-sizing: border-box;
 }
 
-.staff-title {
-    color: #5B5B5B;
-    margin-bottom: 2.8vh;
-    font-size: 3.2vh;
-    font-weight: 600;
-}
-
-.filters-container {
+/* Верхнее меню: вкладки (карточка) */
+.staff-tabs-bar {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1vh;
+    width: 100%;
+    max-width: 100%;
+    margin-bottom: 1.2vh;
+    padding: 1.4vh 1.6vh;
+    box-sizing: border-box;
     background: #ffffff;
     border-radius: 2vh;
-    padding: 2.5vh 3vh;
-    margin-bottom: 3vh;
+    box-shadow: 0 2px 12px rgb(38 38 44 / 6%);
+}
+
+.staff-tab {
+    margin: 0;
+    padding: 1vh 2vh;
+    border: none;
+    border-radius: 8px;
+    background: #f0f4f8;
+    color: #6b7a88;
+    font-family: inherit;
+    font-size: 1.6vh;
+    font-weight: 400;
+    line-height: 1.2;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.staff-tab:hover:not(.is-active) {
+    background: #e4eaf0;
+    color: #556070;
+}
+
+.staff-tab.is-active {
+    background: #B2E9EF;
+    color: #5B5B5B;
+    cursor: default;
+}
+
+/* Карточка фильтров: отдел + поиск */
+.staff-toolbar {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: row;
     flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
     gap: 2vh;
     width: 100%;
     max-width: 100%;
+    margin-bottom: 3vh;
+    padding: 2vh 2.5vh;
     box-sizing: border-box;
+    background: #ffffff;
+    border-radius: 2vh;
+    box-shadow: 0 2px 12px rgb(38 38 44 / 6%);
 }
 
-.filters {
+.staff-search {
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 1vh;
+    min-width: 0;
+    max-width: 100%;
+    margin: 0;
+    padding: 1vh 1.6vh;
+    box-sizing: border-box;
+    background: #f0f4f8;
+    border: 0.1vh solid #d8e4ec;
+    border-radius: 8px;
+    transition: border-color 0.2s ease;
+}
+
+.staff-search:focus-within {
+    border-color: #4ecdc4;
+}
+
+.staff-search__icon {
     display: flex;
-    gap: 1.5vh;
-    flex-wrap: wrap;
-    flex: 1;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
 }
 
-.filter-group {
-    position: relative;
-}
-
-.filter-select, .search-input {
-    background: #E7F6F6;
-    border: 0.1vh solid #D1ECEC;
-    border-radius: 1vh;
-    padding: 1.2vh 2vh;
-    font-size: 1.6vh;
-    height: 5vh;
+.staff-search__input {
+    flex: 1 1 auto;
+    min-width: 12vh;
+    max-width: min(48vh, 100%);
+    padding: 0;
+    border: none;
+    background: transparent;
     outline: none;
-    transition: border-color 0.3s;
+    font-family: inherit;
+    font-size: 1.6vh;
     color: #333;
     box-sizing: border-box;
 }
 
-.filter-select:focus, .search-input:focus {
-    border-color: #4ECDC4;
-}
-
-.filter-select {
-    width: 25vh;
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right 1.5vh center;
-    background-size: 1.6vh;
-    padding-right: 4.5vh;
-}
-
-.search-input {
-    width: 40vh;
-}
-
-.search-input::placeholder {
+.staff-search__input::placeholder {
     color: #888;
 }
 
@@ -88,7 +124,7 @@
     gap: 0;
 }
 
-.staff-table > * {
+.staff-table>* {
     padding: 2vh 3vh;
     display: flex;
     align-items: center;
@@ -108,7 +144,7 @@
     display: contents;
 }
 
-.employee-row > * {
+.employee-row>* {
     cursor: pointer;
     transition: all 0.3s;
     border-bottom: 0.1vh dashed #E0E0E0;
@@ -118,13 +154,13 @@
     align-items: center;
 }
 
-.employee-row:hover > * {
+.employee-row:hover>* {
     font-weight: 500;
     transform: scale(1.02);
-    box-shadow: 0 0.2vh 1vh rgba(0,0,0,0.05);
+    box-shadow: 0 0.2vh 1vh rgba(0, 0, 0, 0.05);
     z-index: 1;
     position: relative;
-    background-color: rgba(0,0,0,0.02);
+    background-color: rgba(0, 0, 0, 0.02);
 }
 
 .employee-info {
@@ -145,11 +181,12 @@
     font-size: 1.4vh;
     font-weight: 500;
     border: 0.2vh solid white;
-    box-shadow: 0 0.2vh 0.4vh rgba(0,0,0,0.1);
+    box-shadow: 0 0.2vh 0.4vh rgba(0, 0, 0, 0.1);
     flex-shrink: 0;
     position: relative;
     overflow: hidden;
 }
+
 .avatar img {
     width: 100%;
     height: 100%;
@@ -227,13 +264,6 @@
     font-size: 1.6vh;
 }
 
-.filter-select option {
-    color: #333;
-    background: white;
-    padding: 1vh;
-    font-size: 1.6vh;
-}
-
 /* StaffList.css - дополнительные стили для аватарки */
 
 .avatar {
@@ -247,7 +277,7 @@
     font-size: 1.4vh;
     font-weight: 500;
     border: 0.2vh solid white;
-    box-shadow: 0 0.2vh 0.4vh rgba(0,0,0,0.1);
+    box-shadow: 0 0.2vh 0.4vh rgba(0, 0, 0, 0.1);
     flex-shrink: 0;
     position: relative;
     overflow: hidden;
@@ -298,8 +328,13 @@
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 .no-tasks-message_gantt_class {

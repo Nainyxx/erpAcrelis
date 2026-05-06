@@ -29,7 +29,7 @@
     margin-top: 10px;
 }
 
-.employee-page_employee_card .account-statistics-card + .account-statistics-card {
+.employee-page_employee_card .account-statistics-card+.account-statistics-card {
     margin-top: 8px;
 }
 

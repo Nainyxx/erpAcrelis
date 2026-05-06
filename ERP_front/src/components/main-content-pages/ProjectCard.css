@@ -5,7 +5,6 @@
   min-height: calc(100vh - 9vh);
   width: 100%;
   box-sizing: border-box;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 /* Header с кнопкой сохранения */
@@ -577,6 +576,64 @@
   margin: 0;
 }
 
+.files-drop-hint_project_card {
+  border: 0.2vh dashed #DEE2E6;
+  border-radius: 1.2vh;
+  padding: 2.2vh 1.2vh 2.4vh;
+  margin-top: 1.2vh;
+  text-align: center;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.4vh;
+  background-color: #FAFCFD;
+}
+
+.files-drop-hint_project_card.is-active_project_card {
+  border-color: #4ECDC4;
+  background-color: rgba(78, 205, 196, 0.08);
+}
+
+.files-tile_project_card.files-drop-active_project_card {
+  box-shadow: 0 0 0 0.2vh rgba(78, 205, 196, 0.25);
+}
+
+.files-drop-icon_project_card {
+  width: 7.4vh;
+  height: 7.4vh;
+  object-fit: contain;
+}
+
+.files-drop-or_project_card {
+  font-size: 2vh;
+  font-weight: 600;
+  color: #5f666c;
+  line-height: 1;
+}
+
+.files-drop-btn_project_card {
+  border: none;
+  background: #A6DFE7;
+  color: #fff;
+  font-size: 1.9vh;
+  font-weight: 600;
+  border-radius: 1vh;
+  padding: 1vh 3.8vh;
+  min-width: 25vh;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.files-drop-btn_project_card:hover {
+  background: #93d7e1;
+}
+
+.files-drop-btn_project_card:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 .files-list_project_card {
   display: flex;
   flex-direction: column;
@@ -593,6 +650,7 @@
   padding: 1vh;
   border-radius: 0.8vh;
   transition: all 0.2s;
+  cursor: pointer;
 }
 
 .file-item_project_card:hover {
@@ -624,9 +682,9 @@
 }
 
 .file-download_project_card {
-  background: none;
-  border: 0.2vh solid #DEE2E6;
-  color: #6C757D;
+  background: transparent;
+  border: none;
+  color: inherit;
   width: 3.2vh;
   height: 3.2vh;
   border-radius: 0.8vh;
@@ -640,8 +698,13 @@
 }
 
 .file-download_project_card:hover {
-  background-color: #F8F9FA;
-  border-color: #868686;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.file-delete-icon_project_card {
+  width: 1.8vh;
+  height: 1.8vh;
+  object-fit: contain;
 }
 
 .files-count_project_card {

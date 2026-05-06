@@ -486,18 +486,17 @@ const EmployeeCard = ({ useMockData = false }) => {
               <h3 id="employee-director-heading">Руководитель</h3>
             </div>
             <div
-              className={`employee-director-body${
-                userData.director?.id ? ' employee-director-body-clickable' : ''
-              }`}
+              className={`employee-director-body${userData.director?.id ? ' employee-director-body-clickable' : ''
+                }`}
               onClick={userData.director?.id ? handleDirectorClick : undefined}
               onKeyDown={
                 userData.director?.id
                   ? (e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        handleDirectorClick();
-                      }
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleDirectorClick();
                     }
+                  }
                   : undefined
               }
               role={userData.director?.id ? 'button' : undefined}
@@ -562,7 +561,7 @@ const EmployeeCard = ({ useMockData = false }) => {
             </div>
           </section>
 
-       
+
         </div>
 
         <div className="account-column-right">

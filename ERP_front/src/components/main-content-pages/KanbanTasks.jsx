@@ -9,7 +9,7 @@ import {
 } from '../../services/api/api';
 import './KanbanTasks.css';
 
-const KanbanTasks = ({ useMockData = true }) => {
+const KanbanTasks = ({ useMockData = false }) => {
   const navigate = useNavigate();
   const { projectId } = useParams();
   

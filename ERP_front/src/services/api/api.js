@@ -879,21 +879,36 @@ export async function getTasks(USE_MOCK_DATA, filters = {}) {
         hours: 8
       }))
     ];
-    
-    // Эмуляция пагинации для mock данных
-    const page = parseInt(filters.page) || 1;
-    const pageSize = 20; // 20 задач на страницу как в API
+
+    let list = [...mockTasks];
+    if (filters.status) {
+      list = list.filter((t) => t.status === filters.status);
+    }
+    if (filters.performer) {
+      list = list.filter((t) => String(t.performer) === String(filters.performer));
+    }
+    if (filters.director) {
+      list = list.filter((t) => String(t.director) === String(filters.director));
+    }
+    if (filters.project) {
+      list = list.filter((t) => String(t.project) === String(filters.project));
+    }
+
+    const page = parseInt(filters.page, 10) || 1;
+    const pageSize = 20;
+    const count = list.length;
     const startIndex = (page - 1) * pageSize;
     const endIndex = startIndex + pageSize;
-    const paginatedTasks = mockTasks.slice(startIndex, endIndex);
-    
+    const paginatedTasks = list.slice(startIndex, endIndex);
+    const totalPages = Math.max(1, Math.ceil(count / pageSize));
+
     return {
       results: paginatedTasks,
-      count: mockTasks.length,
-      next: page * pageSize < mockTasks.length ? page + 1 : null,
+      count,
+      next: page * pageSize < count ? page + 1 : null,
       previous: page > 1 ? page - 1 : null,
       current_page: page,
-      total_pages: Math.ceil(mockTasks.length / pageSize)
+      total_pages: totalPages
     };
   }
   
@@ -1763,24 +1778,19 @@ function formatMockProjects(mockProjects) {
   return { projects, projectTypes };
 }
 
-// Генерация типов проектов
+// Генерация типов проектов (без пункта «all» — его рисует UI ProjectsList)
 function generateProjectTypes(projects) {
-  const types = [{ id: 'all', label: 'Все проекты', count: projects.length }];
   const typeCounts = {};
-  
-  projects.forEach(project => {
+
+  projects.forEach((project) => {
     typeCounts[project.type] = (typeCounts[project.type] || 0) + 1;
   });
-  
-  Object.entries(typeCounts).forEach(([type, count]) => {
-    types.push({
-      id: type,
-      label: PROJECT_TYPE_MAP[type] || 'Другое',
-      count: count
-    });
-  });
-  
-  return types;
+
+  return Object.entries(typeCounts).map(([type, count]) => ({
+    id: type,
+    label: PROJECT_TYPE_MAP[type] || 'Другое',
+    count,
+  }));
 }
 
 // Очистка цены для API

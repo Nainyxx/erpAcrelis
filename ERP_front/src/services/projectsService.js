@@ -117,7 +117,7 @@ const loadMockData = async () => {
 };
 
 // Функция для получения списка проектов
-export const getProjectsList = async (useMockData = true) => {
+export const getProjectsList = async (useMockData = false) => {
   console.log('🔄 getProjectsList запущен, useMockData:', useMockData);
   
   try {
@@ -255,7 +255,7 @@ export const getProjectsList = async (useMockData = true) => {
 };
 
 // Функция для получения данных конкретного проекта (для ProjectCard, GanttChart, KanbanTasks)
-export const getProjectById = async (projectId, useMockData = true) => {
+export const getProjectById = async (projectId, useMockData = false) => {
   console.log('🔄 getProjectById запущен, ID:', projectId);
   
   try {
@@ -327,7 +327,7 @@ export const getProjectById = async (projectId, useMockData = true) => {
 };
 
 // Функция для получения данных проекта по URL
-export const getProjectFromUrl = async (useMockData = true) => {
+export const getProjectFromUrl = async (useMockData = false) => {
   const projectId = getProjectIdFromUrl();
   if (!projectId) return null;
   
@@ -418,7 +418,7 @@ const calculateProgressFromStatus = (status) => {
 };
 
 // Обновленная функция getMyTasks с поддержкой API
-export const getMyTasks = async (userId, useMockData = true) => {
+export const getMyTasks = async (userId, useMockData = false) => {
   console.log('🔄 getMyTasks запущен, userId:', userId, 'useMockData:', useMockData);
   
   try {

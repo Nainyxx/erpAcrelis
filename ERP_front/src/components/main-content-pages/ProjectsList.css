@@ -5,7 +5,7 @@
   min-height: calc(100vh - 9vh);
   width: 100%;
   box-sizing: border-box;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
 }
 
 .pl-visually-hidden {
@@ -210,11 +210,18 @@
 }
 
 .btn-create-project {
-  
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   align-items: center;
   gap: 1vh;
   flex-shrink: 0;
+}
+
+.btn-create-project > button {
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
 }
 
 .projects-toolbar-search-wrap {
@@ -229,7 +236,8 @@
   border: 0.1vh solid #d1ecec;
   border-radius: 1vh;
   padding: 0 1.2vh 0 1.4vh;
-  height: 4vh;
+  height: 4.8vh;
+  max-height: 4.8vh;
 }
 
 .projects-toolbar-search-icon {
@@ -242,11 +250,18 @@
 .projects-toolbar-search {
   flex: 1;
   min-width: 0;
-  height: 100%;
+  align-self: stretch;
+  min-height: 0 !important;
+  height: 100% !important;
+  max-height: 100%;
   border: none !important;
   background: transparent !important;
-  padding-left: 0 !important;
-  padding-right: 1vh !important;
+  padding: 0 1vh 0 0 !important;
+  line-height: 1.35;
+}
+
+.projects-toolbar-search-wrap .search-input.projects-toolbar-search {
+  min-height: 0 !important;
 }
 
 .projects-toolbar-search:focus {
@@ -271,10 +286,11 @@
   background: #E7F6F6 url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") no-repeat right 1.5vh center/1.6vh;
   border: 0.1vh solid #D1ECEC;
   border-radius: 1vh;
-  padding: 1.2vh 2vh;
-  padding-right: 4.5vh;
+  padding: 0.45vh 4.5vh 0.45vh 2vh;
   font-size: 1.6vh;
-  height: 4vh;
+  line-height: 1.35;
+  min-height: 4.8vh;
+  height: auto;
   outline: none;
   transition: all 0.3s ease;
   color: #333;
@@ -327,9 +343,11 @@
   background: #E7F6F6;
   border: 0.1vh solid #D1ECEC;
   border-radius: 1vh;
-  padding: 1.2vh 2vh;
+  padding: 0.45vh 2vh;
   font-size: 1.6vh;
-  height: 4vh;
+  line-height: 1.35;
+  min-height: 4.8vh;
+  height: auto;
   outline: none;
   transition: border-color 0.3s;
   color: #333;
@@ -345,7 +363,7 @@
 }
 
 .projects-toolbar-btn-primary {
-  background: #4ecdc4;
+  background: #6EDCE1;
   color: #fff;
   border: none;
   border-radius: 1vh;

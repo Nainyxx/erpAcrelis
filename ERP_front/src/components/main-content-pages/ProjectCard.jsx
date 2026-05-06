@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { useDropzone } from 'react-dropzone';
 import './ProjectCard.css';
+import uploadCloudIcon from '../../assets/download-files.svg';
+import trashcanIcon from '../../assets/trashcan.svg';
 import { getProjectById, updateProject, uploadFileToProject, addPerformerToProject, getProjectLogs, getStaffList } from '../../services/api/api';
 import { PROJECT_ACTIONS_ALLOWED_ROLES } from '../../constants/roles';
 
@@ -417,8 +420,7 @@ const ProjectCard = ({ useMockData = false }) => {
     }
   };
 
-  const handleFileUpload = async (event) => {
-    const file = event.target.files[0];
+  const uploadProjectFile = useCallback(async (file) => {
     if (!file || !project) return;
 
     setUploadingFile(true);
@@ -430,14 +432,35 @@ const ProjectCard = ({ useMockData = false }) => {
       await loadProjectAndLogs();
 
 
-      event.target.value = null;
-
     } catch (error) {
       alert(`Ошибка загрузки файла: ${error.message}`);
     } finally {
       setUploadingFile(false);
     }
+  }, [project, useMockData]);
+
+  const handleFileUpload = async (event) => {
+    const file = event.target.files[0];
+    await uploadProjectFile(file);
+    event.target.value = null;
   };
+
+  const onProjectFileDrop = useCallback(async (acceptedFiles) => {
+    if (!acceptedFiles || acceptedFiles.length === 0) return;
+    await uploadProjectFile(acceptedFiles[0]);
+  }, [uploadProjectFile]);
+
+  const {
+    getRootProps: getProjectDropzoneRootProps,
+    getInputProps: getProjectDropzoneInputProps,
+    isDragActive: isProjectFileDragActive
+  } = useDropzone({
+    onDrop: onProjectFileDrop,
+    noClick: true,
+    noKeyboard: true,
+    multiple: false,
+    disabled: uploadingFile || !canManageProjectActions
+  });
 
   const handleDownloadFile = async (file) => {
     if (!file.file) {
@@ -496,6 +519,39 @@ const ProjectCard = ({ useMockData = false }) => {
       } catch (fallbackError) {
         alert('Не удалось скачать файл. Попробуйте позже или обратитесь к администратору.');
       }
+    }
+  };
+
+  const handleDeleteFile = async (file) => {
+    if (!file?.id) {
+      alert('Не удалось определить файл для удаления');
+      return;
+    }
+
+    const fileName = file.name || file.originalName || 'этот файл';
+    const isConfirmed = window.confirm(`Удалить файл "${fileName}"?`);
+
+    if (!isConfirmed) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await fetch(`https://api.acrelis.ru/staff/staff/${file.id}/`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || `Ошибка удаления: ${response.status}`);
+      }
+
+      await loadProjectAndLogs();
+    } catch (error) {
+      alert('Не удалось удалить файл. Попробуйте позже.');
     }
   };
 
@@ -981,26 +1037,26 @@ const ProjectCard = ({ useMockData = false }) => {
               </div>
             </div>
 
-            <div className="files-tile_project_card">
+            <div
+              className={`files-tile_project_card ${isProjectFileDragActive ? 'files-drop-active_project_card' : ''}`}
+              {...getProjectDropzoneRootProps()}
+            >
+              <input {...getProjectDropzoneInputProps()} />
               <div className="files-content_project_card">
                 <div className="files-header_project_card">
                   <h3>Файлы проекта</h3>
-                  {canManageProjectActions && (
-                    <button
-                      className="add-btn_project_card"
-                      onClick={handleAddFile}
-                      disabled={uploadingFile}
-                    >
-                      {uploadingFile ? 'Загрузка...' : '+ Загрузить файлы'}
-                    </button>
-                  )}
                 </div>
                 <div className="files-list_project_card">
                   {project.files?.map(file => {
                     const fileName = file.name || file.originalName || (file.file ? file.file.split('/').pop() : 'Файл');
 
                     return (
-                      <div key={file.id} className="file-item_project_card">
+                      <div
+                        key={file.id}
+                        className="file-item_project_card"
+                        onClick={() => handleDownloadFile(file)}
+                        title="Скачать файл"
+                      >
                         <div className="file-details_project_card">
                           <span className="file-name_project_card" title={fileName}>
                             {fileName}
@@ -1013,10 +1069,13 @@ const ProjectCard = ({ useMockData = false }) => {
                         </div>
                         <button
                           className="file-download_project_card"
-                          onClick={() => handleDownloadFile(file)}
-                          title="Скачать файл"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteFile(file);
+                          }}
+                          title="Удалить файл"
                         >
-                          ↓
+                          <img src={trashcanIcon} alt="Удалить файл" className="file-delete-icon_project_card" />
                         </button>
                       </div>
                     );
@@ -1025,6 +1084,24 @@ const ProjectCard = ({ useMockData = false }) => {
                 <div className="files-count_project_card">
                   Всего файлов: {project.files?.length || 0}
                 </div>
+                {canManageProjectActions && (
+                  <div className={`files-drop-hint_project_card ${isProjectFileDragActive ? 'is-active_project_card' : ''}`}>
+                    <img
+                      src={uploadCloudIcon}
+                      alt="Загрузка файлов"
+                      className="files-drop-icon_project_card"
+                    />
+                    <div className="files-drop-or_project_card">ИЛИ</div>
+                    <button
+                      type="button"
+                      className="files-drop-btn_project_card"
+                      onClick={handleAddFile}
+                      disabled={uploadingFile}
+                    >
+                      {uploadingFile ? 'Загрузка...' : 'Загрузить файлы'}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
