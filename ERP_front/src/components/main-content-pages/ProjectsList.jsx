@@ -62,14 +62,30 @@ const buildProjectsQueryString = (selectedType, selectedStatus, searchQuery) => 
   return params.toString();
 };
 
+/** Читает фильтры из query до первого fetch — тот же контракт, что и sync useEffect ниже */
+const parseFiltersFromSearch = (searchStr) => {
+  const params = new URLSearchParams(searchStr || '');
+  const typeParam = params.get('type');
+  const selectedType = typeParam && typeParam !== 'all' ? typeParam : 'all';
+  const statusParam = params.get('status');
+  const selectedStatus =
+    statusParam && PROJECT_STATUS.some((s) => s.id === statusParam) ? statusParam : 'all';
+  const searchParam = params.get('search');
+  const searchQuery =
+    searchParam != null && searchParam !== '' ? searchParam : '';
+  return { selectedType, selectedStatus, searchQuery };
+};
+
 const ProjectsList = ({ useMockData = false, showNotification }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [searchInput, setSearchInput] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedType, setSelectedType] = useState('all');
-  const [selectedStatus, setSelectedStatus] = useState('all'); // Новый фильтр по статусу
+  const initialFromQuery = parseFiltersFromSearch(location.search);
+
+  const [searchInput, setSearchInput] = useState(initialFromQuery.searchQuery);
+  const [searchQuery, setSearchQuery] = useState(initialFromQuery.searchQuery);
+  const [selectedType, setSelectedType] = useState(initialFromQuery.selectedType);
+  const [selectedStatus, setSelectedStatus] = useState(initialFromQuery.selectedStatus);
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -92,27 +108,11 @@ const ProjectsList = ({ useMockData = false, showNotification }) => {
   const searchTimeoutRef = useRef(null);
 
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const typeParam = params.get('type');
-    if (typeParam && typeParam !== 'all') {
-      setSelectedType(typeParam);
-    } else {
-      setSelectedType('all');
-    }
-    const statusParam = params.get('status');
-    if (statusParam && PROJECT_STATUS.some((s) => s.id === statusParam)) {
-      setSelectedStatus(statusParam);
-    } else {
-      setSelectedStatus('all');
-    }
-    const searchParam = params.get('search');
-    if (searchParam != null && searchParam !== '') {
-      setSearchQuery(searchParam);
-      setSearchInput(searchParam);
-    } else {
-      setSearchQuery('');
-      setSearchInput('');
-    }
+    const next = parseFiltersFromSearch(location.search);
+    setSelectedType(next.selectedType);
+    setSelectedStatus(next.selectedStatus);
+    setSearchQuery(next.searchQuery);
+    setSearchInput(next.searchQuery);
   }, [location.search]);
 
   useEffect(() => {
