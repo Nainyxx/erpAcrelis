@@ -9,8 +9,10 @@ import {
   getProjects, 
   getStaffList 
 } from '../../services/api/api';
+import { getDirectorsList } from '../../services/api/staffApi';
 import './MyTasks.css';
 import { MY_TASKS_NAV_QUERY_STORAGE_KEY } from '../../constants/navigationKeys';
+import { PROJECT_ACTIONS_ALLOWED_ROLES } from '../../constants/roles';
 
 // Константы статусов задач
 const TASK_STATUS_MAP = {
@@ -82,6 +84,8 @@ const savePageToStorage = (page) => {
 const MyTasks = ({ useMockData = false }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const userRole = localStorage.getItem('role');
+  const canCreateTask = PROJECT_ACTIONS_ALLOWED_ROLES.includes(userRole);
   
   // Получаем текущего пользователя
   const [currentUser, setCurrentUser] = useState(null);
@@ -123,6 +127,7 @@ const MyTasks = ({ useMockData = false }) => {
   // Данные для автодополнения
   const [allProjects, setAllProjects] = useState([]);
   const [allStaff, setAllStaff] = useState([]);
+  const [allDirectors, setAllDirectors] = useState([]);
   const [projectSuggestions, setProjectSuggestions] = useState([]);
   const [performerSuggestions, setPerformerSuggestions] = useState([]);
   const [directorSuggestions, setDirectorSuggestions] = useState([]);
@@ -145,8 +150,14 @@ const MyTasks = ({ useMockData = false }) => {
   }, [useMockData]);
 
   const directorFilterOptions = useMemo(
-    () => [{ id: 'all', label: 'Все руководители' }, ...performers.slice(1)],
-    [performers]
+    () => [
+      { id: 'all', label: 'Все руководители' },
+      ...allDirectors.map((director) => ({
+        id: String(director.id),
+        label: director.name
+      }))
+    ],
+    [allDirectors]
   );
 
   const projectFilterOptions = useMemo(
@@ -250,6 +261,27 @@ const MyTasks = ({ useMockData = false }) => {
     try {
       const staffResult = await getStaffList(useMockData);
       const staffData = staffResult.employees || [];
+      let directorsData = [];
+
+      try {
+        const directorsResult = await getDirectorsList();
+        const directorsRaw = Array.isArray(directorsResult)
+          ? directorsResult
+          : directorsResult?.results || [];
+
+        directorsData = directorsRaw
+          .map((director) => ({
+            id:
+              director.id ??
+              director.staff_id ??
+              director.user_id ??
+              null,
+            name: director.name || director.full_name || director.username || ''
+          }))
+          .filter((director) => director.id != null && director.name);
+      } catch {
+        directorsData = staffData;
+      }
       
       // Создаем список исполнителей
       const performersList = [
@@ -262,6 +294,7 @@ const MyTasks = ({ useMockData = false }) => {
       
       setPerformers(performersList);
       setAllStaff(staffData);
+      setAllDirectors(directorsData);
       
     } catch (error) {
     }
@@ -413,6 +446,9 @@ const MyTasks = ({ useMockData = false }) => {
 
   // Функции для работы с модальным окном
   const openCreateModal = () => {
+    if (!PROJECT_ACTIONS_ALLOWED_ROLES.includes(localStorage.getItem('role'))) {
+      return;
+    }
     setShowCreateModal(true);
     setCreateError('');
     setNewTask({
@@ -475,7 +511,7 @@ const MyTasks = ({ useMockData = false }) => {
     
     if (value.length > 1) {
       const searchTerm = value.toLowerCase().trim();
-      const filtered = allStaff.filter(staff => 
+      const filtered = allDirectors.filter(staff => 
         staff.name.toLowerCase().includes(searchTerm)
       ).slice(0, 5);
       
@@ -537,6 +573,9 @@ const MyTasks = ({ useMockData = false }) => {
   }, [showProjectSuggestions, showPerformerSuggestions, showDirectorSuggestions]);
 
   const handleCreateTask = async () => {
+    if (!PROJECT_ACTIONS_ALLOWED_ROLES.includes(localStorage.getItem('role'))) {
+      return;
+    }
     // Валидация
     if (!newTask.name.trim()) {
       setCreateError('Название задачи обязательно');
@@ -580,7 +619,7 @@ const MyTasks = ({ useMockData = false }) => {
 
     // Проверяем руководителя
     if (newTask.directorName && !newTask.director) {
-      const foundDirector = allStaff.find(staff => 
+      const foundDirector = allDirectors.find(staff => 
         staff.name.toLowerCase() === newTask.directorName.toLowerCase() ||
         staff.name.toLowerCase().includes(newTask.directorName.toLowerCase())
       );
@@ -850,23 +889,31 @@ const MyTasks = ({ useMockData = false }) => {
             </div>
           </div>
           
-          <button className="create-task-btn" onClick={openCreateModal}>
-            Создать задачу
-          </button>
+          {canCreateTask && (
+            <button className="create-task-btn" onClick={openCreateModal}>
+              Создать задачу
+            </button>
+          )}
         </div>
 
         <div className="no-tasks-message_gantt_class">
           <div className="no-tasks-content_gantt_class">
             <span className="no-tasks-icon_gantt_class">📋</span>
             <h4>Задач пока нет</h4>
-            <p>Создайте первую задачу или выберите другого исполнителя</p>
-            <button 
-              onClick={openCreateModal}
-              className="gantt-back-btn_gantt_class"
-              style={{ marginTop: '2vh' }}
-            >
-              Создать задачу
-            </button>
+            <p>
+              {canCreateTask
+                ? 'Создайте первую задачу или выберите другого исполнителя'
+                : 'Выберите другого исполнителя или измените фильтры'}
+            </p>
+            {canCreateTask && (
+              <button 
+                onClick={openCreateModal}
+                className="gantt-back-btn_gantt_class"
+                style={{ marginTop: '2vh' }}
+              >
+                Создать задачу
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -949,9 +996,11 @@ const MyTasks = ({ useMockData = false }) => {
           </div>
         </div>
         
-        <button className="create-task-btn" onClick={openCreateModal}>
-          Создать задачу
-        </button>
+        {canCreateTask && (
+          <button className="create-task-btn" onClick={openCreateModal}>
+            Создать задачу
+          </button>
+        )}
       </div>
 
       <div className="tasks-table">
@@ -1082,7 +1131,7 @@ const MyTasks = ({ useMockData = false }) => {
       )}
 
       {/* Модальное окно создания задачи */}
-      {showCreateModal && (
+      {canCreateTask && showCreateModal && (
         <div className="modal-overlay123">
           <div className="modal-content123">
             <div className="modal-header123">

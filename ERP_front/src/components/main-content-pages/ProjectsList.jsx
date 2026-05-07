@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getProjects, createProject } from '../../services/api/api';
 import { PROJECTS_NAV_QUERY_STORAGE_KEY } from '../../constants/navigationKeys';
+import { PROJECT_ACTIONS_ALLOWED_ROLES } from '../../constants/roles';
 import './ProjectsList.css';
 
 const PROJECTS_PER_PAGE = 20;
@@ -79,6 +80,8 @@ const parseFiltersFromSearch = (searchStr) => {
 const ProjectsList = ({ useMockData = false, showNotification }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const userRole = localStorage.getItem('role');
+  const canCreateProject = PROJECT_ACTIONS_ALLOWED_ROLES.includes(userRole);
 
   const initialFromQuery = parseFiltersFromSearch(location.search);
 
@@ -219,6 +222,9 @@ const ProjectsList = ({ useMockData = false, showNotification }) => {
 
   // ОБРАБОТЧИК СОЗДАНИЯ ПРОЕКТА
   const handleCreateProject = async () => {
+    if (!PROJECT_ACTIONS_ALLOWED_ROLES.includes(localStorage.getItem('role'))) {
+      return;
+    }
     if (!newProject.name.trim() || !newProject.customer.trim() || !newProject.deadline) {
       setCreateError('Заполните обязательные поля: Название, Заказчик, Дедлайн');
       return;
@@ -461,14 +467,15 @@ const ProjectsList = ({ useMockData = false, showNotification }) => {
         </div>
 
         <div className="btn-create-project">
-          <button
-            type="button"
-            className="projects-toolbar-btn-primary"
-            onClick={() => setShowCreateModal(true)}
-
-          >
-            Создать проект
-          </button>
+          {canCreateProject && (
+            <button
+              type="button"
+              className="projects-toolbar-btn-primary"
+              onClick={() => setShowCreateModal(true)}
+            >
+              Создать проект
+            </button>
+          )}
           <button type="button" className="btn-operations" onClick={() => navigate('/operations')}>
             Операции
           </button>
@@ -521,7 +528,7 @@ const ProjectsList = ({ useMockData = false, showNotification }) => {
       </div>
 
       {/* МОДАЛЬНОЕ ОКНО СОЗДАНИЯ ПРОЕКТА */}
-      {showCreateModal && (
+      {canCreateProject && showCreateModal && (
         <div className="modal-overlay123">
           <div className="modal-content123">
             <div className="modal-header123">

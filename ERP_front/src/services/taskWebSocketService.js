@@ -1,4 +1,6 @@
 // services/taskWebSocketService.js
+import { createTaskCommentsSocket } from './api/taskCommentsWsApi';
+import { getAccessToken } from './api/tokenStore';
 
 class TaskWebSocketService {
     constructor(taskId, options = {}) {
@@ -44,7 +46,7 @@ class TaskWebSocketService {
     getAuthToken() {
         try {
             // Получаем токен из localStorage
-            const token = localStorage.getItem('access_token');
+            const token = getAccessToken();
             
             if (!token) {
                 return null;
@@ -88,11 +90,8 @@ class TaskWebSocketService {
         }
         
         // Формируем правильный URL
-        const wsUrl = `wss://api.acrelis.ru/ws/task/${this.taskId}/comments/?token=${encodeURIComponent(token)}`;
-        
-        
         try {
-            this.ws = new WebSocket(wsUrl);
+            this.ws = createTaskCommentsSocket(this.taskId, token);
             
             this.ws.onopen = this.handleOpen.bind(this);
             this.ws.onmessage = this.handleMessage.bind(this);

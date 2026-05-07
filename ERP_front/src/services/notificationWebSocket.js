@@ -1,4 +1,8 @@
 // ERP_front/src/services/notificationWebSocket.js
+import { createNotificationSocket } from './api/notificationWsApi';
+import { refreshWsToken } from './api/wsClient';
+import { getAccessToken, getRefreshToken, saveTokens } from './api/tokenStore';
+
 class NotificationWebSocket {
   constructor() {
     this.socket = null;
@@ -26,7 +30,7 @@ class NotificationWebSocket {
     this.isConnecting = true;
     this.notifyStatusChange('connecting');
     
-    const token = localStorage.getItem('access_token');
+    const token = getAccessToken();
     
     if (!token) {
       this.isConnecting = false;
@@ -40,11 +44,8 @@ class NotificationWebSocket {
       return;
     }
 
-    const wsUrl = `wss://api.acrelis.ru/ws/notifications/?token=${encodeURIComponent(token)}`;
-    
-    
     try {
-      this.socket = new WebSocket(wsUrl);
+      this.socket = createNotificationSocket(token);
       
       this.socket.onopen = (event) => this.handleOpen(event);
       this.socket.onmessage = (event) => this.handleMessage(event);
@@ -155,31 +156,22 @@ class NotificationWebSocket {
   async handleTokenExpired() {
     
     try {
-      const refreshToken = localStorage.getItem('refresh_token');
+      const refreshToken = getRefreshToken();
       
       if (!refreshToken) {
         this.notifyStatusChange('error', 'Login required');
         return;
       }
       
-      const response = await fetch('https://api.acrelis.ru/api/token/refresh/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ refresh: refreshToken })
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem('access_token', data.access);
+      if (refreshToken) {
+        const newAccessToken = await refreshWsToken();
+        saveTokens({ access: newAccessToken, refresh: refreshToken });
         
         setTimeout(() => {
           if (this.shouldReconnect && !this.isManuallyDisconnected) {
             this.connect();
           }
         }, 1000);
-        
       } else {
         this.notifyStatusChange('error', 'Session expired');
         

@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import NotificationIcon from "../../assets/nav-logo-notification.svg";
 import AccountIcon from "../../assets/icon-account.svg";
-import { clearTokens, authFetch } from "../../services/api/api";
+import { clearTokens } from "../../services/api/api";
+import { fetchStaffById } from "../../services/api/staffApi";
 import './Header.css';
 
 function Header({ currentUser }) {
@@ -20,15 +21,9 @@ function Header({ currentUser }) {
 
         setIsLoading(true);
         try {
-            const response = await authFetch(`https://api.acrelis.ru/staff/staff/${staffId}/`, {
-                method: 'GET'
-            });
-
-            if (response.ok) {
-                const userData = await response.json();
-                if (userData.image || userData.image_url) {
-                    setUserAvatar(userData.image || userData.image_url);
-                }
+            const userData = await fetchStaffById(staffId);
+            if (userData.image || userData.image_url) {
+                setUserAvatar(userData.image || userData.image_url);
             }
         } catch (error) {
         } finally {

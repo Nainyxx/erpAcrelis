@@ -5,6 +5,7 @@ import './ProjectCard.css';
 import uploadCloudIcon from '../../assets/download-files.svg';
 import trashcanIcon from '../../assets/trashcan.svg';
 import { getProjectById, updateProject, uploadFileToProject, addPerformerToProject, getProjectLogs, getStaffList } from '../../services/api/api';
+import { deleteProjectFileById, downloadProjectFile } from '../../services/api/projectsApi';
 import { PROJECT_ACTIONS_ALLOWED_ROLES } from '../../constants/roles';
 
 const ProjectCard = ({ useMockData = false }) => {
@@ -472,21 +473,7 @@ const ProjectCard = ({ useMockData = false }) => {
     const fileName = file.originalName || file.name || fileUrl.split('/').pop() || 'file.txt';
 
     try {
-      const token = localStorage.getItem('access_token');
-
-      const response = await fetch(fileUrl, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/octet-stream'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`Ошибка загрузки файла: ${response.status}`);
-      }
-
-      const blob = await response.blob();
+      const blob = await downloadProjectFile(fileUrl);
       const blobUrl = window.URL.createObjectURL(blob);
 
       const a = document.createElement('a');
@@ -536,18 +523,7 @@ const ProjectCard = ({ useMockData = false }) => {
     }
 
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`https://api.acrelis.ru/staff/staff/${file.id}/`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || `Ошибка удаления: ${response.status}`);
-      }
+      await deleteProjectFileById(file.id);
 
       await loadProjectAndLogs();
     } catch (error) {

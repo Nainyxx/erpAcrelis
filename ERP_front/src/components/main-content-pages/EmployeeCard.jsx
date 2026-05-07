@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getEmployeeById, authFetch, getStaffMediaUrl } from '../../services/api/api';
+import { getEmployeeById, getStaffMediaUrl } from '../../services/api/api';
+import { fetchStaffById } from '../../services/api/staffApi';
 import { AccountProjectsPanel } from '../shared/AccountProjectsPanel';
 import './AccountPage.css';
 import './EmployeeCard.css';
@@ -129,15 +130,7 @@ const EmployeeCard = ({ useMockData = false }) => {
         throw new Error('Не указан ID сотрудника');
       }
 
-      const response = await authFetch(`https://api.acrelis.ru/staff/staff/${employeeId}/`, {
-        method: 'GET'
-      });
-
-      if (!response.ok) {
-        throw new Error(`Ошибка загрузки: ${response.status}`);
-      }
-
-      const employeeData = await response.json();
+      const employeeData = await fetchStaffById(employeeId);
 
       if (!employeeData || !employeeData.id) {
         throw new Error('Сотрудник не найден');

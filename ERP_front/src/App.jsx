@@ -50,10 +50,10 @@ function PrivateRoute({ children }) {
   useEffect(() => {
     const checkAuth = async () => {
       setLoading(true);
-      
+
       // Даем небольшую задержку для плавности
       await new Promise(resolve => setTimeout(resolve, 300));
-      
+
       const authenticated = isAuthenticated();
       setIsAuth(authenticated);
       setLoading(false);
@@ -94,7 +94,7 @@ function MainLayout({ children, currentUser }) {
       <div className='header-container'>
         <Header currentUser={currentUser} />
       </div>
-      
+
       <div className='main-container'>
         <div className="sidebar-wrapper">
           <SideBar currentUser={currentUser} />
@@ -114,12 +114,12 @@ function MainLayout({ children, currentUser }) {
 function KanbanPage({ useMockData, showNotification }) {
   const { projectId } = useParams();
   const navigate = useNavigate();
-  
+
   if (!projectId) {
     return (
-      <div style={{padding: '30px'}}>
+      <div style={{ padding: '30px' }}>
         <h2>Проект не найден</h2>
-        <button 
+        <button
           onClick={() => navigate('/projects')}
           style={{
             padding: '10px 20px',
@@ -136,9 +136,9 @@ function KanbanPage({ useMockData, showNotification }) {
       </div>
     );
   }
-  
+
   return (
-    <KanbanTasks 
+    <KanbanTasks
       useMockData={useMockData}
       showNotification={showNotification}
     />
@@ -148,12 +148,12 @@ function KanbanPage({ useMockData, showNotification }) {
 function GanttPage({ useMockData, showNotification }) {
   const { projectId } = useParams();
   const navigate = useNavigate();
-  
+
   if (!projectId) {
     return (
-      <div style={{padding: '30px'}}>
+      <div style={{ padding: '30px' }}>
         <h2>Проект не найден</h2>
-        <button 
+        <button
           onClick={() => navigate('/projects')}
           style={{
             padding: '10px 20px',
@@ -170,9 +170,9 @@ function GanttPage({ useMockData, showNotification }) {
       </div>
     );
   }
-  
+
   return (
-    <GanttChart2 
+    <GanttChart2
       useMockData={useMockData}
       showNotification={showNotification}
     />
@@ -199,7 +199,7 @@ function App() {
     <div className='App'>
       {/* Контейнер для WebSocket уведомлений */}
       {shouldShowWebSocketNotifications() && <NotificationContainer />}
-      
+
       <Routes>
         {/* Главная страница - сразу на проекты, PrivateRoute сам решит что делать */}
         <Route path="/" element={
@@ -207,22 +207,22 @@ function App() {
             <Navigate to="/projects" replace />
           </PrivateRoute>
         } />
-        
+
         {/* Публичные маршруты */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegistrationPageStart />} />
         <Route path="/register/step2" element={<RegistrationPageEnd />} />
-        
+
         {/* Приглашения по токену */}
-        <Route 
-          path="/staff/register/invite/:token" 
-          element={<InviteRegistrationStart />} 
+        <Route
+          path="/staff/register/invite/:token"
+          element={<InviteRegistrationStart />}
         />
-        <Route 
-          path="/staff/register/invite/:token/step2" 
-          element={<InviteRegistrationEnd />} 
+        <Route
+          path="/staff/register/invite/:token/step2"
+          element={<InviteRegistrationEnd />}
         />
-        
+
         {/* Защищённые маршруты */}
         <Route path="/*" element={
           <PrivateRoute>
@@ -230,108 +230,108 @@ function App() {
               <Routes>
                 {/* Главная страница */}
                 <Route path="/" element={<Navigate to="/projects" replace />} />
-                
+
                 {/* Страница аккаунта */}
                 <Route path="/account" element={
                   <AccountPage
                     useMockData={useMockData}
-                    showNotification={() => {}}
+                    showNotification={() => { }}
                   />
                 } />
-                
+
                 {/* Список проектов */}
                 <Route path="/projects" element={
-                  <ProjectsList 
+                  <ProjectsList
                     useMockData={useMockData}
-                    showNotification={() => {}}
+                    showNotification={() => { }}
                   />
                 } />
-                
+
                 {/* Финансы проекта (заглушка) — до /projects/:projectId, иначе finans съестся как id */}
                 <Route path="/projects/finans/:projectId" element={<ProjectFinancesPage />} />
 
                 {/* Карточка проекта */}
                 <Route path="/projects/:projectId" element={
-                  <ProjectCard 
+                  <ProjectCard
                     useMockData={useMockData}
-                    showNotification={() => {}}
+                    showNotification={() => { }}
                   />
                 } />
-                
+
                 {/* Канбан задач */}
                 <Route path="/kanban/:projectId" element={
-                  <KanbanPage 
+                  <KanbanPage
                     useMockData={useMockData}
-                    showNotification={() => {}}
+                    showNotification={() => { }}
                   />
                 } />
-                
+
                 {/* Диаграмма Ганта */}
                 <Route path="/gantt/:projectId" element={
-                  <GanttPage 
+                  <GanttPage
                     useMockData={useMockData}
-                    showNotification={() => {}}
+                    showNotification={() => { }}
                   />
                 } />
-                
+
                 {/* Страница моих задач */}
                 <Route path="/my-tasks" element={
-                  <MyTasks 
-                    useMockData={useMockData} 
-                    showNotification={() => {}}
+                  <MyTasks
+                    useMockData={useMockData}
+                    showNotification={() => { }}
                   />
                 } />
 
                 {/* Расписание */}
                 <Route path="/schedule" element={<SchedulePage />} />
-                
+
                 {/* Карточка задачи */}
                 <Route path="/tasks/:taskId" element={
-                  <TaskCard 
+                  <TaskCard
                     useMockData={useMockData}
-                    showNotification={() => {}}
+                    showNotification={() => { }}
                   />
                 } />
-                
+
                 {/* Карточка задачи через канбан */}
                 <Route path="/kanban/:projectId/:taskId" element={
-                  <TaskCard 
+                  <TaskCard
                     useMockData={useMockData}
-                    showNotification={() => {}}
+                    showNotification={() => { }}
                   />
                 } />
 
                 {/* Карточка задачи через Гант */}
                 <Route path="/gantt/:projectId/:taskId" element={
-                  <TaskCard 
+                  <TaskCard
                     useMockData={useMockData}
-                    showNotification={() => {}}
+                    showNotification={() => { }}
                   />
                 } />
-                
+
                 {/* Операции — finans до /operations, иначе :staffId съестся */}
                 <Route path="/operations/finans/:staffId" element={<StaffFinancesPage />} />
                 <Route path="/operations" element={
-                  <OperationsPage showNotification={() => {}} />
+                  <OperationsPage showNotification={() => { }} />
                 } />
                 <Route path="/accounting" element={<Navigate to="/operations" replace />} />
-                
+
                 {/* Список сотрудников */}
                 <Route path="/staff" element={
-                  <StaffList 
+                  <StaffList
                     useMockData={useMockData}
-                    showNotification={() => {}}
+                    showNotification={() => { }}
                   />
                 } />
-                
+
                 {/* Карточка сотрудника */}
                 <Route path="/staff/:employeeId" element={
-                  <EmployeeCard 
+                  <EmployeeCard
                     useMockData={useMockData}
-                    showNotification={() => {}}
+                    showNotification={() => { }}
                   />
                 } />
-                
+
                 {/* 404 - перенаправляем на проекты */}
                 <Route path="*" element={<Navigate to="/projects" replace />} />
               </Routes>
