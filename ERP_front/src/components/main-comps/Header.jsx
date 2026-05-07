@@ -2,8 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import NotificationIcon from "../../assets/nav-logo-notification.svg";
 import AccountIcon from "../../assets/icon-account.svg";
-import { clearTokens } from "../../services/api/api";
-import { fetchStaffById } from "../../services/api/staffApi";
+import { clearTokens, fetchStaffById } from "../../services/api";
 import './Header.css';
 
 function Header({ currentUser }) {

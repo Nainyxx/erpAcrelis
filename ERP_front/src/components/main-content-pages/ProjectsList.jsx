@@ -1,9 +1,10 @@
 // ERP_front/src/components/main-content-pages/ProjectsList.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { getProjects, createProject } from '../../services/api/api';
+import { getProjects, createProject } from '../../services/api';
 import { PROJECTS_NAV_QUERY_STORAGE_KEY } from '../../constants/navigationKeys';
 import { PROJECT_ACTIONS_ALLOWED_ROLES } from '../../constants/roles';
+import CreateEntityModal from '../shared/CreateEntityModal';
 import './ProjectsList.css';
 
 const PROJECTS_PER_PAGE = 20;
@@ -528,25 +529,17 @@ const ProjectsList = ({ useMockData = false, showNotification }) => {
       </div>
 
       {/* МОДАЛЬНОЕ ОКНО СОЗДАНИЯ ПРОЕКТА */}
-      {canCreateProject && showCreateModal && (
-        <div className="modal-overlay123">
-          <div className="modal-content123">
-            <div className="modal-header123">
-              <h2>Создать новый проект</h2>
-              <button
-                className="modal-close123"
-                onClick={() => setShowCreateModal(false)}
-                disabled={creating}
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="modal-body123">
-              {createError && (
-                <div className="error-message123">{createError}</div>
-              )}
-
+      {canCreateProject && (
+        <CreateEntityModal
+          title="Создать новый проект"
+          isOpen={showCreateModal}
+          isSubmitting={creating}
+          error={createError}
+          submitLabel="Создать проект"
+          submittingLabel="Создание..."
+          onClose={() => setShowCreateModal(false)}
+          onSubmit={handleCreateProject}
+        >
               <div className="form-group123">
                 <label>Название проекта *</label>
                 <input
@@ -634,26 +627,7 @@ const ProjectsList = ({ useMockData = false, showNotification }) => {
                   <option value="cancelled">Отменен</option>
                 </select>
               </div>
-            </div>
-
-            <div className="modal-footer123">
-              <button
-                className="btn-cancel123"
-                onClick={() => setShowCreateModal(false)}
-                disabled={creating}
-              >
-                Отмена
-              </button>
-              <button
-                className="btn-create123"
-                onClick={handleCreateProject}
-                disabled={creating}
-              >
-                {creating ? 'Создание...' : 'Создать проект'}
-              </button>
-            </div>
-          </div>
-        </div>
+        </CreateEntityModal>
       )}
     </div>
   );

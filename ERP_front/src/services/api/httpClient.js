@@ -3,6 +3,12 @@ import { clearTokens, getAccessToken, getRefreshToken, saveTokens } from './toke
 
 let refreshPromise = null;
 
+function redirectToLogin() {
+  if (typeof window !== 'undefined') {
+    window.location.href = '#/login';
+  }
+}
+
 function withBase(pathOrUrl) {
   if (pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://')) {
     return pathOrUrl;
@@ -17,8 +23,9 @@ export async function refreshAccessToken() {
     const refresh = getRefreshToken();
     const access = getAccessToken();
 
-    if (!refresh || !access) {
+    if (!refresh || !access || access === '') {
       clearTokens();
+      redirectToLogin();
       throw new Error('Требуется повторная авторизация');
     }
 
@@ -33,13 +40,23 @@ export async function refreshAccessToken() {
     });
 
     if (!response.ok) {
-      clearTokens();
-      throw new Error('Сессия истекла');
+      if (response.status === 401) {
+        clearTokens();
+        redirectToLogin();
+        throw new Error('Сессия истекла');
+      }
+      const errorText = await response.text();
+      throw new Error(errorText || `Ошибка обновления: ${response.status}`);
     }
 
-    const data = await response.json();
-    saveTokens(data);
-    return data.access;
+    const newTokens = await response.json();
+
+    if (!newTokens.access) {
+      throw new Error('Не получили новый токен');
+    }
+
+    saveTokens(newTokens);
+    return newTokens.access;
   })();
 
   try {
@@ -62,15 +79,35 @@ export async function authFetch(pathOrUrl, options = {}) {
   }
 
   const requestOptions = { ...options, headers };
-  const first = await fetch(url, requestOptions);
+  const response = await fetch(url, requestOptions);
 
-  if (first.status !== 401 || url.includes('auth/')) {
-    return first;
+  if (response.status !== 401) {
+    return response;
   }
 
-  const newAccess = await refreshAccessToken();
-  requestOptions.headers.Authorization = `Bearer ${newAccess}`;
-  return fetch(url, requestOptions);
+  if (url.includes('auth/')) {
+    clearTokens();
+    redirectToLogin();
+    throw new Error('Требуется повторная авторизация');
+  }
+
+  try {
+    const newAccess = await refreshAccessToken();
+    requestOptions.headers.Authorization = `Bearer ${newAccess}`;
+    const retryResponse = await fetch(url, requestOptions);
+
+    if (retryResponse.status === 401) {
+      clearTokens();
+      redirectToLogin();
+      throw new Error('Не удалось обновить сессию');
+    }
+
+    return retryResponse;
+  } catch (refreshError) {
+    clearTokens();
+    redirectToLogin();
+    throw refreshError;
+  }
 }
 
 export async function requestAuth(pathOrUrl, options = {}) {

@@ -1,20 +1,19 @@
-import React, { useId } from 'react';
+import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import './SelectFilterDropdown.css';
 
 /**
- * Универсальный выпадающий список вариантов (listbox).
- * id для trigger/listbox генерируются через useId(), при необходимости задайте triggerId / listboxId.
+ * Одиночный выбор из списка (listbox). Состояние открытия и клик снаружи — внутри компонента
+ * (как MultiSelectFilterDropdown).
  */
 export function SelectFilterDropdown({
-  labelId,
-  menuRef,
-  isOpen,
-  onToggle,
-  showPlaceholder,
-  triggerText,
-  options,
+  label,
+  labelClassName = '',
+  options = [],
   selectedId,
   onSelectOption,
+  placeholder = '',
+  showPlaceholder = false,
+  triggerText: triggerTextProp,
   triggerId: triggerIdProp,
   listboxId: listboxIdProp,
   triggerAriaLabel = 'Открыть список',
@@ -23,11 +22,63 @@ export function SelectFilterDropdown({
   const uid = useId().replace(/:/g, '');
   const triggerId = triggerIdProp ?? `select-filter-${uid}-trigger`;
   const listboxId = listboxIdProp ?? `select-filter-${uid}-listbox`;
+  const labelDomId = label ? `select-filter-${uid}-label` : undefined;
+
+  const menuRef = useRef(null);
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handlePointerDown = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handlePointerDown);
+    return () => document.removeEventListener('mousedown', handlePointerDown);
+  }, [isOpen]);
+
+  const selectedOption = useMemo(
+    () => options.find((o) => String(o.id) === String(selectedId)),
+    [options, selectedId]
+  );
+
+  const triggerText = useMemo(() => {
+    if (triggerTextProp != null && triggerTextProp !== '') return triggerTextProp;
+    if (selectedOption) return selectedOption.label;
+    if (showPlaceholder) return placeholder;
+    return '';
+  }, [triggerTextProp, selectedOption, showPlaceholder, placeholder]);
+
+  const showAsPlaceholder = showPlaceholder && !selectedOption;
+
+  const toggleOpen = () => setIsOpen((o) => !o);
+
+  const handleSelectOption = (id) => {
+    onSelectOption(id);
+    setIsOpen(false);
+  };
+
+  const rootClass = [
+    'select-filter-dropdown',
+    isOpen ? 'is-menu-open' : '',
+    label ? 'select-filter-dropdown--with-label' : '',
+    className
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return (
-    <div
-      className={`select-filter-dropdown${isOpen ? ' is-menu-open' : ''}${className ? ` ${className}` : ''}`}
-    >
+    <div className={rootClass}>
+      {label ? (
+        <label
+          id={labelDomId}
+          htmlFor={triggerId}
+          className={labelClassName || 'select-filter-dropdown__label'}
+        >
+          {label}
+        </label>
+      ) : null}
       <div className="select-filter-dropdown__inner" ref={menuRef}>
         <button
           type="button"
@@ -37,10 +88,10 @@ export function SelectFilterDropdown({
           aria-haspopup="listbox"
           aria-controls={listboxId}
           aria-label={triggerAriaLabel}
-          onClick={onToggle}
+          onClick={toggleOpen}
         >
           <span
-            className={`select-filter-dropdown__value${showPlaceholder ? ' is-placeholder' : ''}`}
+            className={`select-filter-dropdown__value${showAsPlaceholder ? ' is-placeholder' : ''}`}
           >
             {triggerText}
           </span>
@@ -67,7 +118,7 @@ export function SelectFilterDropdown({
             id={listboxId}
             className="select-filter-dropdown__panel"
             role="listbox"
-            aria-labelledby={labelId}
+            aria-labelledby={labelDomId}
           >
             {options.map((opt) => {
               const selected =
@@ -79,7 +130,7 @@ export function SelectFilterDropdown({
                   role="option"
                   aria-selected={selected}
                   className={`select-filter-dropdown__option${selected ? ' is-selected' : ''}`}
-                  onClick={() => onSelectOption(opt.id)}
+                  onClick={() => handleSelectOption(opt.id)}
                 >
                   <span className="select-filter-dropdown__option-text">
                     {opt.label}

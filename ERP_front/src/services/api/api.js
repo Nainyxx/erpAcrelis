@@ -1,6 +1,23 @@
-const API_CONFIG = {
-  BASE_URL: 'https://api.acrelis.ru/',
-  CSRF_TOKEN: 'ZvWfFB1bOKo6BawwGWwPwt2GBx1kBzoO'
+import { BASE_HTTP_URL } from './config';
+import { authFetch, refreshAccessToken } from './httpClient';
+import {
+  clearTokens,
+  clearUserData,
+  getAccessToken,
+  getRefreshToken,
+  saveTokens,
+  saveUserData
+} from './tokenStore';
+
+export {
+  clearTokens,
+  clearUserData,
+  getAccessToken,
+  getRefreshToken,
+  saveTokens,
+  saveUserData,
+  authFetch,
+  refreshAccessToken
 };
 
 const PROJECT_TYPE_MAP = {
@@ -31,7 +48,7 @@ const PROJECT_TYPE_MAP = {
 // Аутентификация пользователя
 export async function login(username, password) {
   try {
-    const response = await fetch(`${API_CONFIG.BASE_URL}auth/login/`, {
+    const response = await fetch(`${BASE_HTTP_URL}auth/login/`, {
       method: 'POST',
       headers: {
         'accept': 'application/json',
@@ -84,7 +101,7 @@ export async function login(username, password) {
 // Регистрация нового пользователя
 export async function register(userData) {
   try {
-    const response = await fetch(`${API_CONFIG.BASE_URL}auth/register/`, {
+    const response = await fetch(`${BASE_HTTP_URL}auth/register/`, {
       method: 'POST',
       headers: {
         'accept': 'application/json',
@@ -121,136 +138,6 @@ export async function register(userData) {
   }
 }
 
-
-export async function refreshAccessToken() {
-  let isRefreshing = false;
-  let refreshPromise = null;
-
-  if (isRefreshing && refreshPromise) {
-    return refreshPromise;
-  }
-
-  isRefreshing = true;
-  refreshPromise = (async () => {
-    try {
-      const refreshToken = getRefreshToken();
-      const accessToken = getAccessToken();
-
-      if (!refreshToken || !accessToken || accessToken === '') {
-        clearTokens();
-        window.location.href = '#/login';
-        throw new Error('Требуется повторная авторизация');
-      }
-
-      const response = await fetch(`${API_CONFIG.BASE_URL}auth/refresh/`, {
-        method: 'POST',
-        headers: {
-          'accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`
-        },
-        body: JSON.stringify({
-          refresh: refreshToken
-        })
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        
-        if (response.status === 401) {
-          clearTokens();
-          window.location.href = '#/login';
-          throw new Error('Сессия истекла');
-        }
-        
-        throw new Error(`Ошибка обновления: ${response.status}`);
-      }
-
-      const newTokens = await response.json();
-      
-      if (!newTokens.access) {
-        throw new Error('Не получили новый токен');
-      }
-      
-      localStorage.setItem('access_token', newTokens.access);
-      API_CONFIG.ACCESS_TOKEN = newTokens.access;
-      
-      if (newTokens.refresh) {
-        localStorage.setItem('refresh_token', newTokens.refresh);
-      }
-      
-      return newTokens.access;
-      
-    } finally {
-      isRefreshing = false;
-      refreshPromise = null;
-    }
-  })();
-  
-  return refreshPromise;
-}
-
-// Сохранение токенов в localStorage
-export function saveTokens(tokens) {
-  try {
-    localStorage.setItem('access_token', tokens.access);
-    localStorage.setItem('refresh_token', tokens.refresh);
-    API_CONFIG.ACCESS_TOKEN = tokens.access;
-  } catch (error) {
-  }
-}
-
-// Сохранение данных пользователя
-export function saveUserData(userData) {
-  try {
-    localStorage.setItem('user_id', userData.user_id?.toString() || '');
-    localStorage.setItem('staff_id', userData.staff_id?.toString() || '');
-    localStorage.setItem('username', userData.username || '');
-    localStorage.setItem('name', userData.name || '');
-    localStorage.setItem('email', userData.email || '');
-    localStorage.setItem('post', userData.post || '');
-    localStorage.setItem('department', userData.department || '');
-    localStorage.setItem('role', userData.role || userData.post || '');
-  } catch (error) {
-  }
-}
-
-// Очистка данных пользователя
-export function clearUserData() {
-  try {
-    localStorage.removeItem('user_id');
-    localStorage.removeItem('staff_id');
-    localStorage.removeItem('username');
-    localStorage.removeItem('name');
-    localStorage.removeItem('email');
-    localStorage.removeItem('post');
-    localStorage.removeItem('department');
-    localStorage.removeItem('role');
-  } catch (error) {
-  }
-}
-
-// Получение access токена
-export function getAccessToken() {
-  const token = localStorage.getItem('access_token') || API_CONFIG.ACCESS_TOKEN;
-  return token;
-}
-
-// Получение refresh токена
-export function getRefreshToken() {
-  return localStorage.getItem('refresh_token');
-}
-
-// Очистка токенов и данных пользователя
-export function clearTokens() {
-  try {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    clearUserData();
-    API_CONFIG.ACCESS_TOKEN = '';
-  } catch (error) {
-  }
-}
 
 // Проверка аутентификации пользователя
 export function isAuthenticated() {
@@ -309,74 +196,13 @@ export function getCurrentUser() {
   }
 }
 
-// Обертка для API запросов с автообновлением токена
-export async function authFetch(url, options = {}) {
-  const token = getAccessToken();
-  const headers = {
-    ...options.headers,
-    'Authorization': `Bearer ${token}`,
-    'accept': 'application/json',
-  };
-
-  if (!url.includes('auth/')) {
-    headers['X-CSRFTOKEN'] = API_CONFIG.CSRF_TOKEN;
-  }
-
-  const requestOptions = {
-    ...options,
-    headers: headers
-  };
-
-  try {
-    const response = await fetch(url, requestOptions);
-
-    // Если получили 401 - пробуем обновить токен
-    if (response.status === 401) {
-      // НЕ обновляем токен для endpoints аутентификации (это вызовет бесконечный цикл)
-      if (url.includes('auth/')) {
-        clearTokens();
-        window.location.href = '#/login';
-        throw new Error('Требуется повторная авторизация');
-      }
-
-      try {
-        const newAccessToken = await refreshAccessToken();
-
-        // Обновляем заголовок с новым токеном
-        requestOptions.headers['Authorization'] = `Bearer ${newAccessToken}`;
-
-        // Повторяем запрос с новым токеном
-        const retryResponse = await fetch(url, requestOptions);
-
-        // Если снова 401 - значит токен не обновился или что-то не так
-        if (retryResponse.status === 401) {
-          clearTokens();
-          window.location.href = '#/login';
-          throw new Error('Не удалось обновить сессию');
-        }
-
-        return retryResponse;
-      } catch (refreshError) {
-        clearTokens();
-        window.location.href = '#/login';
-        throw refreshError;
-      }
-    }
-
-    return response;
-  } catch (error) {
-    // Если это ошибка сети или другая ошибка - просто пробрасываем дальше
-    throw error;
-  }
-}
-
 /** Полный URL картинки сотрудника/медиа: путь с бэка или уже абсолютный URL. */
 export function getStaffMediaUrl(pathOrUrl) {
   if (pathOrUrl == null || pathOrUrl === '') return null;
   const v = String(pathOrUrl).trim();
   if (!v) return null;
   if (v.startsWith('http://') || v.startsWith('https://')) return v;
-  const base = API_CONFIG.BASE_URL.replace(/\/?$/, '');
+  const base = BASE_HTTP_URL.replace(/\/?$/, '');
   const path = v.startsWith('/') ? v.slice(1) : v;
   return `${base}/media/${path}`;
 }
@@ -438,7 +264,7 @@ export async function getProjects(USE_MOCK_DATA, filters = {}) {
   }
   
   try {
-    const url = new URL(`${API_CONFIG.BASE_URL}projects/`);
+    const url = new URL(`${BASE_HTTP_URL}projects/`);
     
     // Добавляем все фильтры, включая page
     Object.keys(filters).forEach(key => {
@@ -517,7 +343,7 @@ export async function getProjectById(projectId, USE_MOCK_DATA) {
   }
   
   try {
-    const response = await authFetch(`${API_CONFIG.BASE_URL}projects/${projectId}/`, {
+    const response = await authFetch(`${BASE_HTTP_URL}projects/${projectId}/`, {
       method: 'GET'
     });
 
@@ -617,7 +443,7 @@ export async function updateProject(projectId, updateData, USE_MOCK_DATA) {
   }
   
   try {
-    const response = await authFetch(`${API_CONFIG.BASE_URL}projects/${projectId}/`, {
+    const response = await authFetch(`${BASE_HTTP_URL}projects/${projectId}/`, {
       method: 'PATCH',
       body: formData
     });
@@ -677,7 +503,7 @@ export async function createProject(projectData, USE_MOCK_DATA) {
   }
   
   try {
-    const response = await authFetch(`${API_CONFIG.BASE_URL}projects/`, {
+    const response = await authFetch(`${BASE_HTTP_URL}projects/`, {
       method: 'POST',
       body: formData
     });
@@ -714,7 +540,7 @@ export async function uploadFileToProject(projectId, file, USE_MOCK_DATA) {
   formData.append('file', file);
   
   try {
-    const response = await authFetch(`${API_CONFIG.BASE_URL}projects/${projectId}/files/`, {
+    const response = await authFetch(`${BASE_HTTP_URL}projects/${projectId}/files/`, {
       method: 'POST',
       body: formData
     });
@@ -754,7 +580,7 @@ export async function addPerformerToProject(projectId, staffId, USE_MOCK_DATA) {
   }
   
   try {
-    const response = await authFetch(`${API_CONFIG.BASE_URL}projects/${projectId}/performers/`, {
+    const response = await authFetch(`${BASE_HTTP_URL}projects/${projectId}/performers/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -803,7 +629,7 @@ export async function getProjectLogs(projectId, USE_MOCK_DATA) {
   }
   
   try {
-    const response = await authFetch(`${API_CONFIG.BASE_URL}projects/${projectId}/logs/?page=1`, {
+    const response = await authFetch(`${BASE_HTTP_URL}projects/${projectId}/logs/?page=1`, {
       method: 'GET'
     });
 
@@ -913,7 +739,7 @@ export async function getTasks(USE_MOCK_DATA, filters = {}) {
   }
   
   try {
-    const url = new URL(`${API_CONFIG.BASE_URL}tasks/`);
+    const url = new URL(`${BASE_HTTP_URL}tasks/`);
     
     // Добавляем все фильтры, включая page
     Object.keys(filters).forEach(key => {
@@ -1047,7 +873,7 @@ export async function createTask(taskData, USE_MOCK_DATA) {
   }
   
   try {
-    const response = await authFetch(`${API_CONFIG.BASE_URL}tasks/`, {
+    const response = await authFetch(`${BASE_HTTP_URL}tasks/`, {
       method: 'POST',
       body: formData
     });
@@ -1109,7 +935,7 @@ export async function getTaskById(taskId, USE_MOCK_DATA) {
   }
   
   try {
-    const response = await authFetch(`${API_CONFIG.BASE_URL}tasks/${taskId}/`, {
+    const response = await authFetch(`${BASE_HTTP_URL}tasks/${taskId}/`, {
       method: 'GET'
     });
 
@@ -1171,7 +997,7 @@ export async function createSalaryRecord(taskId, completionDate, USE_MOCK_DATA) 
     
 
     
-    const response = await authFetch(`${API_CONFIG.BASE_URL}salary/create/`, {
+    const response = await authFetch(`${BASE_HTTP_URL}salary/create/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1294,7 +1120,7 @@ export async function updateTask(taskId, updateData, USE_MOCK_DATA) {
       // Если не удалось получить задачу, продолжаем без проверки старого статуса
     }
     
-    const response = await authFetch(`${API_CONFIG.BASE_URL}tasks/${taskId}/`, {
+    const response = await authFetch(`${BASE_HTTP_URL}tasks/${taskId}/`, {
       method: 'PATCH',
       body: formData
     });
@@ -1357,7 +1183,7 @@ export async function uploadFileToTask(taskId, file, USE_MOCK_DATA) {
   formData.append('file', file);
   
   try {
-    const response = await authFetch(`${API_CONFIG.BASE_URL}tasks/${taskId}/files/`, {
+    const response = await authFetch(`${BASE_HTTP_URL}tasks/${taskId}/files/`, {
       method: 'POST',
       body: formData
     });
@@ -1391,7 +1217,7 @@ export async function addCommentToTask(taskId, commentData, USE_MOCK_DATA) {
     }
     
     try {
-        const response = await authFetch(`${API_CONFIG.BASE_URL}tasks/${taskId}/comments/`, {
+        const response = await authFetch(`${BASE_HTTP_URL}tasks/${taskId}/comments/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -1439,7 +1265,7 @@ export async function getStaffDepartments(USE_MOCK_DATA) {
   }
   
   try {
-    const response = await authFetch(`${API_CONFIG.BASE_URL}staff/departments/`, {
+    const response = await authFetch(`${BASE_HTTP_URL}staff/departments/`, {
       method: 'GET'
     });
 
@@ -1487,7 +1313,7 @@ export async function getStaffList(USE_MOCK_DATA, filters = {}) {
   }
   
   try {
-    const url = new URL(`${API_CONFIG.BASE_URL}staff/staff/`);
+    const url = new URL(`${BASE_HTTP_URL}staff/staff/`);
     
     if (filters.department && filters.department !== 'all') {
       url.searchParams.append('department', filters.department);
@@ -1593,7 +1419,7 @@ export async function getEmployeeById(employeeId, USE_MOCK_DATA) {
   }
   
   try {
-    const response = await authFetch(`${API_CONFIG.BASE_URL}staff/staff/${employeeId}/`, {
+    const response = await authFetch(`${BASE_HTTP_URL}staff/staff/${employeeId}/`, {
       method: 'GET'
     });
 
@@ -1656,7 +1482,7 @@ export async function updateEmployeeById(employeeId, updateData, USE_MOCK_DATA) 
     formData.append(key, typeof value === 'string' ? value : String(value));
   });
 
-  const response = await authFetch(`${API_CONFIG.BASE_URL}staff/staff/${employeeId}/`, {
+  const response = await authFetch(`${BASE_HTTP_URL}staff/staff/${employeeId}/`, {
     method: 'PATCH',
     body: formData
   });
@@ -1865,7 +1691,7 @@ export async function registerByInvite(token, userData) {
   try {
     
 
-    const response = await fetch(`${API_CONFIG.BASE_URL}staff/register/invite/${token}/`, {
+    const response = await fetch(`${BASE_HTTP_URL}staff/register/invite/${token}/`, {
       method: 'POST',
       headers: {
         'accept': 'application/json',
@@ -1957,7 +1783,7 @@ export async function registerByInvite(token, userData) {
 }
 export async function validateInviteToken(token) {
   try {
-    const response = await fetch(`${API_CONFIG.BASE_URL}staff/register/invite/${token}/validate/`, {
+    const response = await fetch(`${BASE_HTTP_URL}staff/register/invite/${token}/validate/`, {
       method: 'GET',
       headers: {
         'accept': 'application/json',

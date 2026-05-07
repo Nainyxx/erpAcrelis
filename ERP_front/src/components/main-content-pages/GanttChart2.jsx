@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import './GanttChart2.css';
-import { getProjectById, getTasks } from '../../services/api/api';
+import { getProjectById, getTasks } from '../../services/api';
 
 const GanttChart = ({ useMockData = false }) => {
   const navigate = useNavigate();

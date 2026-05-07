@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { getStaffList, getStaffDepartments } from '../../services/api/api';
+import { getStaffList, getStaffDepartments } from '../../services/api';
 import { MultiSelectFilterDropdown } from '../shared/MultiSelectFilterDropdown';
 import './StaffList.css';
 
@@ -235,7 +235,7 @@ const StaffList = ({ useMockData = false }) => {
       <button
         type="button"
         className="projects-breadcrumb__home"
-        onClick={() => navigate(`/staff${location.search || ''}`)}
+        onClick={() => navigate(`/projects${location.search || ''}`)}
       >
         Главная
       </button>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getEmployeeById, updateEmployeeById } from '../../services/api/api';
+import { getEmployeeById, updateEmployeeById } from '../../services/api';
 import { AccountProjectsPanel } from '../shared/AccountProjectsPanel';
 import './AccountPage.css';
 import { MY_TASKS_NAV_QUERY_STORAGE_KEY } from '../../constants/navigationKeys';

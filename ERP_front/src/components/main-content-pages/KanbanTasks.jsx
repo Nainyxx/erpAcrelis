@@ -6,7 +6,7 @@ import {
   formatDateForDisplay, 
   createTask, 
   getStaffList 
-} from '../../services/api/api';
+} from '../../services/api';
 import './KanbanTasks.css';
 
 const KanbanTasks = ({ useMockData = false }) => {

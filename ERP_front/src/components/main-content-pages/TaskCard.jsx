@@ -10,7 +10,7 @@ import {
     uploadFileToTask,
     addCommentToTask,
     getProjectById
-} from '../../services/api/api';
+} from '../../services/api';
 import { PROJECT_ACTIONS_ALLOWED_ROLES } from '../../constants/roles';
 import TaskWebSocketService from '../../services/taskWebSocketService';
 import './TaskCard.css';

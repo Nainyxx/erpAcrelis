@@ -1,7 +1,7 @@
 // ERP_front/src/components/main-comps/LoginPage.jsx
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { login, getProjects } from '../../services/api/api';
+import { login, getProjects } from '../../services/api';
 import './AuthPages.css';
 import AcrelisLogo from '../../assets/acrelis-logo2.svg';
 

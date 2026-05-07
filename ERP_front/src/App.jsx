@@ -28,13 +28,14 @@ import EmployeeCard from './components/main-content-pages/EmployeeCard';
 import AccountPage from './components/main-content-pages/AccountPage';
 import SchedulePage from './components/main-content-pages/SchedulePage';
 import OperationsPage from './components/main-content-pages/OperationsPage';
+import OperationsRequestPage from './components/main-content-pages/OperationsRequestPage';
 import StaffFinancesPage from './components/main-content-pages/StaffFinancesPage';
 
 // Мок данные
 import { projectsData } from './MockData/projects.js';
 
 // Импорт функции аутентификации
-import { isAuthenticated, getCurrentUser } from './services/api/api';
+import { isAuthenticated, getCurrentUser } from './services/api';
 
 // Конфигурация
 const CONFIG = {
@@ -311,8 +312,9 @@ function App() {
 
                 {/* Операции — finans до /operations, иначе :staffId съестся */}
                 <Route path="/operations/finans/:staffId" element={<StaffFinancesPage />} />
+                <Route path="/operations/request" element={<OperationsRequestPage />} />
                 <Route path="/operations" element={
-                  <OperationsPage showNotification={() => { }} />
+                  <OperationsPage useMockData={useMockData} />
                 } />
                 <Route path="/accounting" element={<Navigate to="/operations" replace />} />
 

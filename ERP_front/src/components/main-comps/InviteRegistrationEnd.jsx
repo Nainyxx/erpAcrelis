@@ -1,7 +1,7 @@
 // ERP_front/src/components/main-comps/InviteRegistrationEnd.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { registerByInvite } from '../../services/api/api';
+import { registerByInvite } from '../../services/api';
 import './AuthPages.css';
 import AcrelisLogo from '../../assets/acrelis-logo2.svg';
 

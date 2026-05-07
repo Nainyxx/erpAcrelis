@@ -3,7 +3,7 @@
  * строки с командой и переход в карточку проекта / профиль сотрудника.
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { getProjects, getStaffMediaUrl } from '../../services/api/api';
+import { getProjects, getStaffMediaUrl } from '../../services/api';
 
 const SEARCH_DEBOUNCE_MS = 1500;
 

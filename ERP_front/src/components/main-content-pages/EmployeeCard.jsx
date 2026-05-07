@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getEmployeeById, getStaffMediaUrl } from '../../services/api/api';
-import { fetchStaffById } from '../../services/api/staffApi';
+import { getEmployeeById, getStaffMediaUrl, fetchStaffById } from '../../services/api';
 import { AccountProjectsPanel } from '../shared/AccountProjectsPanel';
 import './AccountPage.css';
 import './EmployeeCard.css';

@@ -4,8 +4,16 @@ import { useDropzone } from 'react-dropzone';
 import './ProjectCard.css';
 import uploadCloudIcon from '../../assets/download-files.svg';
 import trashcanIcon from '../../assets/trashcan.svg';
-import { getProjectById, updateProject, uploadFileToProject, addPerformerToProject, getProjectLogs, getStaffList } from '../../services/api/api';
-import { deleteProjectFileById, downloadProjectFile } from '../../services/api/projectsApi';
+import {
+  getProjectById,
+  updateProject,
+  uploadFileToProject,
+  addPerformerToProject,
+  getProjectLogs,
+  getStaffList,
+  deleteProjectFileById,
+  downloadProjectFile
+} from '../../services/api';
 import { PROJECT_ACTIONS_ALLOWED_ROLES } from '../../constants/roles';
 
 const ProjectCard = ({ useMockData = false }) => {
@@ -655,6 +663,7 @@ const ProjectCard = ({ useMockData = false }) => {
       setChanges(projectLogs);
 
     } catch (error) {
+      console.error('ProjectCard loadProjectAndLogs:', error?.message || error);
     } finally {
       setIsLoading(false);
     }

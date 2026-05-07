@@ -1,7 +1,4 @@
-import { getEmployeeById, getStaffDepartments, getStaffList, updateEmployeeById } from './api';
 import { requestAuth } from './httpClient';
-
-export { getStaffList, getStaffDepartments, getEmployeeById, updateEmployeeById };
 
 export async function fetchStaffById(staffId) {
   const response = await requestAuth(`staff/staff/${staffId}/`, { method: 'GET' });

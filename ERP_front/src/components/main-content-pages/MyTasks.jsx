@@ -1,23 +1,24 @@
 // MyTasks.jsx
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { 
-  getTasks, 
-  getCurrentUser, 
-  formatDateForDisplay, 
-  createTask, 
-  getProjects, 
-  getStaffList 
-} from '../../services/api/api';
-import { getDirectorsList } from '../../services/api/staffApi';
+import {
+  getTasks,
+  getCurrentUser,
+  formatDateForDisplay,
+  createTask,
+  getProjects,
+  getStaffList,
+  getDirectorsList
+} from '../../services/api';
 import './MyTasks.css';
 import { MY_TASKS_NAV_QUERY_STORAGE_KEY } from '../../constants/navigationKeys';
 import { PROJECT_ACTIONS_ALLOWED_ROLES } from '../../constants/roles';
+import CreateEntityModal from '../shared/CreateEntityModal';
 
 // Константы статусов задач
 const TASK_STATUS_MAP = {
   'draft': 'Черновик',
-  'new': 'Новое', 
+  'new': 'Новое',
   'active': 'В работе',
   'paused': 'Ожидает',
   'completed': 'Готово',
@@ -86,44 +87,44 @@ const MyTasks = ({ useMockData = false }) => {
   const location = useLocation();
   const userRole = localStorage.getItem('role');
   const canCreateTask = PROJECT_ACTIONS_ALLOWED_ROLES.includes(userRole);
-  
+
   // Получаем текущего пользователя
   const [currentUser, setCurrentUser] = useState(null);
-  
+
   // Фильтры
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedPerformer, setSelectedPerformer] = useState('');
   const [selectedDirector, setSelectedDirector] = useState('all');
   const [selectedProject, setSelectedProject] = useState('all');
-  
+
   // Пагинация через localStorage
   const [currentPage, setCurrentPage] = useState(getStoredPage());
   const [totalPages, setTotalPages] = useState(1);
   const [totalTasks, setTotalTasks] = useState(0);
-  
+
   // Данные
   const [tasks, setTasks] = useState([]);
   const [performers, setPerformers] = useState([{ id: 'all', label: 'Все исполнители' }]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   // Создание задачи
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState('');
   const [newTask, setNewTask] = useState({
-    name: '', 
-    description: '', 
-    project: '', 
+    name: '',
+    description: '',
+    project: '',
     projectName: '',
-    deadline: '', 
-    performer: '', 
-    performerName: '', 
-    director: '', 
-    directorName: '', 
+    deadline: '',
+    performer: '',
+    performerName: '',
+    director: '',
+    directorName: '',
     hours: 0
   });
-  
+
   // Данные для автодополнения
   const [allProjects, setAllProjects] = useState([]);
   const [allStaff, setAllStaff] = useState([]);
@@ -134,7 +135,7 @@ const MyTasks = ({ useMockData = false }) => {
   const [showProjectSuggestions, setShowProjectSuggestions] = useState(false);
   const [showPerformerSuggestions, setShowPerformerSuggestions] = useState(false);
   const [showDirectorSuggestions, setShowDirectorSuggestions] = useState(false);
-  
+
   const projectInputRef = useRef(null);
   const performerInputRef = useRef(null);
   const directorInputRef = useRef(null);
@@ -213,12 +214,12 @@ const MyTasks = ({ useMockData = false }) => {
     if (normalizeQueryForCompare(location.search) === normalizeQueryForCompare(nextSearch)) {
       try {
         sessionStorage.setItem(MY_TASKS_NAV_QUERY_STORAGE_KEY, nextSearch);
-      } catch (_) {}
+      } catch (_) { }
       return;
     }
     try {
       sessionStorage.setItem(MY_TASKS_NAV_QUERY_STORAGE_KEY, nextSearch);
-    } catch (_) {}
+    } catch (_) { }
     navigate({ pathname: '/my-tasks', search: nextSearch }, { replace: true });
   }, [
     selectedPerformer,
@@ -282,7 +283,7 @@ const MyTasks = ({ useMockData = false }) => {
       } catch {
         directorsData = staffData;
       }
-      
+
       // Создаем список исполнителей
       const performersList = [
         { id: 'all', label: 'Все исполнители' },
@@ -291,11 +292,11 @@ const MyTasks = ({ useMockData = false }) => {
           label: staff.name
         }))
       ];
-      
+
       setPerformers(performersList);
       setAllStaff(staffData);
       setAllDirectors(directorsData);
-      
+
     } catch (error) {
     }
   };
@@ -304,15 +305,15 @@ const MyTasks = ({ useMockData = false }) => {
   const loadTasks = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       // Собираем фильтры для API
       const filters = {};
-      
+
       if (selectedStatus !== 'all') {
         filters.status = selectedStatus;
       }
-      
+
       // Фильтр по исполнителю
       if (selectedPerformer && selectedPerformer !== 'all') {
         filters.performer = selectedPerformer;
@@ -325,29 +326,29 @@ const MyTasks = ({ useMockData = false }) => {
       if (selectedProject && selectedProject !== 'all') {
         filters.project = selectedProject;
       }
-      
+
       // Добавляем пагинацию в фильтры
       if (currentPage > 1) {
         filters.page = currentPage;
       }
-      
+
       // Всегда добавляем сортировку по дедлайну
       filters.ordering = '-deadline';
-      
+
       // Отправляем запрос с фильтрами
       const apiResponse = await getTasks(useMockData, filters);
-      
+
       // Извлекаем данные из ответа
       const apiTasks = apiResponse.results || apiResponse || [];
       const totalCount = apiResponse.count || 0;
-      
+
       // Рассчитываем общее количество страниц
       const calculatedTotalPages = Math.ceil(totalCount / TASKS_PER_PAGE);
-      
+
       // Форматируем задачи
       const formattedTasks = apiTasks.map(task => {
         const status_display = task.status_display || TASK_STATUS_MAP[task.status] || 'Новая';
-        
+
         return {
           id: task.id,
           taskName: task.name,
@@ -366,11 +367,11 @@ const MyTasks = ({ useMockData = false }) => {
           originalDeadline: task.deadline
         };
       });
-      
+
       setTasks(formattedTasks);
       setTotalTasks(totalCount);
       setTotalPages(calculatedTotalPages);
-      
+
     } catch (error) {
       setError('Не удалось загрузить задачи. Проверьте подключение.');
       setTasks([]);
@@ -421,7 +422,7 @@ const MyTasks = ({ useMockData = false }) => {
   const getPageNumbers = () => {
     const pages = [];
     const maxVisiblePages = 5;
-    
+
     if (totalPages <= maxVisiblePages) {
       // Если страниц мало, показываем все
       for (let i = 1; i <= totalPages; i++) {
@@ -440,7 +441,7 @@ const MyTasks = ({ useMockData = false }) => {
         pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
       }
     }
-    
+
     return pages;
   };
 
@@ -452,18 +453,18 @@ const MyTasks = ({ useMockData = false }) => {
     setShowCreateModal(true);
     setCreateError('');
     setNewTask({
-      name: '', 
-      description: '', 
-      project: '', 
+      name: '',
+      description: '',
+      project: '',
       projectName: '',
-      deadline: '', 
-      performer: '', 
-      performerName: '', 
-      director: '', 
-      directorName: '', 
+      deadline: '',
+      performer: '',
+      performerName: '',
+      director: '',
+      directorName: '',
       hours: 0
     });
-    
+
     loadProjectsAndStaff();
   };
 
@@ -484,13 +485,13 @@ const MyTasks = ({ useMockData = false }) => {
   const handleProjectInputChange = (e) => {
     const value = e.target.value;
     setNewTask(prev => ({ ...prev, projectName: value, project: '' }));
-    
+
     if (value.length > 1) {
       const searchTerm = value.toLowerCase().trim();
-      const filtered = allProjects.filter(project => 
+      const filtered = allProjects.filter(project =>
         project.name.toLowerCase().includes(searchTerm)
       ).slice(0, 5);
-      
+
       setProjectSuggestions(filtered);
       setShowProjectSuggestions(filtered.length > 0);
     } else {
@@ -508,13 +509,13 @@ const MyTasks = ({ useMockData = false }) => {
   const handlePerformerInputChange = (e) => {
     const value = e.target.value;
     setNewTask(prev => ({ ...prev, performerName: value, performer: '' }));
-    
+
     if (value.length > 1) {
       const searchTerm = value.toLowerCase().trim();
-      const filtered = allDirectors.filter(staff => 
+      const filtered = allDirectors.filter(staff =>
         staff.name.toLowerCase().includes(searchTerm)
       ).slice(0, 5);
-      
+
       setPerformerSuggestions(filtered);
       setShowPerformerSuggestions(filtered.length > 0);
     } else {
@@ -532,13 +533,13 @@ const MyTasks = ({ useMockData = false }) => {
   const handleDirectorInputChange = (e) => {
     const value = e.target.value;
     setNewTask(prev => ({ ...prev, directorName: value, director: '' }));
-    
+
     if (value.length > 1) {
       const searchTerm = value.toLowerCase().trim();
-      const filtered = allStaff.filter(staff => 
+      const filtered = allStaff.filter(staff =>
         staff.name.toLowerCase().includes(searchTerm)
       ).slice(0, 5);
-      
+
       setDirectorSuggestions(filtered);
       setShowDirectorSuggestions(filtered.length > 0);
     } else {
@@ -589,11 +590,11 @@ const MyTasks = ({ useMockData = false }) => {
 
     // Проверяем проект
     if (newTask.projectName && !newTask.project) {
-      const foundProject = allProjects.find(project => 
+      const foundProject = allProjects.find(project =>
         project.name.toLowerCase() === newTask.projectName.toLowerCase() ||
         project.name.toLowerCase().includes(newTask.projectName.toLowerCase())
       );
-      
+
       if (foundProject) {
         setNewTask(prev => ({ ...prev, project: foundProject.id }));
       } else {
@@ -604,11 +605,11 @@ const MyTasks = ({ useMockData = false }) => {
 
     // Проверяем исполнителя
     if (newTask.performerName && !newTask.performer) {
-      const foundPerformer = allStaff.find(staff => 
+      const foundPerformer = allStaff.find(staff =>
         staff.name.toLowerCase() === newTask.performerName.toLowerCase() ||
         staff.name.toLowerCase().includes(newTask.performerName.toLowerCase())
       );
-      
+
       if (foundPerformer) {
         setNewTask(prev => ({ ...prev, performer: foundPerformer.id }));
       } else {
@@ -619,11 +620,11 @@ const MyTasks = ({ useMockData = false }) => {
 
     // Проверяем руководителя
     if (newTask.directorName && !newTask.director) {
-      const foundDirector = allDirectors.find(staff => 
+      const foundDirector = allDirectors.find(staff =>
         staff.name.toLowerCase() === newTask.directorName.toLowerCase() ||
         staff.name.toLowerCase().includes(newTask.directorName.toLowerCase())
       );
-      
+
       if (foundDirector) {
         setNewTask(prev => ({ ...prev, director: foundDirector.id }));
       } else {
@@ -648,34 +649,34 @@ const MyTasks = ({ useMockData = false }) => {
       };
 
       await createTask(taskData, useMockData);
-      
+
       setShowCreateModal(false);
       setNewTask({
-        name: '', 
-        description: '', 
-        project: '', 
+        name: '',
+        description: '',
+        project: '',
         projectName: '',
-        deadline: '', 
-        performer: '', 
-        performerName: '', 
-        director: '', 
-        directorName: '', 
+        deadline: '',
+        performer: '',
+        performerName: '',
+        director: '',
+        directorName: '',
         hours: 0
       });
-      
+
       // Сбрасываем на первую страницу при создании новой задачи
       setCurrentPage(1);
       await loadTasks();
-      
-    } catch (error) {      
+
+    } catch (error) {
       let userFriendlyError = 'Не удалось создать задачу';
-      
+
       if (error.message.includes('API Error: 400')) {
         const errorMatch = error.message.match(/\{.*\}/);
         if (errorMatch) {
           try {
             const errorJson = JSON.parse(errorMatch[0]);
-            
+
             if (errorJson.hours && Array.isArray(errorJson.hours)) {
               userFriendlyError = 'Превышено общее количество часов проекта. Уменьшите количество часов для этой задачи.';
             } else if (errorJson.non_field_errors && Array.isArray(errorJson.non_field_errors)) {
@@ -698,7 +699,7 @@ const MyTasks = ({ useMockData = false }) => {
       } else if (error.message.includes('500')) {
         userFriendlyError = 'Внутренняя ошибка сервера. Попробуйте позже.';
       }
-      
+
       setCreateError(userFriendlyError);
     } finally {
       setCreating(false);
@@ -715,7 +716,7 @@ const MyTasks = ({ useMockData = false }) => {
       'completed': 'completed',
       'failed': 'failed'
     };
-    
+
     return statusClassMap[status] || 'new';
   };
 
@@ -723,10 +724,10 @@ const MyTasks = ({ useMockData = false }) => {
   const handleCellHover = (taskId, isHovering) => {
     // Находим все ячейки этой задачи (они идут последовательно в DOM)
     const startIndex = tasks.findIndex(t => t.id === taskId) * 5;
-    
+
     // Получаем все ячейки таблицы
     const allCells = document.querySelectorAll('.tasks-table > .task-cell');
-    
+
     // Применяем/убираем стили для 5 ячеек строки
     for (let i = 0; i < 5; i++) {
       const cellIndex = startIndex + i;
@@ -755,7 +756,7 @@ const MyTasks = ({ useMockData = false }) => {
       <button
         type="button"
         className="projects-breadcrumb__home"
-        onClick={() => navigate(`/my-tasks${location.search || ''}`)}
+        onClick={() => navigate(`/projects${location.search || ''}`)}
       >
         Главная
       </button>
@@ -793,7 +794,7 @@ const MyTasks = ({ useMockData = false }) => {
             <span className="no-tasks-icon_gantt_class">⚠️</span>
             <h4>Ошибка загрузки</h4>
             <p>{error}</p>
-            <button 
+            <button
               onClick={handleRefresh}
               className="gantt-back-btn_gantt_class"
               style={{ marginTop: '2vh' }}
@@ -821,8 +822,8 @@ const MyTasks = ({ useMockData = false }) => {
         <div className="filters-container">
           <div className="filters">
             <div className="filter-group">
-              <select 
-                className="filter-select" 
+              <select
+                className="filter-select"
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
               >
@@ -835,16 +836,16 @@ const MyTasks = ({ useMockData = false }) => {
             </div>
 
             <div className="filter-group">
-              <select 
-                className="filter-select" 
+              <select
+                className="filter-select"
                 value={selectedPerformer}
                 onChange={(e) => setSelectedPerformer(e.target.value)}
               >
                 {performers.map(performer => {
-                  const isCurrentUser = currentUser && 
+                  const isCurrentUser = currentUser &&
                     ((currentUser.staff_id && performer.id === currentUser.staff_id.toString()) ||
-                     (currentUser.user_id && performer.id === currentUser.user_id.toString()));
-                  
+                      (currentUser.user_id && performer.id === currentUser.user_id.toString()));
+
                   return (
                     <option key={performer.id} value={performer.id}>
                       {performer.label} {isCurrentUser && '(Вы)'}
@@ -888,7 +889,7 @@ const MyTasks = ({ useMockData = false }) => {
               </select>
             </div>
           </div>
-          
+
           {canCreateTask && (
             <button className="create-task-btn" onClick={openCreateModal}>
               Создать задачу
@@ -906,7 +907,7 @@ const MyTasks = ({ useMockData = false }) => {
                 : 'Выберите другого исполнителя или измените фильтры'}
             </p>
             {canCreateTask && (
-              <button 
+              <button
                 onClick={openCreateModal}
                 className="gantt-back-btn_gantt_class"
                 style={{ marginTop: '2vh' }}
@@ -927,8 +928,8 @@ const MyTasks = ({ useMockData = false }) => {
       <div className="filters-container">
         <div className="filters">
           <div className="filter-group">
-            <select 
-              className="filter-select" 
+            <select
+              className="filter-select"
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
             >
@@ -941,17 +942,17 @@ const MyTasks = ({ useMockData = false }) => {
           </div>
 
           <div className="filter-group">
-            <select 
-              className="filter-select" 
+            <select
+              className="filter-select"
               value={selectedPerformer}
               onChange={(e) => setSelectedPerformer(e.target.value)}
             >
               {performers.map(performer => {
                 // Добавляем отметку для текущего пользователя
-                const isCurrentUser = currentUser && 
+                const isCurrentUser = currentUser &&
                   ((currentUser.staff_id && performer.id === currentUser.staff_id.toString()) ||
-                   (currentUser.user_id && performer.id === currentUser.user_id.toString()));
-                
+                    (currentUser.user_id && performer.id === currentUser.user_id.toString()));
+
                 return (
                   <option key={performer.id} value={performer.id}>
                     {performer.label} {isCurrentUser && '(Вы)'}
@@ -995,7 +996,7 @@ const MyTasks = ({ useMockData = false }) => {
             </select>
           </div>
         </div>
-        
+
         {canCreateTask && (
           <button className="create-task-btn" onClick={openCreateModal}>
             Создать задачу
@@ -1014,9 +1015,9 @@ const MyTasks = ({ useMockData = false }) => {
         {tasks.length === 0 ? (
           <div className="no-tasks">
             {selectedStatus !== 'all' ||
-            selectedPerformer !== 'all' ||
-            selectedDirector !== 'all' ||
-            selectedProject !== 'all'
+              selectedPerformer !== 'all' ||
+              selectedDirector !== 'all' ||
+              selectedProject !== 'all'
               ? 'Задачи не найдены по заданным фильтрам'
               : 'Задачи не найдены'}
           </div>
@@ -1024,7 +1025,7 @@ const MyTasks = ({ useMockData = false }) => {
           tasks.map((task) => (
             <React.Fragment key={task.id}>
               {/* Название задачи */}
-              <div 
+              <div
                 className="task-cell task-name"
                 onClick={() => handleTaskClick(task)}
                 onMouseEnter={() => handleCellHover(task.id, true)}
@@ -1034,7 +1035,7 @@ const MyTasks = ({ useMockData = false }) => {
               </div>
 
               {/* Дедлайн */}
-              <div 
+              <div
                 className="task-cell"
                 onClick={() => handleTaskClick(task)}
                 onMouseEnter={() => handleCellHover(task.id, true)}
@@ -1046,7 +1047,7 @@ const MyTasks = ({ useMockData = false }) => {
               </div>
 
               {/* Статус */}
-              <div 
+              <div
                 className="task-cell"
                 onClick={() => handleTaskClick(task)}
                 onMouseEnter={() => handleCellHover(task.id, true)}
@@ -1058,7 +1059,7 @@ const MyTasks = ({ useMockData = false }) => {
               </div>
 
               {/* Проект */}
-              <div 
+              <div
                 className="task-cell"
                 onClick={() => handleTaskClick(task)}
                 onMouseEnter={() => handleCellHover(task.id, true)}
@@ -1070,7 +1071,7 @@ const MyTasks = ({ useMockData = false }) => {
               </div>
 
               {/* Руководитель */}
-              <div 
+              <div
                 className="task-cell"
                 onClick={() => handleTaskClick(task)}
                 onMouseEnter={() => handleCellHover(task.id, true)}
@@ -1093,16 +1094,16 @@ const MyTasks = ({ useMockData = false }) => {
               Задачи {(currentPage - 1) * TASKS_PER_PAGE + 1} - {Math.min(currentPage * TASKS_PER_PAGE, totalTasks)} из {totalTasks}
             </span>
           </div>
-          
+
           <div className="pagination-controls">
-            <button 
+            <button
               className={`pagination-btn prev-btn ${currentPage === 1 ? 'disabled' : ''}`}
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
             >
               ← Назад
             </button>
-            
+
             <div className="pagination-pages">
               {getPageNumbers().map((page, index) => (
                 page === '...' ? (
@@ -1118,8 +1119,8 @@ const MyTasks = ({ useMockData = false }) => {
                 )
               ))}
             </div>
-            
-            <button 
+
+            <button
               className={`pagination-btn next-btn ${currentPage === totalPages ? 'disabled' : ''}`}
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
@@ -1131,25 +1132,17 @@ const MyTasks = ({ useMockData = false }) => {
       )}
 
       {/* Модальное окно создания задачи */}
-      {canCreateTask && showCreateModal && (
-        <div className="modal-overlay123">
-          <div className="modal-content123">
-            <div className="modal-header123">
-              <h2>Создать новую задачу</h2>
-              <button 
-                className="modal-close123"
-                onClick={closeCreateModal}
-                disabled={creating}
-              >
-                ×
-              </button>
-            </div>
-            
-            <div className="modal-body123">
-              {createError && (
-                <div className="error-message123">{createError}</div>
-              )}
-              
+      {canCreateTask && (
+        <CreateEntityModal
+          title="Создать новую задачу"
+          isOpen={showCreateModal}
+          isSubmitting={creating}
+          error={createError}
+          submitLabel="Создать задачу"
+          submittingLabel="Создание..."
+          onClose={closeCreateModal}
+          onSubmit={handleCreateTask}
+        >
               <div className="form-group123">
                 <label>Название задачи *</label>
                 <input
@@ -1162,7 +1155,7 @@ const MyTasks = ({ useMockData = false }) => {
                   maxLength={100}
                 />
               </div>
-              
+
               <div className="form-group123">
                 <label>Описание *</label>
                 <textarea
@@ -1175,7 +1168,7 @@ const MyTasks = ({ useMockData = false }) => {
                   rows="3"
                 />
               </div>
-              
+
               <div className="form-group123" ref={projectInputRef} style={{ position: 'relative' }}>
                 <label>Проект (опционально)</label>
                 <input
@@ -1188,11 +1181,11 @@ const MyTasks = ({ useMockData = false }) => {
                   autoComplete="off"
                 />
                 <small>Введите название проекта, чтобы выбрать его из списка</small>
-                
+
                 {showProjectSuggestions && projectSuggestions.length > 0 && (
                   <div className="suggestions-dropdown">
                     {projectSuggestions.map((project, index) => (
-                      <div 
+                      <div
                         key={project.id || index}
                         className="suggestion-item"
                         onClick={() => handleProjectSuggestionClick(project)}
@@ -1206,7 +1199,7 @@ const MyTasks = ({ useMockData = false }) => {
                   </div>
                 )}
               </div>
-              
+
               <div className="form-group123">
                 <label>Дедлайн *</label>
                 <input
@@ -1217,7 +1210,7 @@ const MyTasks = ({ useMockData = false }) => {
                   disabled={creating}
                 />
               </div>
-              
+
               <div className="form-row123">
                 <div className="form-group123" ref={performerInputRef} style={{ position: 'relative' }}>
                   <label>Исполнитель (опционально)</label>
@@ -1230,11 +1223,11 @@ const MyTasks = ({ useMockData = false }) => {
                     disabled={creating}
                     autoComplete="off"
                   />
-                  
+
                   {showPerformerSuggestions && performerSuggestions.length > 0 && (
                     <div className="suggestions-dropdown">
                       {performerSuggestions.map((staff, index) => (
-                        <div 
+                        <div
                           key={staff.id || index}
                           className="suggestion-item"
                           onClick={() => handlePerformerSuggestionClick(staff)}
@@ -1248,7 +1241,7 @@ const MyTasks = ({ useMockData = false }) => {
                     </div>
                   )}
                 </div>
-                
+
                 <div className="form-group123" ref={directorInputRef} style={{ position: 'relative' }}>
                   <label>Руководитель (опционально)</label>
                   <input
@@ -1260,11 +1253,11 @@ const MyTasks = ({ useMockData = false }) => {
                     disabled={creating}
                     autoComplete="off"
                   />
-                  
+
                   {showDirectorSuggestions && directorSuggestions.length > 0 && (
                     <div className="suggestions-dropdown">
                       {directorSuggestions.map((staff, index) => (
-                        <div 
+                        <div
                           key={staff.id || index}
                           className="suggestion-item"
                           onClick={() => handleDirectorSuggestionClick(staff)}
@@ -1279,7 +1272,7 @@ const MyTasks = ({ useMockData = false }) => {
                   )}
                 </div>
               </div>
-              
+
               <div className="form-row123">
                 <div className="form-group123">
                   <label>Часы</label>
@@ -1295,26 +1288,7 @@ const MyTasks = ({ useMockData = false }) => {
                   />
                 </div>
               </div>
-            </div>
-            
-            <div className="modal-footer123">
-              <button 
-                className="btn-cancel123"
-                onClick={closeCreateModal}
-                disabled={creating}
-              >
-                Отмена
-              </button>
-              <button 
-                className="btn-create123"
-                onClick={handleCreateTask}
-                disabled={creating}
-              >
-                {creating ? 'Создание...' : 'Создать задачу'}
-              </button>
-            </div>
-          </div>
-        </div>
+        </CreateEntityModal>
       )}
     </div>
   );
