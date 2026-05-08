@@ -1,11 +1,10 @@
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { OPERATIONS_HUB_ALLOWED_ROLES } from '../../constants/roles';
 import './OperationsPage.css';
 import './OperationsRequestPage.css';
+import { Breadcrumbs } from '../shared/Breadcrumbs';
 
 function OperationsRequestPage() {
-  const navigate = useNavigate();
-  const location = useLocation();
   const userRole = localStorage.getItem('role');
   const canAccessHub = userRole && OPERATIONS_HUB_ALLOWED_ROLES.includes(userRole);
 
@@ -17,37 +16,15 @@ function OperationsRequestPage() {
     return <Navigate to="/account" replace />;
   }
 
-  const breadcrumb = (
-    <nav className="projects-breadcrumb" aria-label="Навигация по разделам">
-      <button
-        type="button"
-        className="projects-breadcrumb__home"
-        onClick={() => navigate(`/projects${location.search || ''}`)}
-      >
-        Главная
-      </button>
-      <span className="projects-breadcrumb__sep" aria-hidden="true">
-        {' '}
-        /{' '}
-      </span>
-      <button
-        type="button"
-        className="projects-breadcrumb__home"
-        onClick={() => navigate('/operations')}
-      >
-        Операции
-      </button>
-      <span className="projects-breadcrumb__sep" aria-hidden="true">
-        {' '}
-        /{' '}
-      </span>
-      <span className="projects-breadcrumb__current">Заявка</span>
-    </nav>
-  );
+  const breadcrumbItems = [
+    { label: 'Главная', to: '/projects', preserveSearch: true },
+    { label: 'Операции', to: '/operations' },
+    { label: 'Заявка' },
+  ];
 
   return (
     <div className="operations-page operations-request-page">
-      {breadcrumb}
+      <Breadcrumbs items={breadcrumbItems} />
 
       <section
         className="operations-page__panel operations-page__panel--filters"

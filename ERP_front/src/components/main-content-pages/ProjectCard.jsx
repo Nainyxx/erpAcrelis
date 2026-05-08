@@ -15,6 +15,13 @@ import {
   downloadProjectFile
 } from '../../services/api';
 import { PROJECT_ACTIONS_ALLOWED_ROLES } from '../../constants/roles';
+import {
+  PROJECT_STATUS_OPTIONS,
+  getProjectStatusLabel,
+  normalizeProjectType
+} from '../../constants/projects';
+import { PageLoading } from '../shared/PageLoading';
+import { AvatarPhoto } from '../shared/AvatarPhoto';
 
 const ProjectCard = ({ useMockData = false }) => {
   const navigate = useNavigate();
@@ -59,15 +66,11 @@ const ProjectCard = ({ useMockData = false }) => {
   const userRole = localStorage.getItem('role');
   const canManageProjectActions = PROJECT_ACTIONS_ALLOWED_ROLES.includes(userRole);
 
-  // Обновленные статусы согласно требованиям
-  const statusOptions = [
-    { value: 'draft', label: 'Черновик', apiValue: 'draft' },
-    { value: 'active', label: 'В работе', apiValue: 'active' },
-    { value: 'paused', label: 'Приостановлен', apiValue: 'paused' },
-    { value: 'tests', label: 'Тестируется', apiValue: 'tests' },
-    { value: 'completed', label: 'Завершен', apiValue: 'completed' },
-    { value: 'cancelled', label: 'Отменен', apiValue: 'cancelled' }
-  ];
+  const statusOptions = PROJECT_STATUS_OPTIONS.map((s) => ({
+    value: s.id,
+    label: s.label,
+    apiValue: s.id
+  }));
 
   const formatDateForDisplay = (dateString) => {
     if (!dateString) return 'Не указана';
@@ -137,20 +140,13 @@ const ProjectCard = ({ useMockData = false }) => {
       if (imageUrl) {
         return (
           <>
-            <img
+            <AvatarPhoto
               src={imageUrl}
               alt={name}
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                position: 'absolute',
-                top: 0,
-                left: 0
-              }}
               onError={(e) => {
-                e.target.style.display = 'none';
-                e.target.nextSibling.style.display = 'flex';
+                const wrap = e.target.closest('.projectcard-avatar_project_card');
+                const initialsEl = wrap?.querySelector('.avatar-initials');
+                if (initialsEl) initialsEl.style.display = 'flex';
               }}
             />
             <div
@@ -330,15 +326,7 @@ const ProjectCard = ({ useMockData = false }) => {
       }
 
       if (projectType !== project.type_display && projectType.trim() !== '') {
-        const typeMap = {
-          'Сайт': 'website',
-          'Бот': 'bot',
-          'Приложение': 'app',
-          'Мини-приложение': 'miniapp',
-          'Дизайн': 'design',
-          'Другое': 'other'
-        };
-        updateData.type = typeMap[projectType] || projectType.toLowerCase();
+        updateData.type = normalizeProjectType(projectType);
       }
 
       if (price !== project.price) {
@@ -656,7 +644,7 @@ const ProjectCard = ({ useMockData = false }) => {
       setProjectHours(projectData.hours?.toString() || '0');
       setProjectHoursDone(projectData.hoursDone?.toString() || '0');
 
-      const statusLabel = projectData.status_display || getStatusDisplay(projectData.status);
+      const statusLabel = projectData.status_display || getProjectStatusLabel(projectData.status);
       setProjectStatus(statusLabel);
 
       const projectLogs = await getProjectLogs(parseInt(projectId), useMockData);
@@ -669,18 +657,6 @@ const ProjectCard = ({ useMockData = false }) => {
     }
   };
 
-  const getStatusDisplay = (status) => {
-    const statusMap = {
-      'draft': 'Черновик',
-      'active': 'В работе',
-      'paused': 'Приостановлен',
-      'tests': 'Тестируется',
-      'completed': 'Завершен',
-      'cancelled': 'Отменен'
-    };
-    return statusMap[status] || 'Черновик';
-  };
-
   useEffect(() => {
     loadProjectAndLogs();
   }, [projectId, useMockData]);
@@ -688,13 +664,10 @@ const ProjectCard = ({ useMockData = false }) => {
   if (isLoading) {
     return (
       <div className="projectcard-container_project_card">
-        <div className="gantt-loading_gantt_class">
-          <div className="loading-spinner_gantt_class"></div>
-          <h3 style={{ color: 'black', margin: '1vh 0', fontSize: '2vh' }}>Загрузка карточки проекта...</h3>
-          <p style={{ color: 'rgba(0, 0, 0, 0.8)', fontSize: '1.4vh' }}>
-            Подготавливаем данные проекта
-          </p>
-        </div>
+        <PageLoading
+          title="Загрузка карточки проекта..."
+          subtitle="Подготавливаем данные проекта"
+        />
       </div>
     );
   }

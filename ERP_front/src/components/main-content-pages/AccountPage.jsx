@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getEmployeeById, updateEmployeeById } from '../../services/api';
 import { AccountProjectsPanel } from '../shared/AccountProjectsPanel';
+import { PageLoading } from '../shared/PageLoading';
+import { AvatarPhoto } from '../shared/AvatarPhoto';
 import './AccountPage.css';
 import { MY_TASKS_NAV_QUERY_STORAGE_KEY } from '../../constants/navigationKeys';
 import BackgoundFrame from "../../assets/Frame-account.svg";
@@ -331,10 +333,10 @@ function AccountPage({ useMockData = false }) {
                     onClick={handleAvatarClick}
                     title={isProfileEditing ? 'Нажмите для изменения фото' : ''}
                 >
-                    <img
+                    <AvatarPhoto
                         src={imagePreview}
                         alt="Предпросмотр"
-                        className="avatar-image"
+                        imgClassName="avatar-image"
                     />
                     {isProfileEditing && (
                         <div className="avatar-overlay">
@@ -351,13 +353,13 @@ function AccountPage({ useMockData = false }) {
                     onClick={handleAvatarClick}
                     title={isProfileEditing ? 'Нажмите для изменения фото' : ''}
                 >
-                    <img
+                    <AvatarPhoto
                         src={imageSrc}
-                        alt={userData.name}
-                        className="avatar-image"
+                        alt={userData.name || ''}
+                        imgClassName="avatar-image"
                         onError={(e) => {
                             e.target.style.display = 'none';
-                            const svg = e.target.parentNode.querySelector('svg');
+                            const svg = e.target.closest('.avatar-container')?.querySelector('svg');
                             if (svg) svg.style.display = 'block';
                         }}
                     />
@@ -407,10 +409,7 @@ function AccountPage({ useMockData = false }) {
             <div className="account-page">
                 <div className="account-column-left"></div>
                 <div className="account-column-center">
-                    <div className="loading-state">
-                        <div className="loading-spinner"></div>
-                        <p>Загрузка данных...</p>
-                    </div>
+                    <PageLoading title="Загрузка данных..." />
                 </div>
                 <div className="account-column-right"></div>
             </div>

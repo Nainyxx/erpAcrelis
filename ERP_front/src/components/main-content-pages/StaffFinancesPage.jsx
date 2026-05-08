@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { MultiSelectFilterDropdown } from '../shared/MultiSelectFilterDropdown';
 import {
     staffFinancesEmployeeFullName,
@@ -10,6 +10,7 @@ import {
     staffFinancesYearOptions
 } from '../../MockData/staffFinancesPageMock';
 import './StaffFinancesPage.css';
+import { Breadcrumbs } from '../shared/Breadcrumbs';
 
 function toggleIdInList(id, setSelectedIds) {
     setSelectedIds((prev) => {
@@ -21,8 +22,6 @@ function toggleIdInList(id, setSelectedIds) {
 }
 
 function StaffFinancesPage() {
-    const location = useLocation();
-    const navigate = useNavigate();
     const myStaffId = localStorage.getItem('staff_id');
 
     const [selectedMonthIds, setSelectedMonthIds] = useState(() => [
@@ -36,38 +35,16 @@ function StaffFinancesPage() {
         return <Navigate to="/account" replace />;
     }
 
-    const breadcrumb = (
-        <nav className="staff-finances-breadcrumb" aria-label="Навигация по разделам">
-            <button
-                type="button"
-                className="staff-finances-breadcrumb__link"
-                onClick={() => navigate(`/projects${location.search || ''}`)}
-            >
-                Главная
-            </button>
-            <span className="staff-finances-breadcrumb__sep" aria-hidden="true">
-                {' '}
-                /{' '}
-            </span>
-            <button type="button" className="staff-finances-breadcrumb__link" onClick={() => navigate('/operations')}>
-                Операции
-            </button>
-            <span className="staff-finances-breadcrumb__sep" aria-hidden="true">
-                {' '}
-                /{' '}
-            </span>
-            <span className="staff-finances-breadcrumb__segment">Заработная плата</span>
-            <span className="staff-finances-breadcrumb__sep" aria-hidden="true">
-                {' '}
-                /{' '}
-            </span>
-            <span className="staff-finances-breadcrumb__current">Сотрудник</span>
-        </nav>
-    );
+    const breadcrumbItems = [
+        { label: 'Главная', to: '/projects', preserveSearch: true },
+        { label: 'Операции', to: '/operations' },
+        { label: 'Заработная плата' },
+        { label: 'Сотрудник' },
+    ];
 
     return (
         <div className="staff-finances-page">
-            {breadcrumb}
+            <Breadcrumbs items={breadcrumbItems} />
             <div className="staff-finances-toolbar">
                 <h1 className="staff-finances-toolbar__name">{staffFinancesEmployeeFullName}</h1>
                 <div className="staff-finances-toolbar__filters">

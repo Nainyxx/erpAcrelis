@@ -80,6 +80,7 @@
 
 .employee-page_employee_card .employee-director-avatar {
     flex-shrink: 0;
+    position: relative;
     width: 48px;
     height: 48px;
     border-radius: 50%;

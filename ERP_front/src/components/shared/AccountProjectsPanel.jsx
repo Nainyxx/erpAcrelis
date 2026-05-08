@@ -4,6 +4,7 @@
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { getProjects, getStaffMediaUrl } from '../../services/api';
+import { AvatarPhoto } from './AvatarPhoto';
 
 const SEARCH_DEBOUNCE_MS = 1500;
 
@@ -58,13 +59,14 @@ function ProjectMemberAvatarFace({ member, navigate }) {
                 onClick={onFaceClick}
                 title={canOpenStaff ? `Профиль: ${displayName}` : displayName}
             >
-                <img
+                <AvatarPhoto
                     src={imageUrl}
                     alt=""
-                    className="account-projects-stack-img"
+                    imgClassName="account-projects-stack-img"
                     onError={(e) => {
                         e.target.style.display = 'none';
-                        const fb = e.target.nextElementSibling;
+                        const wrap = e.target.closest('.account-projects-stack-inner');
+                        const fb = wrap?.querySelector('.account-projects-stack-initials');
                         if (fb) fb.style.display = 'flex';
                     }}
                 />

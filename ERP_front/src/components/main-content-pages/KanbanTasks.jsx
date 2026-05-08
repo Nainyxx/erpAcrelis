@@ -8,6 +8,9 @@ import {
   getStaffList 
 } from '../../services/api';
 import './KanbanTasks.css';
+import { Breadcrumbs } from '../shared/Breadcrumbs';
+import { PageLoading } from '../shared/PageLoading';
+import { AvatarPhoto } from '../shared/AvatarPhoto';
 
 const KanbanTasks = ({ useMockData = false }) => {
   const navigate = useNavigate();
@@ -161,24 +164,17 @@ const KanbanTasks = ({ useMockData = false }) => {
             overflow: 'hidden'
           }}
         >
-          <img 
-            src={fullImageUrl} 
+          <AvatarPhoto
+            src={fullImageUrl}
             alt={name}
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              position: 'absolute',
-              top: 0,
-              left: 0
-            }}
-            onError={(e) => {
-              e.target.style.display = 'none';
-              e.target.nextSibling.style.display = 'flex';
-            }}
             crossOrigin="anonymous"
+            onError={(e) => {
+              const wrap = e.target.closest('.assignee-avatar_kanban_task');
+              const fb = wrap?.children[1];
+              if (fb) fb.style.display = 'flex';
+            }}
           />
-          
+
           <div 
             style={{
               display: 'none',
@@ -530,13 +526,10 @@ const KanbanTasks = ({ useMockData = false }) => {
   if (isLoading) {
     return (
       <div className="kanban-container_kanban_task">
-        <div className="gantt-loading_gantt_class">
-          <div className="loading-spinner_gantt_class"></div>
-          <h3 style={{ color: 'black', margin: '1vh 0', fontSize: '2vh' }}>Загрузка канбана задач...</h3>
-          <p style={{ color: 'rgba(0, 0, 0, 0.8)', fontSize: '1.4vh' }}>
-            Подготавливаем список задач проекта
-          </p>
-        </div>
+        <PageLoading
+          title="Загрузка канбана задач..."
+          subtitle="Подготавливаем список задач проекта"
+        />
       </div>
     );
   }
@@ -544,22 +537,14 @@ const KanbanTasks = ({ useMockData = false }) => {
   return (
     <div className="kanban-container_kanban_task">
       <div className="kanban-header_kanban_task">
-        <h1 className="kanban-title_kanban_task">
-          <span 
-            className="breadcrumb-link_kanban_task" 
-            onClick={() => navigate('/projects')}
-          >
-            Проекты
-          </span>
-          {' — '}
-          <span 
-            className="breadcrumb-link_kanban_task" 
-            onClick={() => navigate(`/projects/${projectId}`)}
-          >
-            {projectName || 'Проект'}
-          </span>
-          {' — Канбан задач'}
-        </h1>
+        <Breadcrumbs
+          items={[
+            { label: 'Проекты', to: '/projects' },
+            { label: projectName || 'Проект', to: `/projects/${projectId}` },
+            { label: 'Канбан задач' },
+          ]}
+        />
+        <h1 className="kanban-title_kanban_task">Канбан задач</h1>
       </div>
 
       <div className="create-task-section_kanban_task">

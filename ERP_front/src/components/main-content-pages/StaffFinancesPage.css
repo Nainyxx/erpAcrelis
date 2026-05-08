@@ -4,40 +4,6 @@
     background-color: #f6f6fe;
 }
 
-.staff-finances-breadcrumb {
-    margin: 0 0 1.4vh;
-    font-size: 1.8vh;
-    line-height: 1.5;
-}
-
-.staff-finances-breadcrumb__link {
-    margin: 0;
-    padding: 0;
-    border: none;
-    background: none;
-    font: inherit;
-    color: #8e8e95;
-    cursor: pointer;
-}
-
-.staff-finances-breadcrumb__link:hover {
-    color: #5b5b5b;
-    text-decoration: underline;
-}
-
-.staff-finances-breadcrumb__sep {
-    color: #c8c8d0;
-}
-
-.staff-finances-breadcrumb__segment {
-    color: #5b5b5b;
-}
-
-.staff-finances-breadcrumb__current {
-    color: #26262c;
-    font-weight: 600;
-}
-
 .staff-finances-toolbar {
     display: flex;
     flex-wrap: wrap;

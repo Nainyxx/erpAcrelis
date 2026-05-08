@@ -4,37 +4,24 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { getProjects, createProject } from '../../services/api';
 import { PROJECTS_NAV_QUERY_STORAGE_KEY } from '../../constants/navigationKeys';
 import { PROJECT_ACTIONS_ALLOWED_ROLES } from '../../constants/roles';
+import {
+  PROJECT_STATUS_OPTIONS,
+  PROJECT_TYPE_OPTIONS,
+  getProjectStatusLabel,
+  getProjectTypeLabel
+} from '../../constants/projects';
 import CreateEntityModal from '../shared/CreateEntityModal';
+import { Breadcrumbs } from '../shared/Breadcrumbs';
+import { PageLoading } from '../shared/PageLoading';
+import { AvatarPhoto } from '../shared/AvatarPhoto';
 import './ProjectsList.css';
 
 const PROJECTS_PER_PAGE = 20;
 
 const PROJECT_STATUS = [
   { id: 'all', label: 'Все статусы' },
-  { id: 'draft', label: 'Черновик' },
-  { id: 'active', label: 'В работе' },
-  { id: 'paused', label: 'Приостановлен' },
-  { id: 'tests', label: 'Тестируется' },
-  { id: 'completed', label: 'Завершен' },
-  { id: 'cancelled', label: 'Отменен' },
+  ...PROJECT_STATUS_OPTIONS,
 ];
-
-/** Справочник типов для фильтра и query typeName — не зависит от ответа API */
-const PROJECT_TYPE_OPTIONS = [
-  { id: 'website', label: 'Веб-сайт' },
-  { id: 'bot', label: 'Бот' },
-  { id: 'app', label: 'Приложение' },
-  { id: 'miniapp', label: 'Мини-приложение' },
-  { id: 'design', label: 'Дизайн' },
-  { id: 'other', label: 'Другое' },
-];
-
-const LEGACY_TYPE_LABELS = {
-  mobile: 'Мобильное приложение',
-  dashboard: 'Дашборд',
-  ecommerce: 'Интернет-магазин',
-  system: 'Система',
-};
 
 const normalizeQueryForCompare = (searchStr) => {
   const raw = (searchStr || '').replace(/^\?/, '');
@@ -49,9 +36,7 @@ const buildProjectsQueryString = (selectedType, selectedStatus, searchQuery) => 
   const params = new URLSearchParams();
   if (selectedType && selectedType !== 'all') {
     params.set('type', selectedType);
-    const fromList = PROJECT_TYPE_OPTIONS.find((t) => String(t.id) === String(selectedType));
-    const typeName =
-      fromList?.label || LEGACY_TYPE_LABELS[selectedType] || selectedType;
+    const typeName = getProjectTypeLabel(selectedType) || selectedType;
     if (typeName) params.set('typeName', typeName);
   }
   if (selectedStatus && selectedStatus !== 'all') {
@@ -209,16 +194,11 @@ const ProjectsList = ({ useMockData = false, showNotification }) => {
     loadProjects();
   }, [useMockData, selectedType, selectedStatus, searchQuery]);
 
-  const getTypeLabel = (type) => {
-    const opt = PROJECT_TYPE_OPTIONS.find((t) => t.id === type);
-    if (opt) return opt.label;
-    return LEGACY_TYPE_LABELS[type] || 'Проект';
-  };
+  const getTypeLabel = (type) => getProjectTypeLabel(type);
 
-  // Функция для получения отображаемого названия статуса
   const getStatusLabel = (status) => {
-    const statusObj = PROJECT_STATUS.find(s => s.id === status);
-    return statusObj ? statusObj.label : status;
+    if (status === 'all') return 'Все статусы';
+    return getProjectStatusLabel(status);
   };
 
   // ОБРАБОТЧИК СОЗДАНИЯ ПРОЕКТА
@@ -299,15 +279,15 @@ const ProjectsList = ({ useMockData = false, showNotification }) => {
     if (imageUrl) {
       return (
         <div className="avatar" style={{ backgroundColor: colors[colorIndex] }}>
-          <img
+          <AvatarPhoto
             src={imageUrl}
             alt={name}
+            imgClassName="avatar-image"
             onError={(e) => {
-              e.target.style.display = 'none';
-              const span = e.target.parentElement.querySelector('.avatar-initials');
+              const root = e.target.closest('.avatar');
+              const span = root?.querySelector('.avatar-initials');
               if (span) span.style.display = 'block';
             }}
-            className="avatar-image"
           />
           <span className="avatar-initials" style={{ display: 'none' }}>
             {initials.toUpperCase()}
@@ -349,14 +329,6 @@ const ProjectsList = ({ useMockData = false, showNotification }) => {
     );
   };
 
-  // Компонент загрузки
-  const LoadingSpinner = () => (
-    <div className="loading-container">
-      <div className="loading-spinner"></div>
-      <h3 className="loading-title">Загрузка проектов...</h3>
-    </div>
-  );
-
   // Компонент ошибки
   const ErrorMessage = ({ message }) => (
     <div className="error-container">
@@ -366,29 +338,19 @@ const ProjectsList = ({ useMockData = false, showNotification }) => {
     </div>
   );
 
-  const breadcrumb = (
-    <nav className="projects-breadcrumb" aria-label="Навигация по разделам">
-      <button
-        type="button"
-        className="projects-breadcrumb__home"
-        onClick={() => navigate(`/projects${location.search || ''}`)}
-      >
-        Главная
-      </button>
-      <span className="projects-breadcrumb__sep" aria-hidden="true">
-        {' '}
-        /{' '}
-      </span>
-      <span className="projects-breadcrumb__current">Проекты</span>
-    </nav>
-  );
+  const breadcrumbItems = [
+    { label: 'Главная', to: '/projects', preserveSearch: true },
+    { label: 'Проекты' },
+  ];
 
   // Если идет загрузка
   if (loading) {
     return (
-      <div className="projects-container">
-        {breadcrumb}
-        <LoadingSpinner />
+      <div className="projects-container projects-container--loading">
+        <Breadcrumbs items={breadcrumbItems} />
+        <div className="projects-loading-area">
+          <PageLoading title="Загрузка проектов..." />
+        </div>
       </div>
     );
   }
@@ -397,7 +359,7 @@ const ProjectsList = ({ useMockData = false, showNotification }) => {
   if (error) {
     return (
       <div className="projects-container">
-        {breadcrumb}
+        <Breadcrumbs items={breadcrumbItems} />
         <ErrorMessage message={error} />
       </div>
     );
@@ -405,7 +367,7 @@ const ProjectsList = ({ useMockData = false, showNotification }) => {
 
   return (
     <div className="projects-container">
-      {breadcrumb}
+      <Breadcrumbs items={breadcrumbItems} />
 
       {/* ФИЛЬТРЫ И КНОПКА СОЗДАНИЯ */}
       <div className="projects-toolbar">
@@ -540,93 +502,93 @@ const ProjectsList = ({ useMockData = false, showNotification }) => {
           onClose={() => setShowCreateModal(false)}
           onSubmit={handleCreateProject}
         >
-              <div className="form-group123">
-                <label>Название проекта *</label>
-                <input
-                  type="text"
-                  value={newProject.name}
-                  onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
-                  placeholder="Введите название проекта"
-                  disabled={creating}
-                />
-              </div>
+          <div className="form-group123">
+            <label>Название проекта *</label>
+            <input
+              type="text"
+              value={newProject.name}
+              onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
+              placeholder="Введите название проекта"
+              disabled={creating}
+            />
+          </div>
 
-              <div className="form-group123">
-                <label>Тип проекта *</label>
-                <select
-                  value={newProject.type}
-                  onChange={(e) => setNewProject({ ...newProject, type: e.target.value })}
-                  disabled={creating}
-                >
-                  <option value="website">Веб-сайт</option>
-                  <option value="bot">Бот</option>
-                  <option value="app">Приложение</option>
-                  <option value="miniapp">Мини-приложение</option>
-                  <option value="design">Дизайн</option>
-                  <option value="other">Другое</option>
-                </select>
-              </div>
+          <div className="form-group123">
+            <label>Тип проекта *</label>
+            <select
+              value={newProject.type}
+              onChange={(e) => setNewProject({ ...newProject, type: e.target.value })}
+              disabled={creating}
+            >
+              <option value="website">Веб-сайт</option>
+              <option value="bot">Бот</option>
+              <option value="app">Приложение</option>
+              <option value="miniapp">Мини-приложение</option>
+              <option value="design">Дизайн</option>
+              <option value="other">Другое</option>
+            </select>
+          </div>
 
-              <div className="form-group123">
-                <label>Заказчик *</label>
-                <input
-                  type="text"
-                  value={newProject.customer}
-                  onChange={(e) => setNewProject({ ...newProject, customer: e.target.value })}
-                  placeholder="Введите имя заказчика"
-                  disabled={creating}
-                />
-              </div>
+          <div className="form-group123">
+            <label>Заказчик *</label>
+            <input
+              type="text"
+              value={newProject.customer}
+              onChange={(e) => setNewProject({ ...newProject, customer: e.target.value })}
+              placeholder="Введите имя заказчика"
+              disabled={creating}
+            />
+          </div>
 
-              <div className="form-group123">
-                <label>Дедлайн *</label>
-                <input
-                  type="date"
-                  value={newProject.deadline}
-                  onChange={(e) => setNewProject({ ...newProject, deadline: `${(e.target.value).split('T')[0]}` })}
-                  disabled={creating}
-                />
-              </div>
+          <div className="form-group123">
+            <label>Дедлайн *</label>
+            <input
+              type="date"
+              value={newProject.deadline}
+              onChange={(e) => setNewProject({ ...newProject, deadline: `${(e.target.value).split('T')[0]}` })}
+              disabled={creating}
+            />
+          </div>
 
-              <div className="form-row123">
-                <div className="form-group123">
-                  <label>Часы *</label>
-                  <input
-                    type="number"
-                    value={newProject.hours}
-                    onChange={(e) => setNewProject({ ...newProject, hours: parseInt(e.target.value) || 0 })}
-                    disabled={creating}
-                    min="0"
-                  />
-                </div>
+          <div className="form-row123">
+            <div className="form-group123">
+              <label>Часы *</label>
+              <input
+                type="number"
+                value={newProject.hours}
+                onChange={(e) => setNewProject({ ...newProject, hours: parseInt(e.target.value) || 0 })}
+                disabled={creating}
+                min="0"
+              />
+            </div>
 
-                <div className="form-group123">
-                  <label>Бюджет</label>
-                  <input
-                    type="text"
-                    value={newProject.price}
-                    onChange={(e) => setNewProject({ ...newProject, price: e.target.value })}
-                    placeholder="0.00"
-                    disabled={creating}
-                  />
-                </div>
-              </div>
+            <div className="form-group123">
+              <label>Бюджет</label>
+              <input
+                type="text"
+                value={newProject.price}
+                onChange={(e) => setNewProject({ ...newProject, price: e.target.value })}
+                placeholder="0.00"
+                disabled={creating}
+              />
+            </div>
+          </div>
 
-              <div className="form-group123">
-                <label>Статус *</label>
-                <select
-                  value={newProject.status}
-                  onChange={(e) => setNewProject({ ...newProject, status: e.target.value })}
-                  disabled={creating}
-                >
-                  <option value="draft">Черновик</option>
-                  <option value="active">Активный</option>
-                  <option value="paused">Приостановлен</option>
-                  <option value="tests">Тестирование</option>
-                  <option value="completed">Завершен</option>
-                  <option value="cancelled">Отменен</option>
-                </select>
-              </div>
+          <div className="form-group123">
+            <label>Статус *</label>
+            <select
+              value={newProject.status}
+              onChange={(e) => setNewProject({ ...newProject, status: e.target.value })}
+              disabled={creating}
+            >
+              <option value="draft">Черновик</option>
+              <option value="active">Активный</option>
+              <option value="paused">Приостановлен</option>
+              <option value="tests">Тестирование</option>
+              <option value="completed">Завершен</option>
+              <option value="cancelled">Отменен</option>
+            </select>
+          </div>
         </CreateEntityModal>
       )}
     </div>

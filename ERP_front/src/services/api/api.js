@@ -1,5 +1,11 @@
 import { BASE_HTTP_URL } from './config';
-import { authFetch, refreshAccessToken } from './httpClient';
+import {
+  authFetch,
+  buildSearchUrl,
+  formDataFrom,
+  refreshAccessToken,
+  requestAuthJson
+} from './httpClient';
 import {
   clearTokens,
   clearUserData,
@@ -8,6 +14,25 @@ import {
   saveTokens,
   saveUserData
 } from './tokenStore';
+import {
+  getProjectTypeLabel,
+  normalizeProjectType
+} from '../../constants/projects';
+import { getTaskStatusLabel } from '../../constants/tasks';
+import {
+  cleanPriceForAPI,
+  formatDateForApi,
+  formatDateForDisplay
+} from './formatters';
+import {
+  formatEmployee,
+  formatProjectData,
+  formatProjectListItem,
+  formatProjectLog,
+  formatStaffListItem,
+  generateProjectTypes
+} from './mappers';
+import { mockDelay, withMock } from './mockHelper';
 
 export {
   clearTokens,
@@ -17,138 +42,103 @@ export {
   saveTokens,
   saveUserData,
   authFetch,
-  refreshAccessToken
+  refreshAccessToken,
+  formatDateForDisplay
 };
 
-const PROJECT_TYPE_MAP = {
-  'website': 'Сайт',
-  'bot': 'Бот', 
-  'app': 'Приложение',
-  'miniapp': 'Мини-приложение',
-  'design': 'Дизайн',
-  'other': 'Другое',
-  
-  'веб-сайт': 'website',
-  'сайт': 'website',
-  'вебсайт': 'website',
-  'бот': 'bot',
-  'приложение': 'app',
-  'мобильное приложение': 'app',
-  'мини-приложение': 'miniapp',
-  'миниприложение': 'miniapp',
-  'дизайн': 'design',
-  'другое': 'other',
-  'прочее': 'other',
-  '': 'other'
-};
+const PROJECTS_PAGE_SIZE = 20;
+const TASKS_PAGE_SIZE = 20;
 
-// Аутентификация пользователя
-// В ERP_front/src/services/api/api.js обновим функцию login()
+/* ------------------------------------------------------------------ */
+/*                              Auth                                  */
+/* ------------------------------------------------------------------ */
 
-// Аутентификация пользователя
 export async function login(username, password) {
-  try {
-    const response = await fetch(`${BASE_HTTP_URL}auth/login/`, {
-      method: 'POST',
-      headers: {
-        'accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        username: username,
-        password: password
-      })
-    });
+  const response = await fetch(`${BASE_HTTP_URL}auth/login/`, {
+    method: 'POST',
+    headers: {
+      accept: 'application/json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ username, password })
+  });
 
-
-    if (response.status === 403) {
-      throw new Error('ACCESS_DENIED: Недостаточно прав для доступа к системе');
-    }
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      try {
-        const errorData = JSON.parse(errorText);
-        throw new Error(errorData.detail || 'Ошибка авторизации');
-      } catch {
-        throw new Error(`Ошибка авторизации: ${response.status}`);
-      }
-    }
-
-    const responseData = await response.json();
-    saveTokens(responseData);
-    saveUserData(responseData);
-    
-    return {
-      success: true,
-      user: {
-        user_id: responseData.user_id,
-        username: responseData.username,
-        staff_id: responseData.staff_id,
-        name: responseData.name,
-        email: responseData.email,
-        post: responseData.post,
-        department: responseData.department,
-        accessToken: responseData.access
-      }
-    };
-    
-  } catch (error) {
-    throw error;
+  if (response.status === 403) {
+    throw new Error('ACCESS_DENIED: Недостаточно прав для доступа к системе');
   }
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    try {
+      const errorData = JSON.parse(errorText);
+      throw new Error(errorData.detail || 'Ошибка авторизации');
+    } catch {
+      throw new Error(`Ошибка авторизации: ${response.status}`);
+    }
+  }
+
+  const responseData = await response.json();
+  saveTokens(responseData);
+  saveUserData(responseData);
+
+  return {
+    success: true,
+    user: {
+      user_id: responseData.user_id,
+      username: responseData.username,
+      staff_id: responseData.staff_id,
+      name: responseData.name,
+      email: responseData.email,
+      post: responseData.post,
+      department: responseData.department,
+      accessToken: responseData.access
+    }
+  };
 }
 
-// Регистрация нового пользователя
 export async function register(userData) {
-  try {
-    const response = await fetch(`${BASE_HTTP_URL}auth/register/`, {
-      method: 'POST',
-      headers: {
-        'accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        username: userData.username,
-        password: userData.password,
-        email: userData.email || '',
-        first_name: userData.firstName || '',
-        last_name: userData.lastName || ''
-      })
-    });
+  const response = await fetch(`${BASE_HTTP_URL}auth/register/`, {
+    method: 'POST',
+    headers: {
+      accept: 'application/json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      username: userData.username,
+      password: userData.password,
+      email: userData.email || '',
+      first_name: userData.firstName || '',
+      last_name: userData.lastName || ''
+    })
+  });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      try {
-        const errorData = JSON.parse(errorText);
-        const errorMessage = Object.values(errorData).flat().join(', ') || 'Ошибка регистрации';
-        throw new Error(errorMessage);
-      } catch {
-        throw new Error(`Ошибка регистрации: ${response.status}`);
-      }
+  if (!response.ok) {
+    const errorText = await response.text();
+    try {
+      const errorData = JSON.parse(errorText);
+      const errorMessage =
+        Object.values(errorData).flat().join(', ') || 'Ошибка регистрации';
+      throw new Error(errorMessage);
+    } catch {
+      throw new Error(`Ошибка регистрации: ${response.status}`);
     }
-
-    const result = await response.json();
-    return {
-      success: true,
-      message: 'Регистрация прошла успешно'
-    };
-    
-  } catch (error) {
-    throw error;
   }
+
+  await response.json();
+  return {
+    success: true,
+    message: 'Регистрация прошла успешно'
+  };
 }
 
-
-// Проверка аутентификации пользователя
 export function isAuthenticated() {
   const token = getAccessToken();
   return !!token && token !== '';
 }
 
-// Получение данных текущего пользователя
 export function getCurrentUser() {
   const token = getAccessToken();
-  
+
   if (!token) {
     return {
       user_id: null,
@@ -156,13 +146,13 @@ export function getCurrentUser() {
       name: 'Гость'
     };
   }
-  
+
   try {
     const storedUserId = localStorage.getItem('user_id');
     const storedStaffId = localStorage.getItem('staff_id');
     const storedName = localStorage.getItem('name');
     const storedUsername = localStorage.getItem('username');
-    
+
     if (storedUserId || storedStaffId) {
       return {
         user_id: storedUserId || null,
@@ -175,9 +165,9 @@ export function getCurrentUser() {
         department: localStorage.getItem('department') || ''
       };
     }
-    
+
     const payload = JSON.parse(atob(token.split('.')[1]));
-    
+
     return {
       user_id: payload.user_id || null,
       staff_id: payload.staff_id || null,
@@ -186,7 +176,7 @@ export function getCurrentUser() {
       name: payload.name || payload.username || 'Текущий пользователь',
       exp: payload.exp
     };
-  } catch (error) {
+  } catch {
     return {
       user_id: null,
       staff_id: null,
@@ -207,453 +197,237 @@ export function getStaffMediaUrl(pathOrUrl) {
   return `${base}/media/${path}`;
 }
 
-// Получение списка проектов
-export async function getProjects(USE_MOCK_DATA, filters = {}) {
-  if (USE_MOCK_DATA) {
-    await new Promise(resolve => setTimeout(resolve, 300));
+/* ------------------------------------------------------------------ */
+/*                             Projects                                */
+/* ------------------------------------------------------------------ */
 
-    const mockModule = await import('../../MockData/projects.js');
-    const mockProjects = mockModule.projectsData || [];
+export function getProjects(USE_MOCK_DATA, filters = {}) {
+  return withMock({
+    enabled: USE_MOCK_DATA,
+    mock: async () => {
+      const mockModule = await import('../../MockData/projects.js');
+      const mockProjects = mockModule.projectsData || [];
 
-    // Эмуляция пагинации для mock данных
-    const page = parseInt(filters.page) || 1;
-    const pageSize = 20;
-    const startIndex = (page - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-    const paginatedProjects = mockProjects.slice(startIndex, endIndex).map(project => ({
-      id: project.id,
-      name: project.name,
-      type: project.type || 'other',
-      typeLabel: PROJECT_TYPE_MAP[project.type] || 'Другое',
-      status: project.status || 'draft',
-      price: project.price || "0.00",
-      hours: project.hours || 0,
-      customer: project.customer || 'Не указан',
-      startDate: formatDateForDisplay(project.start_date || project.startDate || project.created),
-      deadline: formatDateForDisplay(project.deadline),
-      team: project.performers || project.team || []
-    }));
+      const page = parseInt(filters.page) || 1;
+      const startIndex = (page - 1) * PROJECTS_PAGE_SIZE;
+      const endIndex = startIndex + PROJECTS_PAGE_SIZE;
+      const paginatedProjects = mockProjects
+        .slice(startIndex, endIndex)
+        .map(formatProjectListItem);
+      const projectTypes = generateProjectTypes(mockProjects.map(formatProjectListItem));
 
-    const projectTypes = generateProjectTypes(
-      mockProjects.map(project => ({
-        id: project.id,
-        name: project.name,
-        type: project.type || 'other',
-        typeLabel: PROJECT_TYPE_MAP[project.type] || 'Другое',
-        status: project.status || 'draft',
-        price: project.price || "0.00",
-        hours: project.hours || 0,
-        customer: project.customer || 'Не указан',
-        startDate: formatDateForDisplay(project.start_date || project.startDate || project.created),
-        deadline: formatDateForDisplay(project.deadline),
-        team: project.performers || project.team || []
-      }))
-    );
-
-    return {
-      projects: paginatedProjects,
-      projectTypes,
-      pagination: {
-        count: mockProjects.length,
-        next: page * pageSize < mockProjects.length ? page + 1 : null,
-        previous: page > 1 ? page - 1 : null,
-        current_page: page,
-        total_pages: Math.ceil(mockProjects.length / pageSize)
-      }
-    };
-  }
-  
-  try {
-    const url = new URL(`${BASE_HTTP_URL}projects/`);
-    
-    // Добавляем все фильтры, включая page
-    Object.keys(filters).forEach(key => {
-      if (filters[key] !== undefined && filters[key] !== null && filters[key] !== '') {
-        url.searchParams.append(key, filters[key]);
-      }
-    });
-    
-    // Если ordering не указан, добавляем сортировку по умолчанию
-    if (!filters.ordering && !url.searchParams.has('ordering')) {
-      url.searchParams.append('ordering', '-id');
-    }
-    
-    
-    const response = await authFetch(url.toString(), {
-      method: 'GET'
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`API Error: ${response.status} - ${errorText}`);
-    }
-
-    const projectsData = await response.json();
-    
-    // Получаем текущую страницу из фильтров
-    const currentPage = parseInt(filters.page) || 1;
-    
-    // Форматируем проекты
-    const formattedProjects = (projectsData.results || projectsData).map(project => ({
-      id: project.id,
-      name: project.name,
-      type: project.type || 'other',
-      typeLabel: PROJECT_TYPE_MAP[project.type] || 'Другое',
-      status: project.status || 'draft',
-      price: project.price || "0.00",
-      hours: project.hours || 0,
-      customer: project.customer || 'Не указан',
-      startDate: formatDateForDisplay(project.start_date || project.created),
-      deadline: formatDateForDisplay(project.deadline),
-      team: project.performers || []
-    }));
-    
-    // Генерируем типы проектов
-    const projectTypes = generateProjectTypes(formattedProjects);
-    
-    // Извлекаем данные пагинации из ответа API
-    const totalCount = projectsData.count || formattedProjects.length;
-    const totalPages = Math.ceil(totalCount / 20);
-    
-    return {
-      projects: formattedProjects,
-      projectTypes,
-      pagination: {
-        count: totalCount,
-        next: projectsData.next,
-        previous: projectsData.previous,
-        current_page: currentPage,
-        total_pages: totalPages
-      }
-    };
-    
-  } catch (error) {
-    throw error;
-  }
-}
-
-// Получение проекта по ID
-// Получение проекта по ID
-export async function getProjectById(projectId, USE_MOCK_DATA) {
-  if (USE_MOCK_DATA) {
-    const mockModule = await import('../../MockData/projects.js');
-    const mockProjects = mockModule.projectsData || [];
-    const project = mockProjects.find(p => p.id === projectId) || getFallbackProject();
-    return formatProjectData(project);
-  }
-  
-  try {
-    const response = await authFetch(`${BASE_HTTP_URL}projects/${projectId}/`, {
-      method: 'GET'
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`API Error: ${response.status} - ${errorText}`);
-    }
-    
-    const project = await response.json();
-    return formatProjectData(project);
-  } catch (error) {
-    throw error;
-  }
-}
-
-// Обновление проекта
-export async function updateProject(projectId, updateData, USE_MOCK_DATA) {
-  if (USE_MOCK_DATA) {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    const project = await getProjectById(projectId, true);
-    const updated = { ...project, ...updateData };
-    
-    // Обновляем отображаемый статус
-    if (updateData.status) {
-      const statusMap = {
-        'draft': 'Черновик',
-        'active': 'В работе',
-        'paused': 'Приостановлен',
-        'tests': 'Тестируется',
-        'completed': 'Завершен',
-        'cancelled': 'Отменен'
+      return {
+        projects: paginatedProjects,
+        projectTypes,
+        pagination: {
+          count: mockProjects.length,
+          next: page * PROJECTS_PAGE_SIZE < mockProjects.length ? page + 1 : null,
+          previous: page > 1 ? page - 1 : null,
+          current_page: page,
+          total_pages: Math.ceil(mockProjects.length / PROJECTS_PAGE_SIZE)
+        }
       };
-      updated.status_display = statusMap[updateData.status] || 'Черновик';
-    }
-    
-    // Обновляем часы
-    if (updateData.hours !== undefined) {
-      updated.hours = updateData.hours;
-    }
-    
-    return formatProjectData(updated);
-  }
-  
-  const formData = new FormData();
-  
-  // Добавляем все поля для обновления
-  if (updateData.status !== undefined) {
-    formData.append('status', updateData.status);
-  }
-  
-  if (updateData.start_date !== undefined) {
-    formData.append('start_date', updateData.start_date);
-  }
-  
-  if (updateData.deadline !== undefined) {
-    formData.append('deadline', updateData.deadline);
-  }
-  
-  if (updateData.type !== undefined) {
-    // Типы проекта должны быть: website, bot, app, miniapp, design, other
-    const validTypes = ['website', 'bot', 'app', 'miniapp', 'design', 'other'];
-    const inputType = updateData.type.toLowerCase().trim();
-    
-    // Если тип уже в правильном формате, используем его
-    if (validTypes.includes(inputType)) {
-      formData.append('type', inputType);
-    } else {
-      // Иначе преобразуем русское название в английский формат
-      const typeMap = {
-        'сайт': 'website',
-        'бот': 'bot',
-        'приложение': 'app',
-        'мини-приложение': 'miniapp',
-        'миниприложение': 'miniapp',
-        'дизайн': 'design',
-        'другое': 'other',
-        'прочее': 'other'
+    },
+    real: async () => {
+      const url = buildSearchUrl('projects/', filters, { ordering: '-id' });
+      const projectsData = await requestAuthJson(url, { method: 'GET' });
+
+      const currentPage = parseInt(filters.page) || 1;
+      const formattedProjects = (projectsData.results || projectsData).map(
+        formatProjectListItem
+      );
+      const projectTypes = generateProjectTypes(formattedProjects);
+      const totalCount = projectsData.count || formattedProjects.length;
+      const totalPages = Math.ceil(totalCount / PROJECTS_PAGE_SIZE);
+
+      return {
+        projects: formattedProjects,
+        projectTypes,
+        pagination: {
+          count: totalCount,
+          next: projectsData.next,
+          previous: projectsData.previous,
+          current_page: currentPage,
+          total_pages: totalPages
+        }
       };
-      
-      const mappedType = typeMap[inputType] || 'other';
-      formData.append('type', mappedType);
     }
-  }
-  
-  if (updateData.price !== undefined) {
-    const cleanPrice = cleanPriceForAPI(updateData.price);
-    formData.append('price', cleanPrice);
-  }
-  
-  if (updateData.customer !== undefined) {
-    formData.append('customer', updateData.customer);
-  }
-  
-  // Добавляем часы
-  if (updateData.hours !== undefined) {
-    formData.append('hours', updateData.hours.toString());
-  }
-  
-  try {
-    const response = await authFetch(`${BASE_HTTP_URL}projects/${projectId}/`, {
-      method: 'PATCH',
-      body: formData
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`API Error: ${response.status} - ${errorText}`);
-    }
-
-    const responseData = await response.json();
-    return formatProjectData(responseData);
-  } catch (error) {
-    throw error;
-  }
+  });
 }
 
-// Создание проекта
-export async function createProject(projectData, USE_MOCK_DATA) {
-  if (USE_MOCK_DATA) {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    const mockId = Math.floor(Math.random() * 1000) + 100;
-    
-    const mockProject = {
-      id: mockId,
-      name: projectData.name || 'Новый проект',
-      type: projectData.type || 'website',
-      status: projectData.status || 'draft',
-      price: projectData.price || "0.00",
-      hours: projectData.hours || 0,
-      customer: projectData.customer || 'Не указан',
-      deadline: projectData.deadline || new Date().toISOString(),
-      created: new Date().toISOString(),
-      available: projectData.available || false,
-      team: [],
-      files: [],
-      changes: []
-    };
-    
-    return formatProjectData(mockProject);
-  }
-  
-  const formData = new FormData();
-  
-  formData.append('name', projectData.name);
-  formData.append('type', projectData.type);
-  formData.append('status', projectData.status);
-  formData.append('customer', projectData.customer);
-  formData.append('deadline', projectData.deadline);
-  formData.append('hours', projectData.hours.toString());
-  
-  if (projectData.price) {
-    formData.append('price', cleanPriceForAPI(projectData.price));
-  }
-  
-  if (projectData.available !== undefined) {
-    formData.append('available', projectData.available.toString());
-  }
-  
-  try {
-    const response = await authFetch(`${BASE_HTTP_URL}projects/`, {
-      method: 'POST',
-      body: formData
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`API Error: ${response.status} - ${errorText}`);
+export function getProjectById(projectId, USE_MOCK_DATA) {
+  return withMock({
+    enabled: USE_MOCK_DATA,
+    delay: 0,
+    mock: async () => {
+      const mockModule = await import('../../MockData/projects.js');
+      const mockProjects = mockModule.projectsData || [];
+      const project = mockProjects.find((p) => p.id === projectId) || getFallbackProject();
+      return formatProjectData(project);
+    },
+    real: async () => {
+      const project = await requestAuthJson(`projects/${projectId}/`, { method: 'GET' });
+      return formatProjectData(project);
     }
-
-    const responseData = await response.json();
-    return formatProjectData(responseData);
-  } catch (error) {
-    throw error;
-  }
+  });
 }
 
-// Загрузка файла в проект
-export async function uploadFileToProject(projectId, file, USE_MOCK_DATA) {
-  if (USE_MOCK_DATA) {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const mockFile = {
+export function updateProject(projectId, updateData, USE_MOCK_DATA) {
+  return withMock({
+    enabled: USE_MOCK_DATA,
+    mock: async () => {
+      const project = await getProjectById(projectId, true);
+      const updated = { ...project, ...updateData };
+
+      if (updateData.hours !== undefined) {
+        updated.hours = updateData.hours;
+      }
+
+      return formatProjectData(updated);
+    },
+    real: async () => {
+      const fields = {};
+      if (updateData.status !== undefined) fields.status = updateData.status;
+      if (updateData.start_date !== undefined) fields.start_date = updateData.start_date;
+      if (updateData.deadline !== undefined) fields.deadline = updateData.deadline;
+      if (updateData.type !== undefined) fields.type = normalizeProjectType(updateData.type);
+      if (updateData.price !== undefined) fields.price = cleanPriceForAPI(updateData.price);
+      if (updateData.customer !== undefined) fields.customer = updateData.customer;
+      if (updateData.hours !== undefined) fields.hours = updateData.hours;
+
+      const responseData = await requestAuthJson(`projects/${projectId}/`, {
+        method: 'PATCH',
+        body: formDataFrom(fields)
+      });
+      return formatProjectData(responseData);
+    }
+  });
+}
+
+export function createProject(projectData, USE_MOCK_DATA) {
+  return withMock({
+    enabled: USE_MOCK_DATA,
+    mock: async () => {
+      const mockId = Math.floor(Math.random() * 1000) + 100;
+      const mockProject = {
+        id: mockId,
+        name: projectData.name || 'Новый проект',
+        type: projectData.type || 'website',
+        status: projectData.status || 'draft',
+        price: projectData.price || '0.00',
+        hours: projectData.hours || 0,
+        customer: projectData.customer || 'Не указан',
+        deadline: projectData.deadline || new Date().toISOString(),
+        created: new Date().toISOString(),
+        available: projectData.available || false,
+        team: [],
+        files: [],
+        changes: []
+      };
+      return formatProjectData(mockProject);
+    },
+    real: async () => {
+      const fields = {
+        name: projectData.name,
+        type: projectData.type,
+        status: projectData.status,
+        customer: projectData.customer,
+        deadline: projectData.deadline,
+        hours: projectData.hours
+      };
+      if (projectData.price) {
+        fields.price = cleanPriceForAPI(projectData.price);
+      }
+      if (projectData.available !== undefined) {
+        fields.available = projectData.available;
+      }
+
+      const responseData = await requestAuthJson('projects/', {
+        method: 'POST',
+        body: formDataFrom(fields)
+      });
+      return formatProjectData(responseData);
+    }
+  });
+}
+
+export function uploadFileToProject(projectId, file, USE_MOCK_DATA) {
+  return withMock({
+    enabled: USE_MOCK_DATA,
+    delay: 500,
+    mock: () => ({
       id: Math.floor(Math.random() * 1000),
       name: file.name,
       file: `https://example.com/files/${file.name}`,
       uploaded_at: new Date().toISOString(),
       size: file.size
-    };
-    
-    return mockFile;
-  }
-  
-  const formData = new FormData();
-  formData.append('file', file);
-  
-  try {
-    const response = await authFetch(`${BASE_HTTP_URL}projects/${projectId}/files/`, {
-      method: 'POST',
-      body: formData
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Ошибка загрузки файла: ${response.status} - ${errorText}`);
+    }),
+    real: async () => {
+      const responseData = await requestAuthJson(`projects/${projectId}/files/`, {
+        method: 'POST',
+        body: formDataFrom({ file })
+      });
+      return {
+        id: responseData.id,
+        name: file.name,
+        file: responseData.file,
+        uploaded_at: responseData.uploaded_at,
+        size: file.size
+      };
     }
-
-    const responseData = await response.json();
-    return {
-      id: responseData.id,
-      name: file.name,
-      file: responseData.file,
-      uploaded_at: responseData.uploaded_at,
-      size: file.size
-    };
-  } catch (error) {
-    throw error;
-  }
+  });
 }
 
-// Добавление исполнителя к проекту
-export async function addPerformerToProject(projectId, staffId, USE_MOCK_DATA) {
-  if (USE_MOCK_DATA) {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    const mockPerformer = {
+export function addPerformerToProject(projectId, staffId, USE_MOCK_DATA) {
+  return withMock({
+    enabled: USE_MOCK_DATA,
+    mock: () => ({
       id: Math.floor(Math.random() * 1000),
       staff: staffId,
       staff_name: 'Иван Иванов',
       staff_post: 'Разработчик',
       assigned_at: new Date().toISOString()
-    };
-    
-    return mockPerformer;
-  }
-  
-  try {
-    const response = await authFetch(`${BASE_HTTP_URL}projects/${projectId}/performers/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        project: parseInt(projectId),
-        staff: parseInt(staffId)
+    }),
+    real: () =>
+      requestAuthJson(`projects/${projectId}/performers/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project: parseInt(projectId),
+          staff: parseInt(staffId)
+        })
       })
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Ошибка: ${response.status} - ${errorText}`);
-    }
-
-    const responseData = await response.json();
-    return responseData;
-  } catch (error) {
-    throw error;
-  }
+  });
 }
 
-// Получение логов проекта
 export async function getProjectLogs(projectId, USE_MOCK_DATA) {
   if (USE_MOCK_DATA) {
-    await new Promise(resolve => setTimeout(resolve, 200));
-    
+    await mockDelay(200);
     const mockLogs = [
-      {
-        id: 1,
-        content: "Проект создан",
-        created: "2025-12-23T10:00:00+03:00"
-      },
-      {
-        id: 2, 
-        content: "Добавлен исполнитель",
-        created: "2025-12-23T11:30:00+03:00"
-      }
+      { id: 1, content: 'Проект создан', created: '2025-12-23T10:00:00+03:00' },
+      { id: 2, content: 'Добавлен исполнитель', created: '2025-12-23T11:30:00+03:00' }
     ];
-    
-    return mockLogs.map(log => ({
-      id: log.id,
-      action: log.content,
-      date: formatDateTime(log.created)
-    }));
+    return mockLogs.map(formatProjectLog);
   }
-  
+
   try {
-    const response = await authFetch(`${BASE_HTTP_URL}projects/${projectId}/logs/?page=1`, {
+    const logsData = await requestAuthJson(`projects/${projectId}/logs/?page=1`, {
       method: 'GET'
     });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`API Error: ${response.status} - ${errorText}`);
-    }
-
-    const logsData = await response.json();
-    return logsData.map(log => ({
-      id: log.id,
-      action: log.content,
-      date: formatDateTime(log.created)
-    }));
-  } catch (error) {
+    return (logsData || []).map(formatProjectLog);
+  } catch {
     return [];
   }
 }
 
-// Получение списка задач
+/* ------------------------------------------------------------------ */
+/*                              Tasks                                  */
+/* ------------------------------------------------------------------ */
+
 export async function getTasks(USE_MOCK_DATA, filters = {}) {
   if (USE_MOCK_DATA) {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
+    await mockDelay();
+
     const mockTasks = [
       {
         id: 1,
@@ -687,88 +461,55 @@ export async function getTasks(USE_MOCK_DATA, filters = {}) {
         created: '2025-12-22T14:30:00+03:00',
         hours: 16
       },
-      // Добавляем больше задач для пагинации
       ...Array.from({ length: 50 }, (_, i) => ({
         id: i + 3,
         name: `Задача ${i + 3}`,
         status: i % 3 === 0 ? 'new' : i % 3 === 1 ? 'active' : 'completed',
-        status_display: i % 3 === 0 ? 'Новое' : i % 3 === 1 ? 'В работе' : 'Завершено',
-        project: i % 2 + 1,
+        status_display:
+          i % 3 === 0 ? 'Новое' : i % 3 === 1 ? 'В работе' : 'Завершено',
+        project: (i % 2) + 1,
         project_name: i % 2 === 0 ? 'Веб-сайт компании' : 'Мобильное приложение',
         director: 1,
         director_name: 'Иван Иванов',
         performer: 4,
         performer_name: 'Лутфуллин Амир',
-        deadline: `2025-12-${25 + i % 5}T10:00:00+03:00`,
+        deadline: `2025-12-${25 + (i % 5)}T10:00:00+03:00`,
         is_overdue: false,
-        created: `2025-12-${20 + i % 3}T10:00:00+03:00`,
+        created: `2025-12-${20 + (i % 3)}T10:00:00+03:00`,
         hours: 8
       }))
     ];
 
     let list = [...mockTasks];
-    if (filters.status) {
-      list = list.filter((t) => t.status === filters.status);
-    }
-    if (filters.performer) {
+    if (filters.status) list = list.filter((t) => t.status === filters.status);
+    if (filters.performer)
       list = list.filter((t) => String(t.performer) === String(filters.performer));
-    }
-    if (filters.director) {
+    if (filters.director)
       list = list.filter((t) => String(t.director) === String(filters.director));
-    }
-    if (filters.project) {
+    if (filters.project)
       list = list.filter((t) => String(t.project) === String(filters.project));
-    }
 
     const page = parseInt(filters.page, 10) || 1;
-    const pageSize = 20;
     const count = list.length;
-    const startIndex = (page - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
+    const startIndex = (page - 1) * TASKS_PAGE_SIZE;
+    const endIndex = startIndex + TASKS_PAGE_SIZE;
     const paginatedTasks = list.slice(startIndex, endIndex);
-    const totalPages = Math.max(1, Math.ceil(count / pageSize));
+    const totalPages = Math.max(1, Math.ceil(count / TASKS_PAGE_SIZE));
 
     return {
       results: paginatedTasks,
       count,
-      next: page * pageSize < count ? page + 1 : null,
+      next: page * TASKS_PAGE_SIZE < count ? page + 1 : null,
       previous: page > 1 ? page - 1 : null,
       current_page: page,
       total_pages: totalPages
     };
   }
-  
+
   try {
-    const url = new URL(`${BASE_HTTP_URL}tasks/`);
-    
-    // Добавляем все фильтры, включая page
-    Object.keys(filters).forEach(key => {
-      if (filters[key] !== undefined && filters[key] !== null && filters[key] !== '') {
-        url.searchParams.append(key, filters[key]);
-      }
-    });
-    
-    // Если ordering не указан, добавляем сортировку по deadline по умолчанию
-    if (!filters.ordering && !url.searchParams.has('ordering')) {
-      url.searchParams.append('ordering', '-deadline');
-    }
-    
-    
-    const response = await authFetch(url.toString(), {
-      method: 'GET'
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`API Error: ${response.status} - ${errorText}`);
-    }
-
-    const tasksData = await response.json();
-    
-    // API возвращает пагинированный ответ с count
-    return tasksData;
-    
-  } catch (error) {
+    const url = buildSearchUrl('tasks/', filters, { ordering: '-deadline' });
+    return await requestAuthJson(url, { method: 'GET' });
+  } catch {
     return {
       results: [],
       count: 0,
@@ -779,124 +520,70 @@ export async function getTasks(USE_MOCK_DATA, filters = {}) {
     };
   }
 }
-// Получение задач по исполнителю
+
 export async function getTasksByPerformer(performerId, USE_MOCK_DATA) {
   if (USE_MOCK_DATA) {
-    const allTasks = await getTasks(true, {});
-    return allTasks;
+    return getTasks(true, {});
   }
-  
   try {
-    const tasks = await getTasks(false, { performer: performerId });
-    return tasks;
-  } catch (error) {
+    return await getTasks(false, { performer: performerId });
+  } catch {
     return [];
   }
 }
 
-// Создание задачи
-export async function createTask(taskData, USE_MOCK_DATA) {
-  if (USE_MOCK_DATA) {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    const mockTask = {
+export function createTask(taskData, USE_MOCK_DATA) {
+  return withMock({
+    enabled: USE_MOCK_DATA,
+    mock: () => ({
       id: Math.floor(Math.random() * 1000) + 100,
       name: taskData.name,
       description: taskData.description || '',
       status: taskData.status || 'new',
-      status_display: taskData.status === 'completed' ? 'Завершено' : 
-                     taskData.status === 'active' ? 'В работе' : 'Новое',
+      status_display:
+        taskData.status === 'completed'
+          ? 'Завершено'
+          : taskData.status === 'active'
+          ? 'В работе'
+          : 'Новое',
       project: taskData.project || null,
       project_name: taskData.project_name || null,
       director: taskData.director || null,
       director_name: taskData.director_name || null,
       performer: taskData.performer || null,
       performer_name: taskData.performer_name || null,
-      deadline: taskData.deadline, // Просто дата
+      deadline: taskData.deadline,
       hours: taskData.hours || 0,
       is_overdue: false,
       created: new Date().toISOString(),
       updated: new Date().toISOString(),
       files: [],
       comments: []
-    };
-    
-    return mockTask;
-  }
-  
-  const formData = new FormData();
-  
-  formData.append('name', taskData.name);
-  formData.append('description', taskData.description || taskData.name);
-  
-  // ФОРМАТИРОВАНИЕ ДАТЫ - только YYYY-MM-DD без времени
-  if (taskData.deadline) {
-    let deadlineFormatted = taskData.deadline;
-    
-    // Если есть время (T), обрезаем его
-    if (taskData.deadline.includes('T')) {
-      deadlineFormatted = taskData.deadline.split('T')[0];
-    }
-    // Если формат DD.MM.YYYY, конвертируем
-    else if (taskData.deadline.includes('.')) {
-      const parts = taskData.deadline.split('.');
-      if (parts.length === 3) {
-        const [day, month, year] = parts;
-        deadlineFormatted = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-      }
-    }
-    
-    // Проверяем, что осталась только дата
-    formData.append('deadline', deadlineFormatted);
-  }
-  
-  if (taskData.project) {
-    formData.append('project', taskData.project.toString());
-  }
-  
-  if (taskData.status) {
-    formData.append('status', taskData.status);
-  } else {
-    formData.append('status', 'new');
-  }
-  
-  if (taskData.performer) {
-    formData.append('performer', taskData.performer.toString());
-  }
-  
-  if (taskData.director) {
-    formData.append('director', taskData.director.toString());
-  }
-  
-  if (taskData.hours !== undefined) {
-    formData.append('hours', taskData.hours.toString());
-  }
-  
-  try {
-    const response = await authFetch(`${BASE_HTTP_URL}tasks/`, {
-      method: 'POST',
-      body: formData
-    });
+    }),
+    real: () => {
+      const fields = {
+        name: taskData.name,
+        description: taskData.description || taskData.name,
+        status: taskData.status || 'new'
+      };
+      if (taskData.deadline) fields.deadline = formatDateForApi(taskData.deadline);
+      if (taskData.project != null) fields.project = taskData.project;
+      if (taskData.performer != null) fields.performer = taskData.performer;
+      if (taskData.director != null) fields.director = taskData.director;
+      if (taskData.hours !== undefined) fields.hours = taskData.hours;
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`API Error: ${response.status} - ${errorText}`);
+      return requestAuthJson('tasks/', {
+        method: 'POST',
+        body: formDataFrom(fields)
+      });
     }
-
-    const responseData = await response.json();
-    return responseData;
-  } catch (error) {
-    throw error;
-  }
+  });
 }
 
-// Получение задачи по ID
-// Получение задачи по ID
-export async function getTaskById(taskId, USE_MOCK_DATA) {
-  if (USE_MOCK_DATA) {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    const mockTask = {
+export function getTaskById(taskId, USE_MOCK_DATA) {
+  return withMock({
+    enabled: USE_MOCK_DATA,
+    mock: () => ({
       id: parseInt(taskId),
       name: 'Тестовая задача',
       description: 'Разработать тесты для нового функционала',
@@ -908,7 +595,7 @@ export async function getTaskById(taskId, USE_MOCK_DATA) {
       director_name: 'Лутфуллин Амир Айратович',
       performer: 5,
       performer_name: 'Азат',
-      performer_image: 'staff_photos/1716959483_9fcb82061eb13984e346a7a61fed9400.jpg', // Добавьте это поле
+      performer_image: 'staff_photos/1716959483_9fcb82061eb13984e346a7a61fed9400.jpg',
       deadline: '2025-12-25T00:00:00+03:00',
       hours: 10,
       is_overdue: false,
@@ -929,79 +616,42 @@ export async function getTaskById(taskId, USE_MOCK_DATA) {
           created: '2025-12-20T14:30:00+03:00'
         }
       ]
-    };
-    
-    return mockTask;
-  }
-  
-  try {
-    const response = await authFetch(`${BASE_HTTP_URL}tasks/${taskId}/`, {
-      method: 'GET'
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`API Error: ${response.status} - ${errorText}`);
-    }
-
-    const taskData = await response.json();
-    
-    return taskData;
-  } catch (error) {
-    throw error;
-  }
+    }),
+    real: () => requestAuthJson(`tasks/${taskId}/`, { method: 'GET' })
+  });
 }
 
-// Обновление задачи
-// Функция для создания записи о начислении зарплаты при закрытии задачи
+/**
+ * Запись о начислении зарплаты при закрытии задачи.
+ * Пишет напрямую через authFetch — нужно мягкое поведение для 400 ("уже существует") и 404 (вернуть null).
+ */
 export async function createSalaryRecord(taskId, completionDate, USE_MOCK_DATA) {
   if (USE_MOCK_DATA) {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    const mockSalaryRecord = {
-      id: Math.floor(Math.random() * 1000),
-      user: 1,
-      user_name: 'Иван Иванов',
-      task: taskId,
-      task_name: 'Тестовая задача',
-      hours: 8,
-      hourly_rate: 1000,
-      salary: 8000,
-      status: 'pending',
-      status_display: 'Ожидает выплаты',
-      completion_date: completionDate,
-      deadline_date: '2025-12-25',
-      created: new Date().toISOString()
-    };
-    
-    return [mockSalaryRecord];
-  }
-  
-  try {
-    // Форматируем дату в YYYY-MM-DD
-    let formattedDate = completionDate;
-    
-    // Если дата содержит время, обрезаем его
-    if (formattedDate.includes('T')) {
-      formattedDate = formattedDate.split('T')[0];
-    }
-    
-    // Если дата в формате DD.MM.YYYY, конвертируем
-    if (formattedDate.includes('.')) {
-      const parts = formattedDate.split('.');
-      if (parts.length === 3) {
-        const [day, month, year] = parts;
-        formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    await mockDelay();
+    return [
+      {
+        id: Math.floor(Math.random() * 1000),
+        user: 1,
+        user_name: 'Иван Иванов',
+        task: taskId,
+        task_name: 'Тестовая задача',
+        hours: 8,
+        hourly_rate: 1000,
+        salary: 8000,
+        status: 'pending',
+        status_display: 'Ожидает выплаты',
+        completion_date: completionDate,
+        deadline_date: '2025-12-25',
+        created: new Date().toISOString()
       }
-    }
-    
+    ];
+  }
 
-    
-    const response = await authFetch(`${BASE_HTTP_URL}salary/create/`, {
+  try {
+    const formattedDate = formatDateForApi(completionDate);
+    const response = await authFetch('salary/create/', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         task_id: taskId,
         completion_date: formattedDate
@@ -1010,8 +660,7 @@ export async function createSalaryRecord(taskId, completionDate, USE_MOCK_DATA) 
 
     if (!response.ok) {
       const errorText = await response.text();
-      
-      // Проверяем, может запись уже существует
+
       if (response.status === 400) {
         try {
           const errorData = JSON.parse(errorText);
@@ -1019,232 +668,135 @@ export async function createSalaryRecord(taskId, completionDate, USE_MOCK_DATA) 
             return null;
           }
         } catch {
-          // Игнорируем ошибки парсинга
+          /* парсинг — best effort */
         }
       }
-      
+
       if (response.status === 404) {
         return null;
       }
-      
+
       throw new Error(`Ошибка создания записи о зарплате: ${response.status}`);
     }
 
-    const responseData = await response.json();
-    return responseData;
-    
-  } catch (error) {
-    return null; // Возвращаем null вместо throw, чтобы не ломать основной flow
+    return response.json();
+  } catch {
+    return null;
   }
 }
 
-// Обновленная функция updateTask с интеграцией начисления зарплаты
 export async function updateTask(taskId, updateData, USE_MOCK_DATA) {
   if (USE_MOCK_DATA) {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
+    await mockDelay();
+
     const currentTask = await getTaskById(taskId, true);
     const updated = { ...currentTask, ...updateData };
-    
+
     if (updateData.status) {
-      const statusMap = {
-        'draft': 'Черновик',
-        'new': 'Новая',
-        'active': 'В работе',
-        'paused': 'Приостановлена',
-        'completed': 'Завершена',
-        'failed': 'Провалена'
-      };
-      updated.status_display = statusMap[updateData.status] || 'Новая';
+      updated.status_display = getTaskStatusLabel(updateData.status);
     }
-    
-    // Если статус изменился на "completed", создаем запись о зарплате
+
     if (updateData.status === 'completed' && currentTask.status !== 'completed') {
       try {
-        // Для мок данных используем текущую дату в формате YYYY-MM-DD
         const today = new Date().toISOString().split('T')[0];
         await createSalaryRecord(taskId, today, USE_MOCK_DATA);
-      } catch (error) {
+      } catch {
+        /* мок-режим — глушим */
       }
     }
-    
+
     return updated;
   }
-  
-  const formData = new FormData();
-  
-  if (updateData.name !== undefined) {
-    formData.append('name', updateData.name);
-  }
-  
-  if (updateData.description !== undefined) {
-    formData.append('description', updateData.description);
-  }
-  
-  if (updateData.project !== undefined) {
-    formData.append('project', updateData.project === null ? '' : updateData.project.toString());
-  }
-  
-  if (updateData.status !== undefined) {
-    formData.append('status', updateData.status);
-  }
-  
+
+  const fields = {};
+  if (updateData.name !== undefined) fields.name = updateData.name;
+  if (updateData.description !== undefined) fields.description = updateData.description;
+  if (updateData.project !== undefined)
+    fields.project = updateData.project === null ? '' : updateData.project;
+  if (updateData.status !== undefined) fields.status = updateData.status;
   if (updateData.deadline !== undefined) {
-    // Убеждаемся, что дата отправляется без времени
-    let deadlineToSend = updateData.deadline;
-    if (deadlineToSend && deadlineToSend.includes('T')) {
-      deadlineToSend = deadlineToSend.split('T')[0];
-    }
-    formData.append('deadline', deadlineToSend || '');
+    fields.deadline = updateData.deadline ? formatDateForApi(updateData.deadline) : '';
   }
-  
-  if (updateData.performer !== undefined) {
-    formData.append('performer', updateData.performer === null ? '' : updateData.performer.toString());
-  }
-  
-  if (updateData.director !== undefined) {
-    formData.append('director', updateData.director === null ? '' : updateData.director.toString());
-  }
-  
-  if (updateData.hours !== undefined) {
-    formData.append('hours', updateData.hours.toString());
-  }
-  
+  if (updateData.performer !== undefined)
+    fields.performer = updateData.performer === null ? '' : updateData.performer;
+  if (updateData.director !== undefined)
+    fields.director = updateData.director === null ? '' : updateData.director;
+  if (updateData.hours !== undefined) fields.hours = updateData.hours;
+
+  let oldStatus = null;
   try {
-    // Сначала получаем текущую задачу, чтобы проверить статус
-    let oldStatus = null;
-    try {
-      const currentTask = await getTaskById(taskId, USE_MOCK_DATA);
-      oldStatus = currentTask.status;
-    } catch {
-      // Если не удалось получить задачу, продолжаем без проверки старого статуса
-    }
-    
-    const response = await authFetch(`${BASE_HTTP_URL}tasks/${taskId}/`, {
-      method: 'PATCH',
-      body: formData
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`API Error: ${response.status} - ${errorText}`);
-    }
-
-    const responseData = await response.json();
-    
-    // Если статус изменился на "completed" (был не completed, стал completed)
-    if (updateData.status === 'completed' && oldStatus !== 'completed') {
-      // Создаем запись о зарплате асинхронно (не ждем завершения)
-      setTimeout(async () => {
-        try {
-          // Используем текущую дату в формате YYYY-MM-DD
-          const today = new Date().toISOString().split('T')[0];
-          const salaryResult = await createSalaryRecord(taskId, today, USE_MOCK_DATA);
-          
-          if (salaryResult) {
-          }
-        } catch (salaryError) {
-        }
-      }, 1000); // Задержка 1 секунда, чтобы дать время на сохранение задачи
-    }
-    
-    return responseData;
-  } catch (error) {
-    throw error;
-  }
-}
-
-// Вспомогательная функция для проверки существования записи о зарплате
-export async function checkSalaryExists(taskId, USE_MOCK_DATA) {
-  try {
-    // Эта функция зависит от того, есть ли у вас endpoint для проверки
-    // Если нет, можно просто вернуть false или сделать проверку по-другому
-    return false;
+    const currentTask = await getTaskById(taskId, USE_MOCK_DATA);
+    oldStatus = currentTask.status;
   } catch {
-    return false;
+    /* старый статус неизвестен — продолжаем без проверки */
   }
+
+  const responseData = await requestAuthJson(`tasks/${taskId}/`, {
+    method: 'PATCH',
+    body: formDataFrom(fields)
+  });
+
+  if (updateData.status === 'completed' && oldStatus !== 'completed') {
+    setTimeout(async () => {
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        await createSalaryRecord(taskId, today, USE_MOCK_DATA);
+      } catch {
+        /* фон-задача — без падений */
+      }
+    }, 1000);
+  }
+
+  return responseData;
 }
 
-// Загрузка файла в задачу
-export async function uploadFileToTask(taskId, file, USE_MOCK_DATA) {
-  if (USE_MOCK_DATA) {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const mockFile = {
+export async function checkSalaryExists() {
+  return false;
+}
+
+export function uploadFileToTask(taskId, file, USE_MOCK_DATA) {
+  return withMock({
+    enabled: USE_MOCK_DATA,
+    delay: 500,
+    mock: () => ({
       id: Math.floor(Math.random() * 1000),
       file: `https://api.acrelis.ru/media/task_files/${file.name}`,
       uploaded_at: new Date().toISOString()
-    };
-    
-    return mockFile;
-  }
-  
-  const formData = new FormData();
-  formData.append('file', file);
-  
-  try {
-    const response = await authFetch(`${BASE_HTTP_URL}tasks/${taskId}/files/`, {
-      method: 'POST',
-      body: formData
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Ошибка загрузки файла задачи: ${response.status} - ${errorText}`);
-    }
-
-    const responseData = await response.json();
-    return responseData;
-  } catch (error) {
-    throw error;
-  }
+    }),
+    real: () =>
+      requestAuthJson(`tasks/${taskId}/files/`, {
+        method: 'POST',
+        body: formDataFrom({ file })
+      })
+  });
 }
 
-// Добавление комментария к задаче
-// В api.js - убедитесь, что этот метод использует правильный endpoint
-export async function addCommentToTask(taskId, commentData, USE_MOCK_DATA) {
-    if (USE_MOCK_DATA) {
-        await new Promise(resolve => setTimeout(resolve, 300));
-        
-        const mockComment = {
-            id: Math.floor(Math.random() * 1000),
-            author_name: 'Текущий пользователь',
-            content: commentData.content,
-            created: new Date().toISOString()
-        };
-        
-        return mockComment;
-    }
-    
-    try {
-        const response = await authFetch(`${BASE_HTTP_URL}tasks/${taskId}/comments/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                content: commentData.content
-            })
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Ошибка: ${response.status} - ${errorText}`);
-        }
-
-        const responseData = await response.json();
-        return responseData;
-    } catch (error) {
-        throw error;
-    }
+export function addCommentToTask(taskId, commentData, USE_MOCK_DATA) {
+  return withMock({
+    enabled: USE_MOCK_DATA,
+    mock: () => ({
+      id: Math.floor(Math.random() * 1000),
+      author_name: 'Текущий пользователь',
+      content: commentData.content,
+      created: new Date().toISOString()
+    }),
+    real: () =>
+      requestAuthJson(`tasks/${taskId}/comments/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: commentData.content })
+      })
+  });
 }
 
-// Получение отделов сотрудников
+/* ------------------------------------------------------------------ */
+/*                              Staff                                  */
+/* ------------------------------------------------------------------ */
+
 export async function getStaffDepartments(USE_MOCK_DATA) {
   if (USE_MOCK_DATA) {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    const mockDepartments = [
+    await mockDelay();
+    return [
       {
         id: 1,
         name: 'Отдел разработки',
@@ -1260,35 +812,19 @@ export async function getStaffDepartments(USE_MOCK_DATA) {
         employees_count: '8'
       }
     ];
-    
-    return mockDepartments;
   }
-  
+
   try {
-    const response = await authFetch(`${BASE_HTTP_URL}staff/departments/`, {
-      method: 'GET'
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      return [];
-    }
-
-    const departmentsData = await response.json();
-    return departmentsData;
-  } catch (error) {
+    return await requestAuthJson('staff/departments/', { method: 'GET' });
+  } catch {
     return [];
   }
 }
 
-// Получение списка сотрудников
-// В файле ERP_front/src/services/api/api.js
-// Находим функцию getStaffList и исправляем ее:
-
 export async function getStaffList(USE_MOCK_DATA, filters = {}) {
   if (USE_MOCK_DATA) {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
+    await mockDelay();
+
     const mockEmployees = [
       {
         id: 1,
@@ -1298,98 +834,61 @@ export async function getStaffList(USE_MOCK_DATA, filters = {}) {
         departmentLabel: 'Отдел разработки',
         email: 'ivan@company.com',
         phone: '+7 (999) 123-45-67'
-      },
-      // ... остальные мок данные
+      }
     ];
-    
+
     const mockDepartments = [
       { id: 'all', label: 'Все отделы', count: mockEmployees.length },
       { id: 'development', label: 'Отдел разработки', count: 1 },
       { id: 'design', label: 'Отдел дизайна', count: 1 },
       { id: 'marketing', label: 'Отдел маркетинга', count: 1 }
     ];
-    
+
     return { employees: mockEmployees, departments: mockDepartments };
   }
-  
+
   try {
-    const url = new URL(`${BASE_HTTP_URL}staff/staff/`);
-    
+    const params = {};
     if (filters.department && filters.department !== 'all') {
-      url.searchParams.append('department', filters.department);
+      params.department = filters.department;
     }
-    
-    if (filters.search) {
-      url.searchParams.append('search', filters.search);
-    }
-    
-    if (filters.is_active !== undefined) {
-      url.searchParams.append('is_active', filters.is_active.toString());
-    }
-    
-    const response = await authFetch(url.toString(), {
-      method: 'GET'
-    });
+    if (filters.search) params.search = filters.search;
+    if (filters.is_active !== undefined) params.is_active = filters.is_active;
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`API Error: ${response.status} - ${errorText}`);
-    }
+    const url = buildSearchUrl('staff/staff/', params);
+    const responseData = await requestAuthJson(url, { method: 'GET' });
 
-    const responseData = await response.json();
-    
-    // ИСПРАВЛЕННАЯ ЧАСТЬ: правильно форматируем данные
-    const employees = responseData.map(staff => ({
-      id: staff.id,
-      name: staff.name,
-      position: staff.post || staff.position || 'Сотрудник',
-      post: staff.post || 'Сотрудник',
-      department: staff.department?.toString() || '0',
-      departmentLabel: staff.department_name || 'Не указан',
-      email: staff.email,
-      phone: staff.phone,
-      birthday: staff.birthday,
-      telegram: staff.telegram,
-      is_active: staff.is_active,
-      // ВАЖНО: добавляем поля image и image_url
-      image: staff.image || null,
-      image_url: staff.image_url || staff.image || null
-    }));
-    
+    const employees = (responseData || []).map(formatStaffListItem);
+
     const departments = await getStaffDepartments(USE_MOCK_DATA);
-    const departmentList = [
-      { id: 'all', label: 'Все отделы', count: employees.length }
-    ];
-    
+    const departmentList = [{ id: 'all', label: 'Все отделы', count: employees.length }];
+
     if (Array.isArray(departments)) {
-      departments.forEach(dept => {
-        const count = employees.filter(emp => emp.department === dept.id.toString()).length;
+      departments.forEach((dept) => {
+        const count = employees.filter(
+          (emp) => emp.department === dept.id.toString()
+        ).length;
         departmentList.push({
           id: dept.id.toString(),
           label: dept.name || `Отдел ${dept.id}`,
-          count: count
+          count
         });
       });
     }
-    
-    return { 
-      employees: employees, 
-      departments: departmentList
-    };
-  } catch (error) {
-    return { 
-      employees: [], 
+
+    return { employees, departments: departmentList };
+  } catch {
+    return {
+      employees: [],
       departments: [{ id: 'all', label: 'Все отделы', count: 0 }]
     };
   }
 }
 
-// Получение сотрудника по ID
-export async function getEmployeeById(employeeId, USE_MOCK_DATA) {
-  if (USE_MOCK_DATA) {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    const mockEmployee = {
+export function getEmployeeById(employeeId, USE_MOCK_DATA) {
+  return withMock({
+    enabled: USE_MOCK_DATA,
+    mock: () => ({
       id: parseInt(employeeId),
       name: 'Иван Иванов',
       position: 'Руководитель отдела разработки',
@@ -1408,263 +907,142 @@ export async function getEmployeeById(employeeId, USE_MOCK_DATA) {
       failed_tasks: 1,
       statistic_percent: 74,
       statistic_label: 'Отлично',
-      director: {
-        id: 1,
-        name: 'Васильев Дмитрий',
-        post: 'Директор'
-      }
-    };
-    
-    return mockEmployee;
-  }
-  
-  try {
-    const response = await authFetch(`${BASE_HTTP_URL}staff/staff/${employeeId}/`, {
-      method: 'GET'
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`API Error: ${response.status} - ${errorText}`);
+      director: { id: 1, name: 'Васильев Дмитрий', post: 'Директор' }
+    }),
+    real: async () => {
+      const staffData = await requestAuthJson(`staff/staff/${employeeId}/`, {
+        method: 'GET'
+      });
+      return formatEmployee(staffData);
     }
-
-    const staffData = await response.json();
-
-    const employee = {
-      id: staffData.id,
-      name: staffData.name,
-      position: staffData.post,
-      post: staffData.post,
-      image: staffData.image || null,
-      image_url: staffData.image_url || staffData.image || null,
-      department: staffData.department?.toString() || '0',
-      departmentLabel: staffData.department_name || 'Не указан',
-      email: staffData.email,
-      phone: staffData.phone,
-      birthday: staffData.birthday,
-      dream: staffData.dream || '',
-      is_active: staffData.is_active,
-      created: staffData.created,
-      telegram: staffData.telegram || '@acrelis',
-      current_tasks: staffData.current_tasks || 0,
-      closed_on_time_tasks: staffData.closed_on_time_tasks || 0,
-      closed_late_tasks: staffData.closed_late_tasks || 0,
-      failed_tasks: staffData.failed_tasks || 0,
-      director: staffData.director || null,
-      statistic_percent: staffData.statistic_percent ?? null,
-      statistic_label: staffData.statistic_label ?? '',
-      shared_project_team: staffData.shared_project_team,
-      joint_project_collaborators: staffData.joint_project_collaborators,
-      coworkers_shared_projects: staffData.coworkers_shared_projects,
-      shared_project_members: staffData.shared_project_members
-    };
-    
-    return employee;
-  } catch (error) {
-    throw error;
-  }
+  });
 }
 
-// Обновление сотрудника по ID
-export async function updateEmployeeById(employeeId, updateData, USE_MOCK_DATA) {
-  if (USE_MOCK_DATA) {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    return { id: parseInt(employeeId), ...updateData };
-  }
+export function updateEmployeeById(employeeId, updateData, USE_MOCK_DATA) {
+  return withMock({
+    enabled: USE_MOCK_DATA,
+    mock: () => ({ id: parseInt(employeeId), ...updateData }),
+    real: () =>
+      requestAuthJson(`staff/staff/${employeeId}/`, {
+        method: 'PATCH',
+        body: formDataFrom(updateData)
+      })
+  });
+}
 
-  const formData = new FormData();
-  Object.entries(updateData).forEach(([key, value]) => {
-    if (value === undefined || value === null) return;
-    if (typeof Blob !== 'undefined' && value instanceof Blob) {
-      formData.append(key, value);
-      return;
-    }
-    formData.append(key, typeof value === 'string' ? value : String(value));
+/* ------------------------------------------------------------------ */
+/*                            Invitations                              */
+/* ------------------------------------------------------------------ */
+
+export async function registerByInvite(token, userData) {
+  const response = await fetch(`${BASE_HTTP_URL}staff/register/invite/${token}/`, {
+    method: 'POST',
+    headers: {
+      accept: 'application/json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(userData)
   });
 
-  const response = await authFetch(`${BASE_HTTP_URL}staff/staff/${employeeId}/`, {
-    method: 'PATCH',
-    body: formData
-  });
+  const responseText = await response.text();
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`API Error: ${response.status} - ${errorText}`);
+    let errorMessage = 'Ошибка регистрации';
+
+    if (responseText) {
+      try {
+        const errorData = JSON.parse(responseText);
+
+        if (errorData.error) {
+          errorMessage = errorData.error;
+        } else if (errorData.detail) {
+          errorMessage = errorData.detail;
+        } else if (errorData.non_field_errors) {
+          errorMessage = Array.isArray(errorData.non_field_errors)
+            ? errorData.non_field_errors.join(', ')
+            : errorData.non_field_errors;
+        } else if (typeof errorData === 'object') {
+          const fieldErrors = [];
+          for (const [field, errors] of Object.entries(errorData)) {
+            if (Array.isArray(errors)) {
+              fieldErrors.push(`${field}: ${errors.join(', ')}`);
+            } else if (typeof errors === 'string') {
+              fieldErrors.push(`${field}: ${errors}`);
+            }
+          }
+          if (fieldErrors.length > 0) {
+            errorMessage = fieldErrors.join('; ');
+          }
+        }
+      } catch {
+        if (
+          responseText.includes('Приглашение истекло') ||
+          responseText.includes('Неверное или несуществующее приглашение')
+        ) {
+          errorMessage = responseText;
+        }
+      }
+    }
+
+    if (response.status === 404) {
+      errorMessage = 'Ссылка приглашения не найдена';
+    }
+
+    throw new Error(errorMessage);
   }
 
-  return response.json();
-}
+  let result;
+  try {
+    result = JSON.parse(responseText);
+  } catch {
+    throw new Error('Ошибка обработки ответа от сервера');
+  }
 
-// Форматирование данных проекта
-// Форматирование данных проекта
-// Форматирование данных проекта
-function formatProjectData(project) {
-  return {
-    id: project.id,
-    name: project.name,
-    type: project.type || 'other',
-    typeLabel: PROJECT_TYPE_MAP[project.type] || 'Другое',
-    type_display: project.type_display || PROJECT_TYPE_MAP[project.type] || 'Другое',
-    
-    status: project.status || 'draft',
-    status_display: project.status_display || getStatusDisplay(project.status),
-    price: project.price || "0.00",
-    hours: project.hours || 0, // Добавляем часы
-    customer: project.customer || 'Не указан',
-    
-    startDate: project.start_date || project.created || '',
-    deadline: project.deadline || '',
-    
-    startDateFormatted: formatDateForDisplay(project.start_date || project.created),
-    deadlineFormatted: formatDateForDisplay(project.deadline),
-    
-    performers: project.performers || [],
-    
-    team: (project.performers || []).map(p => ({
-      id: p.id,
-      name: p.staff_name || 'Исполнитель',
-      staff_name: p.staff_name || 'Исполнитель',
-      staff_image: p.staff_image,
-      role: p.staff_post || 'Участник',
-      assigned_at: p.assigned_at
-    })),
-    
-    files: (project.files || []).map(file => ({
-      id: file.id,
-      name: file.original_filename || file.file.split('/').pop(),
-      originalName: file.original_filename || file.file.split('/').pop(),
-      file: file.file || file.file_url,
-      uploaded_at: file.uploaded_at,
-      size: file.size || file.file_size || 0
-    })),
-    
-    logs: project.logs || [],
-    ganttTasks: []
-  };
-}
-
-// Конвертация даты в формат API
-function convertToAPIDate(dateString) {
-  if (!dateString) return null;
-  
-  if (dateString.includes('T') && dateString.includes('+')) {
-    return dateString;
-  }
-  
-  if (dateString.match(/^\d{2}\.\d{2}\.\d{4}$/)) {
-    const [day, month, year] = dateString.split('.');
-    return `${year}-${month}-${day}`;
-  }
-  
-  if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
-    return dateString;
-  }
-  
-  return dateString;
-}
-
-// Форматирование даты для отображения
-export function formatDateForDisplay(dateString) {
-  if (!dateString) return '';
-  
-  if (dateString.match(/^\d{2}\.\d{2}\.\d{4}$/)) {
-    return dateString;
-  }
-  
-  if (dateString.includes('T')) {
-    try {
-      const datePart = dateString.split('T')[0];
-      const [year, month, day] = datePart.split('-');
-      return `${day}.${month}.${year}`;
-    } catch (e) {
-      return dateString;
+  if (result.access && result.refresh) {
+    saveTokens(result);
+    if (result.user_id || result.username) {
+      saveUserData(result);
     }
   }
-  
-  return dateString;
+
+  return {
+    success: true,
+    message: 'Регистрация по приглашению прошла успешно!',
+    data: result
+  };
 }
 
-// Форматирование моковых проектов
-function formatMockProjects(mockProjects) {
-  const projects = mockProjects.map(project => ({
-    id: project.id,
-    name: project.name,
-    type: project.type || 'other',
-    typeLabel: PROJECT_TYPE_MAP[project.type] || 'Другое',
-    status: project.status || 'draft',
-    price: project.price || "0.00",
-    hours: project.hours || 0,
-    customer: project.customer || 'Не указан',
-    deadline: project.deadline || '',
-    startDate: project.startDate || project.created || '',
-    team: project.team || []
-  }));
-  
-  const projectTypes = generateProjectTypes(projects);
-  return { projects, projectTypes };
-}
-
-// Генерация типов проектов (без пункта «all» — его рисует UI ProjectsList)
-function generateProjectTypes(projects) {
-  const typeCounts = {};
-
-  projects.forEach((project) => {
-    typeCounts[project.type] = (typeCounts[project.type] || 0) + 1;
-  });
-
-  return Object.entries(typeCounts).map(([type, count]) => ({
-    id: type,
-    label: PROJECT_TYPE_MAP[type] || 'Другое',
-    count,
-  }));
-}
-
-// Очистка цены для API
-function cleanPriceForAPI(price) {
-  if (typeof price === 'number') return price.toFixed(2);
-  const clean = price.toString()
-    .replace(/[^\d.,]/g, '')
-    .replace(',', '.');
-  const num = parseFloat(clean);
-  return isNaN(num) ? "0.00" : num.toFixed(2);
-}
-
-// Форматирование даты и времени
-function formatDateTime(dateTimeString) {
-  if (!dateTimeString) return '';
+export async function validateInviteToken(token) {
   try {
-    const date = new Date(dateTimeString);
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear();
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    return `${day}.${month}.${year} ${hours}:${minutes}`;
-  } catch {
-    return '';
+    const response = await fetch(
+      `${BASE_HTTP_URL}staff/register/invite/${token}/validate/`,
+      {
+        method: 'GET',
+        headers: { accept: 'application/json' }
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('Невалидный или просроченный инвайт');
+    }
+
+    const data = await response.json();
+    return { valid: true, data };
+  } catch (error) {
+    return { valid: false, error: error.message };
   }
 }
 
-// Получение отображаемого статуса
-function getStatusDisplay(status) {
-  const statusMap = {
-    'draft': 'Черновик',
-    'active': 'В работе',
-    'paused': 'Приостановлен',
-    'tests': 'Тестируется',
-    'completed': 'Завершен',
-    'cancelled': 'Отменен'
-  };
-  return statusMap[status] || 'Черновик';
-}
+/* ------------------------------------------------------------------ */
+/*                          Internal helpers                           */
+/* ------------------------------------------------------------------ */
 
-// Получение fallback проекта
 function getFallbackProject() {
   return {
     id: 1,
     name: 'Тестовый проект',
     type: 'other',
-    typeLabel: 'Другое',
+    typeLabel: getProjectTypeLabel('other'),
     status: 'draft',
     price: '0.00',
     hours: 0,
@@ -1674,136 +1052,4 @@ function getFallbackProject() {
     files: [],
     changes: []
   };
-}
-
-// В ERP_front/src/services/api/api.js
-// Регистрация по инвайт-ссылке
-// ERP_front/src/services/api/api.js - обновленная функция registerByInvite
-
-// Регистрация по инвайт-ссылке
-// ERP_front/src/services/api/api.js - исправленная функция registerByInvite
-
-// Регистрация по инвайт-ссылке
-// ERP_front/src/services/api/api.js - полностью исправленная функция registerByInvite
-
-// Регистрация по инвайт-ссылке
-export async function registerByInvite(token, userData) {
-  try {
-    
-
-    const response = await fetch(`${BASE_HTTP_URL}staff/register/invite/${token}/`, {
-      method: 'POST',
-      headers: {
-        'accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(userData)
-    });
-
-
-
-    const responseText = await response.text();
-
-    if (!response.ok) {
-      let errorMessage = 'Ошибка регистрации';
-      
-      // Пытаемся распарсить JSON ошибки
-      if (responseText) {
-        try {
-          const errorData = JSON.parse(responseText);
-          
-          // Извлекаем сообщение об ошибке
-          if (errorData.error) {
-            errorMessage = errorData.error;
-          } else if (errorData.detail) {
-            errorMessage = errorData.detail;
-          } else if (errorData.non_field_errors) {
-            errorMessage = Array.isArray(errorData.non_field_errors) 
-              ? errorData.non_field_errors.join(', ')
-              : errorData.non_field_errors;
-          } else if (typeof errorData === 'object') {
-            // Собираем все ошибки полей
-            const fieldErrors = [];
-            for (const [field, errors] of Object.entries(errorData)) {
-              if (Array.isArray(errors)) {
-                fieldErrors.push(`${field}: ${errors.join(', ')}`);
-              } else if (typeof errors === 'string') {
-                fieldErrors.push(`${field}: ${errors}`);
-              }
-            }
-            if (fieldErrors.length > 0) {
-              errorMessage = fieldErrors.join('; ');
-            }
-          }
-        } catch (parseError) {
-          // Если не удалось распарсить, но есть текст
-          if (responseText.includes('Приглашение истекло') || 
-              responseText.includes('Неверное или несуществующее приглашение')) {
-            errorMessage = responseText;
-          }
-        }
-      }
-      
-      // Дополнительные проверки на основе статуса
-      if (response.status === 404) {
-        errorMessage = 'Ссылка приглашения не найдена';
-      }
-      
-      throw new Error(errorMessage);
-    }
-
-    // Если ответ успешный
-    let result;
-    try {
-      result = JSON.parse(responseText);
-    } catch (parseError) {
-      throw new Error('Ошибка обработки ответа от сервера');
-    }
-    
-    
-    // Если в ответе есть токены - сохраняем их
-    if (result.access && result.refresh) {
-      saveTokens(result);
-      
-      // Сохраняем данные пользователя если они есть
-      if (result.user_id || result.username) {
-        saveUserData(result);
-      }
-    }
-    
-    return {
-      success: true,
-      message: 'Регистрация по приглашению прошла успешно!',
-      data: result
-    };
-    
-  } catch (error) {
-    throw error;
-  }
-}
-export async function validateInviteToken(token) {
-  try {
-    const response = await fetch(`${BASE_HTTP_URL}staff/register/invite/${token}/validate/`, {
-      method: 'GET',
-      headers: {
-        'accept': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error('Невалидный или просроченный инвайт');
-    }
-
-    const data = await response.json();
-    return {
-      valid: true,
-      data: data
-    };
-    
-  } catch (error) {
-    return {
-      valid: false,
-      error: error.message
-    };
-  }
 }

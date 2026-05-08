@@ -14,6 +14,8 @@ import './MyTasks.css';
 import { MY_TASKS_NAV_QUERY_STORAGE_KEY } from '../../constants/navigationKeys';
 import { PROJECT_ACTIONS_ALLOWED_ROLES } from '../../constants/roles';
 import CreateEntityModal from '../shared/CreateEntityModal';
+import { Breadcrumbs } from '../shared/Breadcrumbs';
+import { PageLoading } from '../shared/PageLoading';
 
 // Константы статусов задач
 const TASK_STATUS_MAP = {
@@ -751,35 +753,20 @@ const MyTasks = ({ useMockData = false }) => {
     }
   };
 
-  const breadcrumb = (
-    <nav className="projects-breadcrumb" aria-label="Навигация по разделам">
-      <button
-        type="button"
-        className="projects-breadcrumb__home"
-        onClick={() => navigate(`/projects${location.search || ''}`)}
-      >
-        Главная
-      </button>
-      <span className="projects-breadcrumb__sep" aria-hidden="true">
-        {' '}
-        /{' '}
-      </span>
-      <span className="projects-breadcrumb__current">Мои задачи</span>
-    </nav>
-  );
+  const breadcrumbItems = [
+    { label: 'Главная', to: '/projects', preserveSearch: true },
+    { label: 'Мои задачи' },
+  ];
 
   // ЗАГРУЗКА
   if (loading || selectedPerformer === '') {
     return (
       <div className="mytasks-container">
-        {breadcrumb}
-        <div className="gantt-loading_gantt_class">
-          <div className="loading-spinner_gantt_class"></div>
-          <h3 style={{ color: 'black', margin: '1vh 0', fontSize: '2vh' }}>Загрузка задач...</h3>
-          <p style={{ color: 'rgba(0, 0, 0, 0.8)', fontSize: '1.4vh' }}>
-            Подготавливаем список задач
-          </p>
-        </div>
+        <Breadcrumbs items={breadcrumbItems} />
+        <PageLoading
+          title="Загрузка задач..."
+          subtitle="Подготавливаем список задач"
+        />
       </div>
     );
   }
@@ -788,7 +775,7 @@ const MyTasks = ({ useMockData = false }) => {
   if (error) {
     return (
       <div className="mytasks-container">
-        {breadcrumb}
+        <Breadcrumbs items={breadcrumbItems} />
         <div className="no-tasks-message_gantt_class">
           <div className="no-tasks-content_gantt_class">
             <span className="no-tasks-icon_gantt_class">⚠️</span>
@@ -817,7 +804,7 @@ const MyTasks = ({ useMockData = false }) => {
   ) {
     return (
       <div className="mytasks-container">
-        {breadcrumb}
+        <Breadcrumbs items={breadcrumbItems} />
 
         <div className="filters-container">
           <div className="filters">
@@ -923,7 +910,7 @@ const MyTasks = ({ useMockData = false }) => {
 
   return (
     <div className="mytasks-container">
-      {breadcrumb}
+      <Breadcrumbs items={breadcrumbItems} />
 
       <div className="filters-container">
         <div className="filters">

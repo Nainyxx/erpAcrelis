@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { OPERATIONS_HUB_ALLOWED_ROLES } from '../../constants/roles';
 import { downloadProjectFile, getProjects } from '../../services/api';
 import { SelectFilterDropdown } from '../shared/SelectFilterDropdown';
@@ -13,6 +13,7 @@ import {
   REQUEST_TYPE_OPTIONS,
 } from './operationsPageMocks';
 import './OperationsPage.css';
+import { Breadcrumbs } from '../shared/Breadcrumbs';
 
 async function downloadOperationAttachment(displayFileName) {
   const fileUrl = MOCK_OPERATION_FILE_DOWNLOAD_URL;
@@ -161,7 +162,6 @@ function OperationCard({ op }) {
 
 function OperationsPage({ useMockData = false }) {
   const navigate = useNavigate();
-  const location = useLocation();
   const userRole = localStorage.getItem('role');
   const canAccessHub = userRole && OPERATIONS_HUB_ALLOWED_ROLES.includes(userRole);
 
@@ -224,26 +224,14 @@ function OperationsPage({ useMockData = false }) {
     return <Navigate to="/account" replace />;
   }
 
-  const breadcrumb = (
-    <nav className="projects-breadcrumb" aria-label="Навигация по разделам">
-      <button
-        type="button"
-        className="projects-breadcrumb__home"
-        onClick={() => navigate(`/projects${location.search || ''}`)}
-      >
-        Главная
-      </button>
-      <span className="projects-breadcrumb__sep" aria-hidden="true">
-        {' '}
-        /{' '}
-      </span>
-      <span className="projects-breadcrumb__current">Операции</span>
-    </nav>
-  );
+  const breadcrumbItems = [
+    { label: 'Главная', to: '/projects', preserveSearch: true },
+    { label: 'Операции' },
+  ];
 
   return (
     <div className="operations-page">
-      {breadcrumb}
+      <Breadcrumbs items={breadcrumbItems} />
 
       <section
         className="operations-page__panel operations-page__panel--filters operations-page__panel--quick-actions"
@@ -361,7 +349,6 @@ function OperationsPage({ useMockData = false }) {
       </section>
 
       <section
-        className="operations-page__panel operations-page__panel--table"
         aria-label="Список операций"
       >
         {filteredOperations.length === 0 ? (

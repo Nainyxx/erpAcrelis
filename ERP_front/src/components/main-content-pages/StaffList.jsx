@@ -2,6 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getStaffList, getStaffDepartments } from '../../services/api';
 import { MultiSelectFilterDropdown } from '../shared/MultiSelectFilterDropdown';
+import { Breadcrumbs } from '../shared/Breadcrumbs';
+import { PageLoading } from '../shared/PageLoading';
+import { AvatarPhoto } from '../shared/AvatarPhoto';
 import './StaffList.css';
 
 const StaffList = ({ useMockData = false }) => {
@@ -199,14 +202,12 @@ const StaffList = ({ useMockData = false }) => {
     if (imageUrl) {
       return (
         <div className="avatar">
-          <img
+          <AvatarPhoto
             src={imageUrl}
-            alt={employee.name}
+            alt={employee.name || ''}
             onError={(e) => {
-              e.target.style.display = 'none';
-              const fallback = e.target.parentNode.querySelector(
-                '.avatar-fallback'
-              );
+              const root = e.target.closest('.avatar');
+              const fallback = root?.querySelector('.avatar-fallback');
               if (fallback) fallback.style.display = 'flex';
             }}
           />
@@ -230,44 +231,20 @@ const StaffList = ({ useMockData = false }) => {
     );
   };
 
-  const breadcrumb = (
-    <nav className="projects-breadcrumb" aria-label="Навигация по разделам">
-      <button
-        type="button"
-        className="projects-breadcrumb__home"
-        onClick={() => navigate(`/projects${location.search || ''}`)}
-      >
-        Главная
-      </button>
-      <span className="projects-breadcrumb__sep" aria-hidden="true">
-        {' '}
-        /{' '}
-      </span>
-      <span className="projects-breadcrumb__current">Сотрудники</span>
-    </nav>
-  );
+  const breadcrumbItems = [
+    { label: 'Главная', to: '/projects', preserveSearch: true },
+    { label: 'Сотрудники' },
+  ];
 
   if (loading) {
     return (
       <div className="staff-container">
-        {breadcrumb}
+        <Breadcrumbs items={breadcrumbItems} />
         {renderStaffTabs()}
-        {renderStaffToolbar()}
-        <div className="gantt-loading_gantt_class">
-          <div className="loading-spinner_gantt_class" />
-          <h3
-            style={{
-              color: 'black',
-              margin: '1vh 0',
-              fontSize: '2vh'
-            }}
-          >
-            Загрузка списка сотрудников...
-          </h3>
-          <p style={{ color: 'rgba(0, 0, 0, 0.8)', fontSize: '1.4vh' }}>
-            Подготавливаем данные сотрудников
-          </p>
-        </div>
+        <PageLoading
+          title="Загрузка списка сотрудников..."
+          subtitle="Подготавливаем данные сотрудников"
+        />
       </div>
     );
   }
@@ -275,7 +252,7 @@ const StaffList = ({ useMockData = false }) => {
   if (error) {
     return (
       <div className="staff-container">
-        {breadcrumb}
+        <Breadcrumbs items={breadcrumbItems} />
         {renderStaffTabs()}
         {renderStaffToolbar()}
         <div className="no-tasks-message_gantt_class">
@@ -300,7 +277,7 @@ const StaffList = ({ useMockData = false }) => {
   if (employees.length === 0) {
     return (
       <div className="staff-container">
-        {breadcrumb}
+        <Breadcrumbs items={breadcrumbItems} />
         {renderStaffTabs()}
         {renderStaffToolbar()}
         <div className="no-tasks-message_gantt_class">
@@ -316,7 +293,7 @@ const StaffList = ({ useMockData = false }) => {
 
   return (
     <div className="staff-container">
-      {breadcrumb}
+      <Breadcrumbs items={breadcrumbItems} />
       {renderStaffTabs()}
       {renderStaffToolbar()}
 

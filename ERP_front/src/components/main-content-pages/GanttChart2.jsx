@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import './GanttChart2.css';
 import { getProjectById, getTasks } from '../../services/api';
+import { PageLoading } from '../shared/PageLoading';
 
 const GanttChart = ({ useMockData = false }) => {
   const navigate = useNavigate();
@@ -559,13 +560,10 @@ const GanttChart = ({ useMockData = false }) => {
   if (isLoading) {
     return (
       <div className="gantt-container_gantt_class">
-        <div className="gantt-loading_gantt_class">
-          <div className="loading-spinner_gantt_class"></div>
-          <h3 style={{ color: 'black', margin: '1vh 0', fontSize: '2vh' }}>Загрузка диаграммы Ганта...</h3>
-          <p style={{ color: 'rgba(0, 0, 0, 0.8)', fontSize: '1.4vh' }}>
-            Подготавливаем визуализацию проекта
-          </p>
-        </div>
+        <PageLoading
+          title="Загрузка диаграммы Ганта..."
+          subtitle="Подготавливаем визуализацию проекта"
+        />
       </div>
     );
   }

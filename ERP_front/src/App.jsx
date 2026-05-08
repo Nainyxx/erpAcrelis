@@ -36,6 +36,7 @@ import { projectsData } from './MockData/projects.js';
 
 // Импорт функции аутентификации
 import { isAuthenticated, getCurrentUser } from './services/api';
+import { PageLoading } from './components/shared/PageLoading';
 
 // Конфигурация
 const CONFIG = {
@@ -65,21 +66,8 @@ function PrivateRoute({ children }) {
 
   if (loading) {
     return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
-        backgroundColor: '#F6F6FE'
-      }}>
-        <div className="loading-spinner" style={{
-          width: '40px',
-          height: '40px',
-          border: '4px solid #e1e1e1',
-          borderTopColor: '#667eea',
-          borderRadius: '50%',
-          animation: 'spin 1s linear infinite'
-        }}></div>
+      <div className="page-loading-viewport">
+        <PageLoading />
       </div>
     );
   }

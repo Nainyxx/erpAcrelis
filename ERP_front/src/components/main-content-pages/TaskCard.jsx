@@ -12,7 +12,10 @@ import {
     getProjectById
 } from '../../services/api';
 import { PROJECT_ACTIONS_ALLOWED_ROLES } from '../../constants/roles';
+import { TASK_STATUS_OPTIONS } from '../../constants/tasks';
 import TaskWebSocketService from '../../services/taskWebSocketService';
+import { PageLoading } from '../shared/PageLoading';
+import { AvatarPhoto } from '../shared/AvatarPhoto';
 import './TaskCard.css';
 
 // Константы для ограничения длины названий файлов
@@ -88,13 +91,9 @@ const TaskCard = ({ useMockData = false }) => {
         image: null
     });
 
-    const statusOptions_task_card = [
-        { value: 'new', label: 'Новое', progress: 20, apiValue: 'new' },
-        { value: 'active', label: 'В работе', progress: 60, apiValue: 'active' },
-        { value: 'paused', label: 'Ожидает', progress: 0, apiValue: 'paused' },
-        { value: 'completed', label: 'Готова', progress: 100, apiValue: 'completed' },
-        { value: 'draft', label: 'Черновик', progress: 10, apiValue: 'draft' }
-    ];
+    const statusOptions_task_card = TASK_STATUS_OPTIONS.filter((s) =>
+        ['new', 'active', 'paused', 'completed', 'draft'].includes(s.value)
+    );
 
     const escapeHtml_task_card = (text = '') => text
         .replace(/&/g, '&amp;')
@@ -891,22 +890,15 @@ const TaskCard = ({ useMockData = false }) => {
                     overflow: 'hidden'
                 }}
             >
-                <img
+                <AvatarPhoto
                     src={fullImageUrl}
                     alt={initials}
-                    style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        position: 'absolute',
-                        top: 0,
-                        left: 0
-                    }}
-                    onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.nextSibling.style.display = 'flex';
-                    }}
                     crossOrigin="anonymous"
+                    onError={(e) => {
+                        const wrap = e.target.closest('.avatar-container_task_card');
+                        const fb = wrap?.querySelector('.avatar-fallback_task_card');
+                        if (fb) fb.style.display = 'flex';
+                    }}
                 />
 
                 <div
@@ -1146,13 +1138,10 @@ const TaskCard = ({ useMockData = false }) => {
     if (loading) {
         return (
             <div className="taskcard-container_task_card">
-                <div className="gantt-loading_gantt_class">
-                    <div className="loading-spinner_gantt_class"></div>
-                    <h3 style={{ color: 'black', margin: '1vh 0', fontSize: '2vh' }}>Загрузка задачи...</h3>
-                    <p style={{ color: 'rgba(0, 0, 0, 0.8)', fontSize: '1.4vh' }}>
-                        Подготавливаем данные задачи
-                    </p>
-                </div>
+                <PageLoading
+                    title="Загрузка задачи..."
+                    subtitle="Подготавливаем данные задачи"
+                />
             </div>
         );
     }

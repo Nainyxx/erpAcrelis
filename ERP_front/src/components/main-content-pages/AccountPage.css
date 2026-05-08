@@ -439,6 +439,7 @@
 
 .account-projects-stack-inner {
     box-sizing: border-box;
+    position: relative;
     width: var(--projects-avatar-face);
     height: var(--projects-avatar-face);
     overflow: hidden;
@@ -586,6 +587,8 @@
     box-sizing: border-box;
     border: 5.7px solid #fff;
     border-radius: 50%;
+    position: relative;
+    overflow: hidden;
 }
 
 .avatar-container svg {
@@ -618,6 +621,7 @@
 .avatar-overlay {
     position: absolute;
     inset: 0;
+    z-index: 3;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -633,35 +637,6 @@
     font-size: clamp(12px, 1.1vw, 18px);
     font-weight: 500;
     text-align: center;
-}
-
-.loading-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-}
-
-.loading-spinner {
-    width: 6vh;
-    height: 6vh;
-    margin-bottom: 3vh;
-    border: 0.5vh solid #e5e5e5;
-    border-top-color: #06c;
-    border-radius: 50%;
-    animation: accountPageSpin 1s linear infinite;
-}
-
-.loading-state p {
-    font-size: 2vh;
-    color: #fff;
-}
-
-@keyframes accountPageSpin {
-    to {
-        transform: rotate(360deg);
-    }
 }
 
 .profile-card {

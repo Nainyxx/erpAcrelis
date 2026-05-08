@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import NotificationIcon from "../../assets/nav-logo-notification.svg";
 import AccountIcon from "../../assets/icon-account.svg";
 import { clearTokens, fetchStaffById } from "../../services/api";
+import { AvatarPhoto } from "../shared/AvatarPhoto";
 import './Header.css';
 
 function Header({ currentUser }) {
@@ -53,14 +53,15 @@ function Header({ currentUser }) {
                             <div className="loading-spinner-small"></div>
                         </div>
                     ) : userAvatar ? (
-                        <img
+                        <AvatarPhoto
                             src={userAvatar}
                             alt={currentUser ? currentUser.name : "Гость"}
-                            className="user-avatar"
+                            imgClassName="user-avatar"
                             onError={(e) => {
-                                // Если аватарка не загружается, показываем стандартную иконку
                                 e.target.style.display = 'none';
-                                e.target.parentNode.querySelector('.default-avatar').style.display = 'block';
+                                const btn = e.target.closest('.navButt1');
+                                const def = btn?.querySelector('.default-avatar');
+                                if (def) def.style.display = 'block';
                             }}
                         />
                     ) : (

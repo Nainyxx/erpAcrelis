@@ -127,3 +127,48 @@ export async function requestPublic(pathOrUrl, options = {}) {
   }
   return response;
 }
+
+/** Аутентифицированный запрос с автопарсингом JSON-тела. Возвращает null для 204. */
+export async function requestAuthJson(pathOrUrl, options = {}) {
+  const response = await requestAuth(pathOrUrl, options);
+  if (response.status === 204) return null;
+  return response.json();
+}
+
+/** Публичный запрос с автопарсингом JSON-тела. Возвращает null для 204. */
+export async function requestPublicJson(pathOrUrl, options = {}) {
+  const response = await requestPublic(pathOrUrl, options);
+  if (response.status === 204) return null;
+  return response.json();
+}
+
+/**
+ * Собрать URL с query-параметрами; пустые/undefined/null значения отбрасываются.
+ * `defaults` применяются перед `params` (params могут перезаписать).
+ */
+export function buildSearchUrl(path, params = {}, defaults = {}) {
+  const url = new URL(withBase(path));
+  const merged = { ...defaults, ...params };
+  Object.entries(merged).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === '') return;
+    url.searchParams.append(key, value);
+  });
+  return url.toString();
+}
+
+/**
+ * Собрать FormData из плоского объекта.
+ * undefined/null поля пропускаются; Blob/File добавляются как есть; всё остальное — приведение к строке.
+ */
+export function formDataFrom(obj = {}) {
+  const fd = new FormData();
+  Object.entries(obj).forEach(([key, value]) => {
+    if (value === undefined || value === null) return;
+    if (typeof Blob !== 'undefined' && value instanceof Blob) {
+      fd.append(key, value);
+      return;
+    }
+    fd.append(key, typeof value === 'string' ? value : String(value));
+  });
+  return fd;
+}

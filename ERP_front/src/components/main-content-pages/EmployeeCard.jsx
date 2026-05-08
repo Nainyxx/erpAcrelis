@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getEmployeeById, getStaffMediaUrl, fetchStaffById } from '../../services/api';
 import { AccountProjectsPanel } from '../shared/AccountProjectsPanel';
+import { PageLoading } from '../shared/PageLoading';
+import { AvatarPhoto } from '../shared/AvatarPhoto';
 import './AccountPage.css';
 import './EmployeeCard.css';
 import BackgoundFrame from '../../assets/Frame-account.svg';
@@ -159,13 +161,13 @@ const EmployeeCard = ({ useMockData = false }) => {
       const imageSrc = userData.image || userData.image_url;
       return (
         <div className="avatar-container">
-          <img
+          <AvatarPhoto
             src={imageSrc}
-            alt={userData.name}
-            className="avatar-image"
+            alt={userData.name || ''}
+            imgClassName="avatar-image"
             onError={(e) => {
               e.target.style.display = 'none';
-              const svg = e.target.parentNode.querySelector('svg');
+              const svg = e.target.closest('.avatar-container')?.querySelector('svg');
               if (svg) svg.style.display = 'block';
             }}
           />
@@ -231,10 +233,7 @@ const EmployeeCard = ({ useMockData = false }) => {
         <div className="account-page">
           <div className="account-column-left" />
           <div className="account-column-center">
-            <div className="loading-state">
-              <div className="loading-spinner" />
-              <p>Загрузка данных...</p>
-            </div>
+            <PageLoading title="Загрузка данных..." />
           </div>
           <div className="account-column-right" />
         </div>
@@ -373,10 +372,10 @@ const EmployeeCard = ({ useMockData = false }) => {
             >
               <div className="employee-director-avatar" aria-hidden="true">
                 {directorPhotoUrl && !directorPhotoFailed ? (
-                  <img
+                  <AvatarPhoto
                     src={directorPhotoUrl}
                     alt=""
-                    className="employee-director-avatar-img"
+                    imgClassName="employee-director-avatar-img"
                     onError={() => setDirectorPhotoFailed(true)}
                   />
                 ) : (
