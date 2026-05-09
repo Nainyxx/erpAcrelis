@@ -4,10 +4,16 @@ import { getEmployeeById, getStaffMediaUrl, fetchStaffById } from '../../service
 import { AccountProjectsPanel } from '../shared/AccountProjectsPanel';
 import { PageLoading } from '../shared/PageLoading';
 import { AvatarPhoto } from '../shared/AvatarPhoto';
+import { Breadcrumbs } from '../shared/Breadcrumbs';
 import './AccountPage.css';
 import './EmployeeCard.css';
 import BackgoundFrame from '../../assets/Frame-account.svg';
 import statisticDonutSrc from '../../assets/statistic-account.svg';
+
+const EMPLOYEE_CARD_BREADCRUMB_PREFIX = [
+  { label: 'Главная', to: '/projects', preserveSearch: true },
+  { label: 'Сотрудники', to: '/staff' },
+];
 
 const EmployeeCard = ({ useMockData = false }) => {
   const { employeeId } = useParams();
@@ -161,10 +167,10 @@ const EmployeeCard = ({ useMockData = false }) => {
       const imageSrc = userData.image || userData.image_url;
       return (
         <div className="avatar-container">
-          <AvatarPhoto
+          <img
             src={imageSrc}
             alt={userData.name || ''}
-            imgClassName="avatar-image"
+            className="avatar-image"
             onError={(e) => {
               e.target.style.display = 'none';
               const svg = e.target.closest('.avatar-container')?.querySelector('svg');
@@ -224,12 +230,10 @@ const EmployeeCard = ({ useMockData = false }) => {
   if (isLoading) {
     return (
       <div className="employee-page_employee_card">
-        <h1 className="page-title_employee_card">
-          <span className="clickable_employee_card" onClick={() => navigate('/staff')}>
-            Сотрудники
-          </span>{' '}
-          — Загрузка...
-        </h1>
+        <Breadcrumbs
+          className="employee-card-breadcrumbs"
+          items={[...EMPLOYEE_CARD_BREADCRUMB_PREFIX, { label: 'Загрузка...' }]}
+        />
         <div className="account-page">
           <div className="account-column-left" />
           <div className="account-column-center">
@@ -244,12 +248,10 @@ const EmployeeCard = ({ useMockData = false }) => {
   if (loadError && !userData.id) {
     return (
       <div className="employee-page_employee_card">
-        <h1 className="page-title_employee_card">
-          <span className="clickable_employee_card" onClick={() => navigate('/staff')}>
-            Сотрудники
-          </span>{' '}
-          — Карточка сотрудника
-        </h1>
+        <Breadcrumbs
+          className="employee-card-breadcrumbs"
+          items={[...EMPLOYEE_CARD_BREADCRUMB_PREFIX, { label: 'Карточка сотрудника' }]}
+        />
         <div className="no-tasks-message_gantt_class">
           <div className="no-tasks-content_gantt_class">
             <span className="no-tasks-icon_gantt_class">⚠️</span>
@@ -272,12 +274,10 @@ const EmployeeCard = ({ useMockData = false }) => {
   if (!userData.id) {
     return (
       <div className="employee-page_employee_card">
-        <h1 className="page-title_employee_card">
-          <span className="clickable_employee_card" onClick={() => navigate('/staff')}>
-            Сотрудники
-          </span>{' '}
-          — Карточка сотрудника
-        </h1>
+        <Breadcrumbs
+          className="employee-card-breadcrumbs"
+          items={[...EMPLOYEE_CARD_BREADCRUMB_PREFIX, { label: 'Карточка сотрудника' }]}
+        />
         <div className="no-tasks-message_gantt_class">
           <div className="no-tasks-content_gantt_class">
             <span className="no-tasks-icon_gantt_class">👤</span>
@@ -299,12 +299,10 @@ const EmployeeCard = ({ useMockData = false }) => {
 
   return (
     <div className="employee-page_employee_card">
-      <h1 className="page-title_employee_card">
-        <span className="clickable_employee_card" onClick={() => navigate('/staff')}>
-          Сотрудники
-        </span>{' '}
-        — {displayName}
-      </h1>
+      <Breadcrumbs
+        className="employee-card-breadcrumbs"
+        items={[...EMPLOYEE_CARD_BREADCRUMB_PREFIX, { label: displayName }]}
+      />
 
       <div className="account-page">
         <img className="account-bg-svg" src={BackgoundFrame} alt="" aria-hidden="true" />
@@ -395,7 +393,7 @@ const EmployeeCard = ({ useMockData = false }) => {
             </div>
           </section>
 
-          <section className="account-statistics-card" aria-labelledby="employee-statistics-heading">
+          <section className="account-statistics-card account-statistics-card-stretch" aria-labelledby="employee-statistics-heading">
             <div className="profile-card-header">
               <h3 id="employee-statistics-heading">Статистика сотрудника</h3>
             </div>

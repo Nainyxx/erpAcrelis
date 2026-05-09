@@ -1,5 +1,163 @@
-.operations-request-page__placeholder {
+.operations-request-page {
+  --rq-filter-dropdown-width: 340px;
+  /* место под шапку, хлебные крошки и панель фильтров — подстройка при смене вёрстки */
+  --rq-list-scroll-offset: 280px;
+}
+
+.operations-request-page__toolbar {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 96px;
+  row-gap: 20px;
+  align-items: stretch;
+}
+
+.operations-request-page__create-wrap {
+  align-self: stretch;
+  min-height: 0;
+}
+
+.operations-request-page__filters-wrap {
+  min-width: 0;
+}
+
+.operations-request-page__create-btn {
+  box-sizing: border-box;
   margin: 0;
-  color: #666;
-  font-size: 16px;
+  padding: 16px;
+  height: 100%;
+  width: auto;
+  max-width: 100%;
+  aspect-ratio: 1;
+  border: none;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: inherit;
+  font-weight: 600;
+  color: #26262c;
+  cursor: pointer;
+  min-height: 0;
+  background: linear-gradient(
+    165deg,
+    rgba(210, 252, 248, 0.98) 0%,
+    rgba(170, 232, 226, 0.72) 48%,
+    rgba(155, 220, 214, 0.78) 100%
+  );
+  transition: filter 0.15s ease, transform 0.1s ease;
+}
+
+.operations-request-page__create-btn:hover {
+  filter: brightness(0.98);
+}
+
+.operations-request-page__create-btn:active {
+  transform: scale(0.99);
+}
+
+.operations-request-page__create-plus {
+  font-size: clamp(28px, 5vw, 36px);
+  line-height: 1;
+  font-weight: 600;
+}
+
+.operations-request-page__create-label {
+  font-size: clamp(14px, 2.2vw, 16px);
+  line-height: 1.2;
+}
+
+.operations-request-page__filters .operations-filters__title {
+  font-weight: 700;
+}
+
+.operations-request-page__filters-grid {
+  display: grid;
+  grid-template-columns: repeat(2, max-content);
+  gap: 16px 20px;
+  width: max-content;
+  max-width: 100%;
+}
+
+.operations-request-page__filters-grid .operations-filters__field {
+  width: max-content;
+  max-width: 100%;
+}
+
+/* Селекты: не на всю ширину колонки (перебивает OperationsPage.css) */
+.operations-request-page__filters .operations-filters__dropdown.select-filter-dropdown {
+  width: auto;
+  max-width: 100%;
+  align-self: start;
+}
+
+.operations-request-page__filters .operations-filters__dropdown .select-filter-dropdown__inner {
+  width: var(--rq-filter-dropdown-width);
+  max-width: min(var(--rq-filter-dropdown-width), 100%);
+}
+
+.operations-request-page__filters .operations-filters__dropdown .select-filter-dropdown__trigger,
+.operations-request-page__filters .operations-filters__dropdown .select-filter-dropdown__panel {
+  width: 100%;
+}
+
+.operations-request-page__filters .operations-filters__dropdown .select-filter-dropdown__panel {
+  min-width: 0;
+}
+
+.operations-request-card {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  min-height: 120px;
+  border: 1px solid #ececef;
+  border-radius: 14px;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.operations-request-card__inner {
+  min-height: 120px;
+  border-radius: 13px;
+}
+
+.operations-request-page__list-section {
+  min-height: 0;
+}
+
+.operations-request-page__list-scroll {
+  max-height: calc(100vh - var(--rq-list-scroll-offset));
+  min-height: 12rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  box-sizing: border-box;
+  padding: 8px 14px 12px 4px;
+}
+
+@media (max-width: 700px) {
+  .operations-request-page {
+    --rq-list-scroll-offset: 360px;
+  }
+
+  .operations-request-page__toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .operations-request-page__create-btn {
+    width: 140px;
+    height: 140px;
+  }
+
+  .operations-request-page__filters-grid {
+    grid-template-columns: 1fr;
+    width: auto;
+    justify-items: start;
+  }
+
+  .operations-request-page__filters .operations-filters__dropdown .select-filter-dropdown__inner {
+    width: min(var(--rq-filter-dropdown-width), 100%);
+  }
 }

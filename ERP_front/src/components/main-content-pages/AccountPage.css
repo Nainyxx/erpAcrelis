@@ -1,6 +1,8 @@
 .account-page {
     --bg-height: 280px;
-    --avatar-size: clamp(96px, 11vw, 220px);
+    --avatar-size: clamp(88px, 10vw, 180px);
+    --avatar-ring: 5.7px;
+    --avatar-outer-size: calc(var(--avatar-size) + 2 * var(--avatar-ring));
     --column-block-gap: 12px;
     --account-center-content-max: 640px;
     --account-col-left: clamp(200px, 20vw, 400px);
@@ -46,7 +48,7 @@
     position: relative;
     z-index: 2;
     align-self: center;
-    margin-top: calc(var(--avatar-size) * -0.5);
+    margin-top: calc(-1 * (var(--account-column-pad) + var(--avatar-outer-size) * 0.5));
 }
 
 .account-column-left,
@@ -118,9 +120,11 @@
 
 .account-statistics-chart {
     display: flex;
+    width: 100%;
     align-items: center;
     justify-content: center;
-    flex: 0 1 auto;
+    flex: 1 1 auto;
+    min-height: 0;
     padding: 2px 0 0;
 }
 
@@ -128,6 +132,7 @@
     position: relative;
     width: clamp(92px, 18vw, 136px);
     height: clamp(92px, 18vw, 136px);
+    margin: 0 auto;
 }
 
 .account-statistics-donut-img {
@@ -173,11 +178,7 @@
     --joint-row-between: 0px;
     --joint-list-pad-block: 8px;
     --joint-visible-rows: 3;
-    --joint-list-max-h: calc(
-        var(--joint-list-pad-block) +
-        (var(--joint-item-pad-y) * 2 + var(--projects-row-inner-h)) * var(--joint-visible-rows) +
-        var(--joint-row-between) * (var(--joint-visible-rows) - 1)
-    );
+    --joint-list-max-h: calc(var(--joint-list-pad-block) + (var(--joint-item-pad-y) * 2 + var(--projects-row-inner-h)) * var(--joint-visible-rows) + var(--joint-row-between) * (var(--joint-visible-rows) - 1));
     display: flex;
     flex-direction: column;
     gap: 0;
@@ -537,7 +538,7 @@
     max-width: var(--account-col-right);
     align-self: stretch;
     align-items: stretch;
-    margin-top: calc(var(--avatar-size) * -0.5);
+    margin-top: calc(var(--avatar-outer-size) * -0.5);
     min-height: 100%;
     padding-top: var(--account-column-pad);
     padding-bottom: var(--account-column-pad);
@@ -585,10 +586,8 @@
     align-items: center;
     justify-content: center;
     box-sizing: border-box;
-    border: 5.7px solid #fff;
+    border: var(--avatar-ring, 5.7px) solid #fff;
     border-radius: 50%;
-    position: relative;
-    overflow: hidden;
 }
 
 .avatar-container svg {
@@ -621,7 +620,6 @@
 .avatar-overlay {
     position: absolute;
     inset: 0;
-    z-index: 3;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -653,6 +651,11 @@
     box-shadow: 0 6px 18px rgba(38, 38, 44, 0.06);
 }
 
+.account-column-right .profile-card {
+    width: min(100%, 420px);
+    align-self: flex-start;
+}
+
 .profile-card-header {
     display: flex;
     flex-shrink: 0;
@@ -676,7 +679,8 @@
     flex: 1 1 auto;
     flex-direction: column;
     align-items: stretch;
-    justify-content: space-evenly;
+    justify-content: flex-start;
+    gap: 12px;
     min-height: 0;
 }
 

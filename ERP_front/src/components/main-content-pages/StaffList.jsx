@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { getStaffList, getStaffDepartments } from '../../services/api';
+import { useNavigate } from 'react-router-dom';
+import { getStaffList } from '../../services/api';
 import { MultiSelectFilterDropdown } from '../shared/MultiSelectFilterDropdown';
 import { Breadcrumbs } from '../shared/Breadcrumbs';
 import { PageLoading } from '../shared/PageLoading';
@@ -9,7 +9,6 @@ import './StaffList.css';
 
 const StaffList = ({ useMockData = false }) => {
   const navigate = useNavigate();
-  const location = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDepartmentIds, setSelectedDepartmentIds] = useState([]);
   const [employees, setEmployees] = useState([]);
@@ -23,23 +22,19 @@ const StaffList = ({ useMockData = false }) => {
       setError(null);
 
       try {
-        const { employees: loadedEmployees } = await getStaffList(useMockData);
-        const departmentsData = await getStaffDepartments(useMockData);
+        const { employees: loadedEmployees, departments: fromList } =
+          await getStaffList(useMockData);
 
         const departmentOptions = [];
 
-        if (departmentsData.length > 0) {
-          departmentsData.forEach((dept) => {
-            const count = loadedEmployees.filter(
-              (emp) =>
-                emp.department === dept.id.toString() ||
-                emp.departmentLabel === dept.name
-            ).length;
+        const apiDepartments = (fromList || []).filter((d) => d.id !== 'all');
 
+        if (apiDepartments.length > 0) {
+          apiDepartments.forEach((dept) => {
             departmentOptions.push({
-              id: dept.id.toString(),
-              label: dept.name,
-              count
+              id: String(dept.id),
+              label: dept.label,
+              count: dept.count
             });
           });
         } else {

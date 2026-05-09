@@ -1,0 +1,111 @@
+/* Тулбар: фильтры слева, поиск справа (как StaffList + StaffFinances) */
+.finans-list-page__toolbar {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.finans-list-page__toolbar-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.2vh;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.finans-list-page__search {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.finans-list-page .staff-search {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  padding: 0 var(--msfd-pad-x);
+  box-sizing: border-box;
+  height: var(--msfd-trigger-h);
+  min-height: var(--msfd-trigger-h);
+  max-height: var(--msfd-trigger-h);
+  background-color: #eaf6f7;
+  border: 0.1vh solid #d8e4ec;
+  border-radius: 10px;
+  transition: border-color 0.2s ease;
+}
+
+.finans-list-page .staff-search:focus-within {
+  border-color: #4ecdc4;
+}
+
+.finans-list-page .staff-search__icon {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+}
+
+.finans-list-page .staff-search__input {
+  flex: 1 1 auto;
+  min-width: 12vh;
+  max-width: min(48vh, 100%);
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-family: var(--font-sans, 'Inter Variable', 'Inter', ui-sans-serif, system-ui, sans-serif);
+  font-size: clamp(1.45vh, 1.05vw, 1.9vh);
+  font-weight: 400;
+  color: #333;
+  outline: none;
+}
+
+.finans-list-page .staff-search__input::placeholder {
+  color: #6b7a88;
+  
+}
+
+/* Таблица свода ЗП: 5 колонок, не трогаем .staff-finances-table у карточки сотрудника */
+.finans-list-salary-table {
+  display: grid;
+  grid-template-columns: minmax(10rem, 2fr) repeat(4, minmax(5rem, 1fr));
+  width: 100%;
+  font-family: var(--font-sans, 'Inter Variable', 'Inter', ui-sans-serif, system-ui, sans-serif);
+}
+
+.finans-list-salary-table .sf-cell--head:nth-child(n + 2) {
+  justify-content: center;
+}
+
+.finans-list-salary-table .sf-row--clickable .sf-cell {
+  cursor: pointer;
+}
+
+.finans-list-salary-table .sf-row--clickable .sf-cell--task:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: -2px;
+}
+
+.finans-list-salary-table .sf-row--total > .sf-cell {
+  font-weight: 700;
+  border-bottom: none;
+  border-top: 0.2vh solid #e7f6f6;
+}
+
+.finans-list-salary-table .sf-cell--total-label {
+  color: #26262c;
+}
+
+.finans-list-salary-table .sf-cell--total-num {
+  justify-content: center;
+}
+
+.finans-list-salary-table .sf-cell--total-salary {
+  font-weight: 700;
+}
+
+.finans-list-salary-table > .sf-row:last-of-type > .sf-cell {
+  border-bottom: none;
+}

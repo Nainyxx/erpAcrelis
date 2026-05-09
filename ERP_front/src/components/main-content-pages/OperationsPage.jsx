@@ -1,11 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { OPERATIONS_HUB_ALLOWED_ROLES } from '../../constants/roles';
 import { downloadProjectFile, getProjects } from '../../services/api';
 import { SelectFilterDropdown } from '../shared/SelectFilterDropdown';
+import CreateEntityModal from '../shared/CreateEntityModal';
 import refreshIconSrc from '../../assets/refresh-icon.svg';
-import docIconSrc from '../../assets/doc-icon.svg';
 import {
+  CREATE_OPERATION_TYPE_OPTIONS,
+  MOCK_ACCOUNT_OPTIONS,
   MOCK_OPERATION_FILE_DOWNLOAD_URL,
   MOCK_OPERATIONS,
   OPERATION_TYPE_OPTIONS,
@@ -92,6 +95,32 @@ function FolderIcon() {
 }
 
 function OperationCard({ op }) {
+  const [filesOpen, setFilesOpen] = useState(false);
+  const folderWrapRef = useRef(null);
+
+  const files = op.files?.length ? op.files : [];
+
+  useEffect(() => {
+    if (!filesOpen) return undefined;
+
+    const onDocMouseDown = (e) => {
+      if (folderWrapRef.current && !folderWrapRef.current.contains(e.target)) {
+        setFilesOpen(false);
+      }
+    };
+
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') setFilesOpen(false);
+    };
+
+    document.addEventListener('mousedown', onDocMouseDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onDocMouseDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [filesOpen]);
+
   const isIncome = op.type === 'income';
   const sign = isIncome ? '+' : '−';
   const amountClass = `operations-card__amount operations-card__amount--${op.type}`;
@@ -101,10 +130,44 @@ function OperationCard({ op }) {
     <li className="operations-card">
       <div className="operations-card__head">
         <span className={badgeClass}>{isIncome ? 'Приход' : 'Расход'}</span>
-        <span className="operations-card__date">{formatDateTime(op.date)}</span>
-        <button type="button" className="operations-card__folder" aria-label="Папка операции">
-          <FolderIcon />
-        </button>
+        <div className="operations-card__date-row">
+          <span className="operations-card__date">{formatDateTime(op.date)}</span>
+          {files.length > 0 ? (
+            <div className="operations-card__folder-wrap" ref={folderWrapRef}>
+              <button
+                type="button"
+                className="operations-card__folder"
+                aria-label="Документы операции"
+                aria-expanded={filesOpen}
+                aria-haspopup="menu"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setFilesOpen((v) => !v);
+                }}
+              >
+                <FolderIcon />
+              </button>
+              {filesOpen ? (
+                <div className="operations-card__files-popover" role="menu">
+                  {files.map((f, fileIndex) => (
+                    <button
+                      key={`${op.id}-file-${fileIndex}-${f.name}`}
+                      type="button"
+                      role="menuitem"
+                      className="operations-card__files-popover-item"
+                      onClick={() => {
+                        downloadOperationAttachment(f.name);
+                        setFilesOpen(false);
+                      }}
+                    >
+                      {f.name}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
       </div>
 
       <div className="operations-card__body">
@@ -132,33 +195,17 @@ function OperationCard({ op }) {
           <span className="operations-card__meta-value">{op.accountMasked}</span>
         </div>
       </div>
-
-      {op.files && op.files.length > 0 ? (
-        <div className="operations-card__files">
-          {op.files.map((f, fileIndex) => (
-            <button
-              key={`${op.id}-file-${fileIndex}-${f.name}`}
-              type="button"
-              className="operations-card__file"
-              aria-label={`Скачать ${f.name}`}
-              onClick={() => downloadOperationAttachment(f.name)}
-            >
-              <img
-                src={docIconSrc}
-                alt=""
-                className="operations-card__file-icon"
-                width={16}
-                height={20}
-                decoding="async"
-              />
-              <span className="operations-card__file-name">{f.name}</span>
-            </button>
-          ))}
-        </div>
-      ) : null}
     </li>
   );
 }
+
+const emptyCreateForm = () => ({
+  type: 'income',
+  projectId: '',
+  amount: '',
+  accountId: '',
+  comment: '',
+});
 
 function OperationsPage({ useMockData = false }) {
   const navigate = useNavigate();
@@ -170,6 +217,13 @@ function OperationsPage({ useMockData = false }) {
   const [period, setPeriod] = useState('all');
   const [requestType, setRequestType] = useState('all');
   const [projectsLoaded, setProjectsLoaded] = useState([]);
+
+  const [showCreateOperationModal, setShowCreateOperationModal] = useState(false);
+  const [newOperation, setNewOperation] = useState(emptyCreateForm);
+  const [createError, setCreateError] = useState('');
+  const [attachedFiles, setAttachedFiles] = useState([]);
+  const [extraOperations, setExtraOperations] = useState([]);
+  const createFileInputRef = useRef(null);
 
   const projectOptions = useMemo(
     () => [
@@ -199,15 +253,104 @@ function OperationsPage({ useMockData = false }) {
     };
   }, [useMockData, canAccessHub]);
 
+  const operationsSource = useMemo(
+    () => [...extraOperations, ...MOCK_OPERATIONS],
+    [extraOperations]
+  );
+
   // period — только для UI; при запросе списка операций передавать на бэкенд, мок не фильтруем по дате
   const filteredOperations = useMemo(() => {
-    return MOCK_OPERATIONS.filter((op) => {
+    return operationsSource.filter((op) => {
       if (operationType !== 'all' && op.type !== operationType) return false;
       if (projectId !== 'all' && String(op.projectId) !== projectId) return false;
       if (requestType !== 'all' && op.requestType !== requestType) return false;
       return true;
     });
-  }, [operationType, projectId, requestType]);
+  }, [operationType, projectId, requestType, operationsSource]);
+
+  const openCreateOperationModal = (type) => {
+    setCreateError('');
+    setAttachedFiles([]);
+    setNewOperation({ ...emptyCreateForm(), type });
+    setShowCreateOperationModal(true);
+  };
+
+  const closeCreateOperationModal = () => {
+    setShowCreateOperationModal(false);
+    setCreateError('');
+    setAttachedFiles([]);
+    setNewOperation(emptyCreateForm());
+  };
+
+  useLayoutEffect(() => {
+    const input = createFileInputRef.current;
+    if (!input) return undefined;
+
+    const onChange = () => {
+      const list = input.files;
+      if (!list?.length) return;
+      const next = Array.from(list);
+      flushSync(() => {
+        setAttachedFiles((prev) => [...prev, ...next]);
+      });
+      input.value = '';
+    };
+
+    input.addEventListener('change', onChange);
+    return () => input.removeEventListener('change', onChange);
+  }, []);
+
+  const handleClearAttachedFiles = () => {
+    setAttachedFiles([]);
+    if (createFileInputRef.current) createFileInputRef.current.value = '';
+  };
+
+  const handleCreateOperationSubmit = () => {
+    const { type, projectId: pid, amount, accountId, comment } = newOperation;
+    setCreateError('');
+
+    if (type !== 'income' && type !== 'expense') {
+      setCreateError('Выберите тип операции.');
+      return;
+    }
+    if (!pid) {
+      setCreateError('Выберите проект.');
+      return;
+    }
+    const normalizedAmount = String(amount).replace(/\s/g, '').replace(',', '.');
+    const amountNum = parseFloat(normalizedAmount);
+    if (!amount || Number.isNaN(amountNum) || amountNum <= 0) {
+      setCreateError('Введите корректную сумму.');
+      return;
+    }
+    if (!accountId) {
+      setCreateError('Выберите счёт.');
+      return;
+    }
+
+    const project = projectsLoaded.find((p) => String(p.id) === String(pid));
+    const account = MOCK_ACCOUNT_OPTIONS.find((a) => a.id === accountId);
+    const managerName = localStorage.getItem('name')?.trim() || '—';
+
+    const newOp = {
+      id: `op-new-${Date.now()}`,
+      type,
+      amount: amountNum,
+      purpose: comment.trim() || 'Без комментария',
+      date: new Date().toISOString(),
+      projectId: Number(pid),
+      projectName: project?.name || 'Проект',
+      paymentMethod: 'Безналичный',
+      managerName,
+      accountMasked: account?.label || '—',
+      requestType: 'other',
+      files:
+        attachedFiles.length > 0 ? attachedFiles.map((f) => ({ name: f.name })) : undefined
+    };
+
+    setExtraOperations((prev) => [newOp, ...prev]);
+    closeCreateOperationModal();
+  };
 
   const handleResetFilters = () => {
     setOperationType('all');
@@ -231,6 +374,15 @@ function OperationsPage({ useMockData = false }) {
 
   return (
     <div className="operations-page">
+      {/* Вложения формы: скрытый file на странице (не в модалке), off-screen вместо display:none */}
+      <input
+        ref={createFileInputRef}
+        type="file"
+        multiple
+        className="operations-page__file-input"
+        tabIndex={-1}
+        aria-hidden={true}
+      />
       <Breadcrumbs items={breadcrumbItems} />
 
       <section
@@ -238,10 +390,18 @@ function OperationsPage({ useMockData = false }) {
         aria-label="Быстрые операции"
       >
         <div className="operations-quick-actions">
-          <button type="button" className="operations-quick-btn operations-quick-btn--income">
+          <button
+            type="button"
+            className="operations-quick-btn operations-quick-btn--income"
+            onClick={() => openCreateOperationModal('income')}
+          >
             +   Приход
           </button>
-          <button type="button" className="operations-quick-btn operations-quick-btn--expense">
+          <button
+            type="button"
+            className="operations-quick-btn operations-quick-btn--expense"
+            onClick={() => openCreateOperationModal('expense')}
+          >
             −   Расход
           </button>
           <button
@@ -336,8 +496,8 @@ function OperationsPage({ useMockData = false }) {
               <button
                 type="button"
                 className="operations-filters__chip"
-                aria-label="Перейти к заявке: заработная плата"
-                onClick={() => navigate('/operations/request')}
+                aria-label="Перейти к разделу заработная плата"
+                onClick={() => navigate('/operations/finans')}
               >
                 Заработная плата
               </button>
@@ -361,6 +521,150 @@ function OperationsPage({ useMockData = false }) {
           </ul>
         )}
       </section>
+
+      <CreateEntityModal
+        title="Создание операции"
+        isOpen={showCreateOperationModal}
+        isSubmitting={false}
+        error={createError}
+        submitLabel="Создать операцию"
+        submittingLabel="Создание..."
+        onClose={closeCreateOperationModal}
+        onSubmit={handleCreateOperationSubmit}
+      >
+        <div className="form-group123">
+          <label htmlFor="operations-create-type">Тип операции *</label>
+          <select
+            id="operations-create-type"
+            value={newOperation.type}
+            onChange={(e) =>
+              setNewOperation({ ...newOperation, type: e.target.value })
+            }
+          >
+            {CREATE_OPERATION_TYPE_OPTIONS.map((opt) => (
+              <option key={opt.id} value={opt.id}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="form-row123">
+          <div className="form-group123">
+            <label htmlFor="operations-create-project">Проект *</label>
+            <select
+              id="operations-create-project"
+              value={newOperation.projectId}
+              onChange={(e) =>
+                setNewOperation({ ...newOperation, projectId: e.target.value })
+              }
+            >
+              <option value="">Выберите проект</option>
+              {projectsLoaded.map((p) => (
+                <option key={p.id} value={String(p.id)}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-group123">
+            <label htmlFor="operations-create-amount">Сумма *</label>
+            <input
+              id="operations-create-amount"
+              type="text"
+              inputMode="decimal"
+              autoComplete="off"
+              placeholder="Введите сумму"
+              value={newOperation.amount}
+              onChange={(e) =>
+                setNewOperation({ ...newOperation, amount: e.target.value })
+              }
+            />
+          </div>
+        </div>
+
+        <div className="form-group123">
+          <label htmlFor="operations-create-account">Счёт *</label>
+          <select
+            id="operations-create-account"
+            value={newOperation.accountId}
+            onChange={(e) =>
+              setNewOperation({ ...newOperation, accountId: e.target.value })
+            }
+          >
+            <option value="">Выберите счёт</option>
+            {MOCK_ACCOUNT_OPTIONS.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="form-group123">
+          <label htmlFor="operations-create-comment">Комментарий</label>
+          <textarea
+            id="operations-create-comment"
+            className="operations-create-comment"
+            rows={4}
+            placeholder="Введите комментарий к операции..."
+            value={newOperation.comment}
+            onChange={(e) =>
+              setNewOperation({ ...newOperation, comment: e.target.value })
+            }
+          />
+        </div>
+
+        <div className="operations-create-docs">
+          <div className="operations-create-docs__head">
+            <span className="operations-create-docs__title">Документы</span>
+            <div className="operations-create-docs__toolbar">
+              <button
+                type="button"
+                className="operations-create-docs__icon-btn"
+                aria-label="Добавить файлы"
+                onClick={() => createFileInputRef.current?.click()}
+              >
+                <img src={refreshIconSrc} alt="" width={20} height={20} decoding="async" />
+              </button>
+              <button
+                type="button"
+                className="operations-create-docs__icon-btn"
+                aria-label="Удалить все файлы"
+                onClick={handleClearAttachedFiles}
+                disabled={attachedFiles.length === 0}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path
+                    d="M4 7h16M10 11v6M14 11v6M6 7l1-2h10l1 2M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="operations-create-docs__upload"
+            onClick={() => createFileInputRef.current?.click()}
+          >
+            <span className="operations-create-docs__upload-inner">
+              <span className="operations-create-docs__upload-plus" aria-hidden="true">
+                +
+              </span>
+              <span className="operations-create-docs__upload-label">Загрузить</span>
+            </span>
+          </button>
+          {attachedFiles.length > 0 ? (
+            <p className="operations-create-docs__names" aria-live="polite">
+              {attachedFiles.map((f) => f.name).join(', ')}
+            </p>
+          ) : null}
+        </div>
+      </CreateEntityModal>
     </div>
   );
 }

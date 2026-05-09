@@ -821,7 +821,13 @@ export async function getStaffDepartments(USE_MOCK_DATA) {
   }
 }
 
-export async function getStaffList(USE_MOCK_DATA, filters = {}) {
+export async function getStaffList(
+  USE_MOCK_DATA,
+  filters = {},
+  options = {}
+) {
+  const { includeDepartments = true } = options;
+
   if (USE_MOCK_DATA) {
     await mockDelay();
 
@@ -836,6 +842,10 @@ export async function getStaffList(USE_MOCK_DATA, filters = {}) {
         phone: '+7 (999) 123-45-67'
       }
     ];
+
+    if (!includeDepartments) {
+      return { employees: mockEmployees, departments: [] };
+    }
 
     const mockDepartments = [
       { id: 'all', label: 'Все отделы', count: mockEmployees.length },
@@ -859,6 +869,10 @@ export async function getStaffList(USE_MOCK_DATA, filters = {}) {
     const responseData = await requestAuthJson(url, { method: 'GET' });
 
     const employees = (responseData || []).map(formatStaffListItem);
+
+    if (!includeDepartments) {
+      return { employees, departments: [] };
+    }
 
     const departments = await getStaffDepartments(USE_MOCK_DATA);
     const departmentList = [{ id: 'all', label: 'Все отделы', count: employees.length }];

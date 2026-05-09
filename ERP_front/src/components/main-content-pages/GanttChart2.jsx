@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import './GanttChart2.css';
 import { getProjectById, getTasks } from '../../services/api';
 import { PageLoading } from '../shared/PageLoading';
+import { Breadcrumbs } from '../shared/Breadcrumbs';
 
 const GanttChart = ({ useMockData = false }) => {
   const navigate = useNavigate();
@@ -588,22 +589,15 @@ const GanttChart = ({ useMockData = false }) => {
     <div className="gantt-container_gantt_class">
       {/* Заголовок */}
       <div className="gantt-header_gantt_class">
-        <h1 className="gantt-title_gantt_class">
-          <span 
-            className="gantt-link_gantt_class" 
-            onClick={() => navigate('/projects')}
-          >
-            Проекты
-          </span>
-          {' — '}
-          <span 
-            className="gantt-link_gantt_class"
-            onClick={() => navigate(`/projects/${project.id}`)}
-          >
-            {project.name}
-          </span>
-          {' — Диаграмма Ганта'}
-        </h1>
+        <div className="gantt-title_gantt_class">
+          <Breadcrumbs
+            items={[
+              { label: 'Проекты', to: '/projects', preserveSearch: true },
+              { label: project.name || 'Проект', to: `/projects/${project.id}` },
+              { label: 'Диаграмма Ганта' },
+            ]}
+          />
+        </div>
       </div>
 
       {/* Основной контейнер */}

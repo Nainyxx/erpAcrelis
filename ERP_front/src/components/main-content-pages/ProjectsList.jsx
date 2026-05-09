@@ -121,13 +121,10 @@ const ProjectsList = ({ useMockData = false, showNotification }) => {
       sessionStorage.setItem(PROJECTS_NAV_QUERY_STORAGE_KEY, nextSearch);
     } catch (_) { }
     navigate({ pathname: '/projects', search: nextSearch }, { replace: true });
-  }, [
-    selectedType,
-    selectedStatus,
-    searchQuery,
-    location.search,
-    navigate,
-  ]);
+    // Не добавлять location.search в deps: при переходе на /projects без query
+    // первый эффект обновит state, этот эффект должен сработать уже с новым state.
+    // Иначе в том же проходе остаётся старый state и navigate снова подставляет старые фильтры.
+  }, [selectedType, selectedStatus, searchQuery, navigate]);
 
   // Загрузка проектов
   const loadProjects = async () => {

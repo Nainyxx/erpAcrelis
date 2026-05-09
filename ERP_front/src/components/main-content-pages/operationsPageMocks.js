@@ -8,6 +8,20 @@ export const OPERATION_TYPE_OPTIONS = [
   { id: 'expense', label: 'Расход' },
 ];
 
+/** Только приход/расход — для формы создания операции */
+export const CREATE_OPERATION_TYPE_OPTIONS = [
+  { id: 'income', label: 'Приход' },
+  { id: 'expense', label: 'Расход' },
+];
+
+/** Счета до подключения API (id — внутренний ключ формы) */
+export const MOCK_ACCOUNT_OPTIONS = [
+  { id: '4081-4081', label: '4081 **** **** 4081' },
+  { id: '4070-9012', label: '4070 **** **** 9012' },
+  { id: '4070-3311', label: '4070 **** **** 3311' },
+  { id: 'cash', label: 'Наличные (касса)' },
+];
+
 export const PERIOD_OPTIONS = [
   { id: 'all', label: 'За всё время' },
   { id: 'day', label: 'День' },

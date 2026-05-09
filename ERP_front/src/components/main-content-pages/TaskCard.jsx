@@ -1,6 +1,6 @@
 // ERP_front/src/components/main-content-pages/TaskCard.jsx
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useParams, Link, useLocation } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
 import uploadCloudIcon from '../../assets/download-files.svg';
@@ -16,6 +16,7 @@ import { TASK_STATUS_OPTIONS } from '../../constants/tasks';
 import TaskWebSocketService from '../../services/taskWebSocketService';
 import { PageLoading } from '../shared/PageLoading';
 import { AvatarPhoto } from '../shared/AvatarPhoto';
+import { Breadcrumbs } from '../shared/Breadcrumbs';
 import './TaskCard.css';
 
 // Константы для ограничения длины названий файлов
@@ -147,160 +148,41 @@ const TaskCard = ({ useMockData = false }) => {
         }
     }, [projectId, useMockData, loadingProject]);
 
-    // ==================== Рендеринг заголовка в зависимости от контекста ====================
-    const renderHeader = () => {
-        // Используем window.location.hash для HashRouter
-        const hashPath = window.location.hash || '';
-
-        // Убираем # из начала
-        const path = hashPath.startsWith('#') ? hashPath.substring(1) : hashPath;
-
-        // Разбиваем путь на части
-        const pathParts = path.split('/').filter(part => part !== '');
-
-        // Проверяем структуру пути
+    const taskBreadcrumbItems = useMemo(() => {
+        const pathParts = location.pathname.split('/').filter(Boolean);
         const isFromKanban = pathParts[0] === 'kanban' && pathParts.length === 3;
         const isFromGantt = pathParts[0] === 'gantt' && pathParts.length === 3;
         const isFromTasks = pathParts[0] === 'tasks' && pathParts.length === 2;
+        const projectLabel = project?.name || 'Проект';
+        const taskLabel = task?.name || 'Задача';
 
-        // Если пришли из канбана
-        if (isFromKanban) {
-            return (
-                <div className="taskcard-header_task_card">
-                    <h1 className="taskcard-title_task_card">
-                        <span
-                            className="mytasks-link_task_card"
-                            onClick={() => navigate('/projects')}
-                            style={{ cursor: 'pointer' }}
-                        >
-                            Проекты
-                        </span>
-                        {' — '}
-                        <span
-                            className="mytasks-link_task_card"
-                            onClick={() => navigate(`/projects/${projectId}`)}
-                            style={{ cursor: 'pointer' }}
-                        >
-                            {project?.name || 'ERP Front'}
-                        </span>
-                        {' — '}
-                        <span
-                            className="mytasks-link_task_card"
-                            onClick={() => navigate(`/kanban/${projectId}`)}
-                            style={{ cursor: 'pointer' }}
-                        >
-                            Канбан задач
-                        </span>
-                        {' — '}
-                        <span className="task-name_task_card">{task?.name || 'Задача'}</span>
-                    </h1>
-                    {canManageTaskActions && (
-                        <button
-                            className="save-changes-btn_task_card"
-                            onClick={handleSaveChanges}
-                        >
-                            {isSaving ? 'Сохранение...' : 'Сохранить изменения'}
-                        </button>
-                    )}
-                </div>
-            );
+        if (isFromKanban && projectId) {
+            return [
+                { label: 'Проекты', to: '/projects', preserveSearch: true },
+                { label: projectLabel, to: `/projects/${projectId}` },
+                { label: 'Канбан задач', to: `/kanban/${projectId}` },
+                { label: taskLabel },
+            ];
         }
-
-        // Если пришли из ганта
-        if (isFromGantt) {
-            return (
-                <div className="taskcard-header_task_card">
-                    <h1 className="taskcard-title_task_card">
-                        <span
-                            className="mytasks-link_task_card"
-                            onClick={() => navigate('/projects')}
-                            style={{ cursor: 'pointer' }}
-                        >
-                            Проекты
-                        </span>
-                        {' — '}
-                        <span
-                            className="mytasks-link_task_card"
-                            onClick={() => navigate(`/projects/${projectId}`)}
-                            style={{ cursor: 'pointer' }}
-                        >
-                            {project?.name || 'ERP Front'}
-                        </span>
-                        {' — '}
-                        <span
-                            className="mytasks-link_task_card"
-                            onClick={() => navigate(`/gantt/${projectId}`)}
-                            style={{ cursor: 'pointer' }}
-                        >
-                            Диаграмма Ганта
-                        </span>
-                        {' — '}
-                        <span className="task-name_task_card">{task?.name || 'Задача'}</span>
-                    </h1>
-                    {canManageTaskActions && (
-                        <button
-                            className="save-changes-btn_task_card"
-                            onClick={handleSaveChanges}
-                        >
-                            {isSaving ? 'Сохранение...' : 'Сохранить изменения'}
-                        </button>
-                    )}
-                </div>
-            );
+        if (isFromGantt && projectId) {
+            return [
+                { label: 'Проекты', to: '/projects', preserveSearch: true },
+                { label: projectLabel, to: `/projects/${projectId}` },
+                { label: 'Диаграмма Ганта', to: `/gantt/${projectId}` },
+                { label: taskLabel },
+            ];
         }
-
-        // Если пришли из списка задач
         if (isFromTasks) {
-            return (
-                <div className="taskcard-header_task_card">
-                    <h1 className="taskcard-title_task_card">
-                        <span
-                            className="mytasks-link_task_card"
-                            onClick={navigateToMyTasksPreservingQuery}
-                            style={{ cursor: 'pointer' }}
-                        >
-                            Мои задачи
-                        </span>
-                        {' — '}
-                        <span className="task-name_task_card">{task?.name || 'Задача'}</span>
-                    </h1>
-                    {canManageTaskActions && (
-                        <button
-                            className="save-changes-btn_task_card"
-                            onClick={handleSaveChanges}
-                        >
-                            {isSaving ? 'Сохранение...' : 'Сохранить изменения'}
-                        </button>
-                    )}
-                </div>
-            );
+            return [
+                { label: 'Мои задачи', to: '/my-tasks', preserveSearch: true },
+                { label: taskLabel },
+            ];
         }
-
-        // По умолчанию
-        return (
-            <div className="taskcard-header_task_card">
-                <h1 className="taskcard-title_task_card">
-                    <span
-                        className="mytasks-link_task_card"
-                        onClick={navigateToMyTasksPreservingQuery}
-                        style={{ cursor: 'pointer', textDecoration: 'underline' }}
-                    >
-                        Мои задачи
-                    </span>
-                    {' — '}
-                    <span className="task-name_task_card">{task?.name || 'Задача'}</span>
-                </h1>
-                {canManageTaskActions && (
-                    <button
-                        className="save-changes-btn_task_card"
-                        onClick={handleSaveChanges}
-                    >
-                        {isSaving ? 'Сохранение...' : 'Сохранить изменения'}
-                    </button>
-                )}
-            </div>
-        );
-    };
+        return [
+            { label: 'Мои задачи', to: '/my-tasks', preserveSearch: true },
+            { label: taskLabel },
+        ];
+    }, [location.pathname, project?.name, projectId, task?.name]);
 
     // ==================== Функции для обработки названий файлов ====================
 
@@ -1199,8 +1081,19 @@ const TaskCard = ({ useMockData = false }) => {
 
     return (
         <div className="taskcard-container_task_card">
-            {/* Рендерим заголовок в зависимости от контекста */}
-            {renderHeader()}
+            <div className="taskcard-header_task_card">
+                <div className="taskcard-title_task_card">
+                    <Breadcrumbs items={taskBreadcrumbItems} />
+                </div>
+                {canManageTaskActions && (
+                    <button
+                        className="save-changes-btn_task_card"
+                        onClick={handleSaveChanges}
+                    >
+                        {isSaving ? 'Сохранение...' : 'Сохранить изменения'}
+                    </button>
+                )}
+            </div>
 
             {/* Форма ввода описания задачи */}
             <div className="comment-form-container_task_card">

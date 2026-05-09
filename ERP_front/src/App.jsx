@@ -29,6 +29,7 @@ import AccountPage from './components/main-content-pages/AccountPage';
 import SchedulePage from './components/main-content-pages/SchedulePage';
 import OperationsPage from './components/main-content-pages/OperationsPage';
 import OperationsRequestPage from './components/main-content-pages/OperationsRequestPage';
+import FinansList from './components/main-content-pages/FinansList';
 import StaffFinancesPage from './components/main-content-pages/StaffFinancesPage';
 
 // Мок данные
@@ -298,9 +299,10 @@ function App() {
                   />
                 } />
 
-                {/* Операции — finans до /operations, иначе :staffId съестся */}
+                {/* Операции — сначала список /finans, затем карточка сотрудника */}
+                <Route path="/operations/finans" element={<FinansList />} />
                 <Route path="/operations/finans/:staffId" element={<StaffFinancesPage />} />
-                <Route path="/operations/request" element={<OperationsRequestPage />} />
+                <Route path="/operations/request" element={<OperationsRequestPage useMockData={useMockData} />} />
                 <Route path="/operations" element={
                   <OperationsPage useMockData={useMockData} />
                 } />

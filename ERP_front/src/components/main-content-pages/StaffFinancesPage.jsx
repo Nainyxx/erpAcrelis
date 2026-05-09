@@ -38,7 +38,7 @@ function StaffFinancesPage() {
     const breadcrumbItems = [
         { label: 'Главная', to: '/projects', preserveSearch: true },
         { label: 'Операции', to: '/operations' },
-        { label: 'Заработная плата' },
+        { label: 'Заработная плата', to: '/operations/finans' },
         { label: 'Сотрудник' },
     ];
 

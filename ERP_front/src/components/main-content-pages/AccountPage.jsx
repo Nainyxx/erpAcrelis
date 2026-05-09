@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { getEmployeeById, updateEmployeeById } from '../../services/api';
 import { AccountProjectsPanel } from '../shared/AccountProjectsPanel';
 import { PageLoading } from '../shared/PageLoading';
-import { AvatarPhoto } from '../shared/AvatarPhoto';
 import './AccountPage.css';
 import { MY_TASKS_NAV_QUERY_STORAGE_KEY } from '../../constants/navigationKeys';
 import BackgoundFrame from "../../assets/Frame-account.svg";
@@ -333,10 +332,10 @@ function AccountPage({ useMockData = false }) {
                     onClick={handleAvatarClick}
                     title={isProfileEditing ? 'Нажмите для изменения фото' : ''}
                 >
-                    <AvatarPhoto
+                    <img
                         src={imagePreview}
                         alt="Предпросмотр"
-                        imgClassName="avatar-image"
+                        className="avatar-image"
                     />
                     {isProfileEditing && (
                         <div className="avatar-overlay">
@@ -353,10 +352,10 @@ function AccountPage({ useMockData = false }) {
                     onClick={handleAvatarClick}
                     title={isProfileEditing ? 'Нажмите для изменения фото' : ''}
                 >
-                    <AvatarPhoto
+                    <img
                         src={imageSrc}
                         alt={userData.name || ''}
-                        imgClassName="avatar-image"
+                        className="avatar-image"
                         onError={(e) => {
                             e.target.style.display = 'none';
                             const svg = e.target.closest('.avatar-container')?.querySelector('svg');

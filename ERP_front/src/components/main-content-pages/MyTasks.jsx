@@ -1,5 +1,5 @@
 // MyTasks.jsx
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   getTasks,
@@ -28,6 +28,14 @@ const TASK_STATUS_MAP = {
 };
 
 const TASKS_PER_PAGE = 20;
+
+const EmptyTasksInboxIcon = () => (
+  <svg className="mytasks-empty-state__icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /><path d="M14 2v6h6M9 15h6M9 11h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+);
+
+const EmptyTasksSearchIcon = () => (
+  <svg className="mytasks-empty-state__icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="1.5" /><path d="M16 16l4.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /><path d="M8.2 11h5.6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.45" /></svg>
+);
 
 /** Сравнение query без учёта порядка ключей */
 const normalizeQueryForCompare = (searchStr) => {
@@ -171,8 +179,9 @@ const MyTasks = ({ useMockData = false }) => {
     [allProjects]
   );
 
-  // Парсим query при смене URL (в т.ч. после синхронизации фильтров)
-  useEffect(() => {
+  // Парсим query при смене URL до useEffect синхронизации адреса, иначе тот эффект
+  // один кадр видит старые фильтры и снова navigate() → цикл ререндеров и запросов.
+  useLayoutEffect(() => {
     const user = getCurrentUser();
     setCurrentUser(user);
 
@@ -231,7 +240,6 @@ const MyTasks = ({ useMockData = false }) => {
     performers,
     directorFilterOptions,
     projectFilterOptions,
-    location.search,
     navigate
   ]);
 
@@ -262,7 +270,7 @@ const MyTasks = ({ useMockData = false }) => {
   // Загрузка списка сотрудников
   const loadStaffList = async () => {
     try {
-      const staffResult = await getStaffList(useMockData);
+      const staffResult = await getStaffList(useMockData, {}, { includeDepartments: false });
       const staffData = staffResult.employees || [];
       let directorsData = [];
 
@@ -884,29 +892,30 @@ const MyTasks = ({ useMockData = false }) => {
           )}
         </div>
 
-        <div className="no-tasks-message_gantt_class">
-          <div className="no-tasks-content_gantt_class">
-            <span className="no-tasks-icon_gantt_class">📋</span>
-            <h4>Задач пока нет</h4>
-            <p>
-              {canCreateTask
-                ? 'Создайте первую задачу или выберите другого исполнителя'
-                : 'Выберите другого исполнителя или измените фильтры'}
-            </p>
-            {canCreateTask && (
-              <button
-                onClick={openCreateModal}
-                className="gantt-back-btn_gantt_class"
-                style={{ marginTop: '2vh' }}
-              >
-                Создать задачу
-              </button>
-            )}
+        <div className="mytasks-empty-state mytasks-empty-state--page" role="status">
+          <div className="mytasks-empty-state__icon-wrap">
+            <EmptyTasksInboxIcon />
           </div>
+          <h3 className="mytasks-empty-state__title">Задач пока нет</h3>
+          <p className="mytasks-empty-state__text">
+            {canCreateTask
+              ? 'Создайте первую задачу или выберите другого исполнителя в фильтре выше.'
+              : 'Выберите другого исполнителя или измените фильтры над таблицей.'}
+          </p>
         </div>
       </div>
     );
   }
+
+  const listFiltersNarrowing =
+    selectedStatus !== 'all' ||
+    selectedPerformer !== 'all' ||
+    selectedDirector !== 'all' ||
+    selectedProject !== 'all';
+  const emptyListTitle = listFiltersNarrowing ? 'Задачи не найдены' : 'Список пуст';
+  const emptyListText = listFiltersNarrowing
+    ? 'По выбранным фильтрам ничего не подошло. Измените условия в фильтрах выше.'
+    : 'На этой странице нет строк. Перейдите на другую страницу или обновите список.';
 
   return (
     <div className="mytasks-container">
@@ -1000,13 +1009,12 @@ const MyTasks = ({ useMockData = false }) => {
         <div className="header-cell">Руководитель</div>
 
         {tasks.length === 0 ? (
-          <div className="no-tasks">
-            {selectedStatus !== 'all' ||
-              selectedPerformer !== 'all' ||
-              selectedDirector !== 'all' ||
-              selectedProject !== 'all'
-              ? 'Задачи не найдены по заданным фильтрам'
-              : 'Задачи не найдены'}
+          <div className="mytasks-empty-state mytasks-empty-state--in-table" role="status">
+            <div className="mytasks-empty-state__icon-wrap mytasks-empty-state__icon-wrap--muted">
+              {listFiltersNarrowing ? <EmptyTasksSearchIcon /> : <EmptyTasksInboxIcon />}
+            </div>
+            <h3 className="mytasks-empty-state__title">{emptyListTitle}</h3>
+            <p className="mytasks-empty-state__text">{emptyListText}</p>
           </div>
         ) : (
           tasks.map((task) => (
@@ -1130,151 +1138,151 @@ const MyTasks = ({ useMockData = false }) => {
           onClose={closeCreateModal}
           onSubmit={handleCreateTask}
         >
-              <div className="form-group123">
-                <label>Название задачи *</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={newTask.name}
-                  onChange={handleInputChange}
-                  placeholder="Введите название задачи"
-                  disabled={creating}
-                  maxLength={100}
-                />
-              </div>
+          <div className="form-group123">
+            <label>Название задачи *</label>
+            <input
+              type="text"
+              name="name"
+              value={newTask.name}
+              onChange={handleInputChange}
+              placeholder="Введите название задачи"
+              disabled={creating}
+              maxLength={100}
+            />
+          </div>
 
-              <div className="form-group123">
-                <label>Описание *</label>
-                <textarea
-                  name="description"
-                  value={newTask.description}
-                  onChange={handleInputChange}
-                  className="form-textarea123"
-                  placeholder="Введите описание задачи"
-                  disabled={creating}
-                  rows="3"
-                />
-              </div>
+          <div className="form-group123">
+            <label>Описание *</label>
+            <textarea
+              name="description"
+              value={newTask.description}
+              onChange={handleInputChange}
+              className="form-textarea123"
+              placeholder="Введите описание задачи"
+              disabled={creating}
+              rows="3"
+            />
+          </div>
 
-              <div className="form-group123" ref={projectInputRef} style={{ position: 'relative' }}>
-                <label>Проект (опционально)</label>
-                <input
-                  type="text"
-                  name="projectName"
-                  value={newTask.projectName}
-                  onChange={handleProjectInputChange}
-                  placeholder="Начните вводить название проекта"
-                  disabled={creating}
-                  autoComplete="off"
-                />
-                <small>Введите название проекта, чтобы выбрать его из списка</small>
+          <div className="form-group123" ref={projectInputRef} style={{ position: 'relative' }}>
+            <label>Проект (опционально)</label>
+            <input
+              type="text"
+              name="projectName"
+              value={newTask.projectName}
+              onChange={handleProjectInputChange}
+              placeholder="Начните вводить название проекта"
+              disabled={creating}
+              autoComplete="off"
+            />
+            <small>Введите название проекта, чтобы выбрать его из списка</small>
 
-                {showProjectSuggestions && projectSuggestions.length > 0 && (
-                  <div className="suggestions-dropdown">
-                    {projectSuggestions.map((project, index) => (
-                      <div
-                        key={project.id || index}
-                        className="suggestion-item"
-                        onClick={() => handleProjectSuggestionClick(project)}
-                      >
-                        <div className="suggestion-name">{project.name}</div>
-                        {project.typeLabel && (
-                          <div className="suggestion-details">{project.typeLabel}</div>
-                        )}
-                      </div>
-                    ))}
+            {showProjectSuggestions && projectSuggestions.length > 0 && (
+              <div className="suggestions-dropdown">
+                {projectSuggestions.map((project, index) => (
+                  <div
+                    key={project.id || index}
+                    className="suggestion-item"
+                    onClick={() => handleProjectSuggestionClick(project)}
+                  >
+                    <div className="suggestion-name">{project.name}</div>
+                    {project.typeLabel && (
+                      <div className="suggestion-details">{project.typeLabel}</div>
+                    )}
                   </div>
-                )}
+                ))}
               </div>
+            )}
+          </div>
 
-              <div className="form-group123">
-                <label>Дедлайн *</label>
-                <input
-                  type="date"
-                  name="deadline"
-                  value={newTask.deadline}
-                  onChange={handleInputChange}
-                  disabled={creating}
-                />
-              </div>
+          <div className="form-group123">
+            <label>Дедлайн *</label>
+            <input
+              type="date"
+              name="deadline"
+              value={newTask.deadline}
+              onChange={handleInputChange}
+              disabled={creating}
+            />
+          </div>
 
-              <div className="form-row123">
-                <div className="form-group123" ref={performerInputRef} style={{ position: 'relative' }}>
-                  <label>Исполнитель (опционально)</label>
-                  <input
-                    type="text"
-                    name="performerName"
-                    value={newTask.performerName}
-                    onChange={handlePerformerInputChange}
-                    placeholder="Начните вводить ФИО исполнителя"
-                    disabled={creating}
-                    autoComplete="off"
-                  />
+          <div className="form-row123">
+            <div className="form-group123" ref={performerInputRef} style={{ position: 'relative' }}>
+              <label>Исполнитель (опционально)</label>
+              <input
+                type="text"
+                name="performerName"
+                value={newTask.performerName}
+                onChange={handlePerformerInputChange}
+                placeholder="Начните вводить ФИО исполнителя"
+                disabled={creating}
+                autoComplete="off"
+              />
 
-                  {showPerformerSuggestions && performerSuggestions.length > 0 && (
-                    <div className="suggestions-dropdown">
-                      {performerSuggestions.map((staff, index) => (
-                        <div
-                          key={staff.id || index}
-                          className="suggestion-item"
-                          onClick={() => handlePerformerSuggestionClick(staff)}
-                        >
-                          <div className="suggestion-name">{staff.name}</div>
-                          {staff.position && (
-                            <div className="suggestion-details">{staff.position}</div>
-                          )}
-                        </div>
-                      ))}
+              {showPerformerSuggestions && performerSuggestions.length > 0 && (
+                <div className="suggestions-dropdown">
+                  {performerSuggestions.map((staff, index) => (
+                    <div
+                      key={staff.id || index}
+                      className="suggestion-item"
+                      onClick={() => handlePerformerSuggestionClick(staff)}
+                    >
+                      <div className="suggestion-name">{staff.name}</div>
+                      {staff.position && (
+                        <div className="suggestion-details">{staff.position}</div>
+                      )}
                     </div>
-                  )}
+                  ))}
                 </div>
+              )}
+            </div>
 
-                <div className="form-group123" ref={directorInputRef} style={{ position: 'relative' }}>
-                  <label>Руководитель (опционально)</label>
-                  <input
-                    type="text"
-                    name="directorName"
-                    value={newTask.directorName}
-                    onChange={handleDirectorInputChange}
-                    placeholder="Начните вводить ФИО руководителя"
-                    disabled={creating}
-                    autoComplete="off"
-                  />
+            <div className="form-group123" ref={directorInputRef} style={{ position: 'relative' }}>
+              <label>Руководитель (опционально)</label>
+              <input
+                type="text"
+                name="directorName"
+                value={newTask.directorName}
+                onChange={handleDirectorInputChange}
+                placeholder="Начните вводить ФИО руководителя"
+                disabled={creating}
+                autoComplete="off"
+              />
 
-                  {showDirectorSuggestions && directorSuggestions.length > 0 && (
-                    <div className="suggestions-dropdown">
-                      {directorSuggestions.map((staff, index) => (
-                        <div
-                          key={staff.id || index}
-                          className="suggestion-item"
-                          onClick={() => handleDirectorSuggestionClick(staff)}
-                        >
-                          <div className="suggestion-name">{staff.name}</div>
-                          {staff.position && (
-                            <div className="suggestion-details">{staff.position}</div>
-                          )}
-                        </div>
-                      ))}
+              {showDirectorSuggestions && directorSuggestions.length > 0 && (
+                <div className="suggestions-dropdown">
+                  {directorSuggestions.map((staff, index) => (
+                    <div
+                      key={staff.id || index}
+                      className="suggestion-item"
+                      onClick={() => handleDirectorSuggestionClick(staff)}
+                    >
+                      <div className="suggestion-name">{staff.name}</div>
+                      {staff.position && (
+                        <div className="suggestion-details">{staff.position}</div>
+                      )}
                     </div>
-                  )}
+                  ))}
                 </div>
-              </div>
+              )}
+            </div>
+          </div>
 
-              <div className="form-row123">
-                <div className="form-group123">
-                  <label>Часы</label>
-                  <input
-                    type="number"
-                    name="hours"
-                    value={newTask.hours}
-                    onChange={handleInputChange}
-                    placeholder="0"
-                    min="0"
-                    max="2147483647"
-                    disabled={creating}
-                  />
-                </div>
-              </div>
+          <div className="form-row123">
+            <div className="form-group123">
+              <label>Часы</label>
+              <input
+                type="number"
+                name="hours"
+                value={newTask.hours}
+                onChange={handleInputChange}
+                placeholder="0"
+                min="0"
+                max="2147483647"
+                disabled={creating}
+              />
+            </div>
+          </div>
         </CreateEntityModal>
       )}
     </div>

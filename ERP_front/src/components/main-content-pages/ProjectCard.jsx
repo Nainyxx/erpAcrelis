@@ -22,6 +22,7 @@ import {
 } from '../../constants/projects';
 import { PageLoading } from '../shared/PageLoading';
 import { AvatarPhoto } from '../shared/AvatarPhoto';
+import { Breadcrumbs } from '../shared/Breadcrumbs';
 
 const ProjectCard = ({ useMockData = false }) => {
   const navigate = useNavigate();
@@ -250,7 +251,9 @@ const ProjectCard = ({ useMockData = false }) => {
 
   const loadStaffList = async () => {
     try {
-      const staffListResult = await getStaffList(useMockData);
+      const staffListResult = await getStaffList(useMockData, {}, {
+        includeDepartments: false
+      });
       const staffList = staffListResult.employees || [];
       setAllStaff(staffList);
     } catch (error) {
@@ -711,19 +714,14 @@ const ProjectCard = ({ useMockData = false }) => {
       />
 
       <div className="projectcard-header_project_card">
-        <h1 className="projectcard-title_project_card">
-          <span
-            className="projects-link_project_card"
-            onClick={navigateToProjectsPreservingQuery}
-            style={{ cursor: 'pointer' }}
-          >
-            Проекты
-          </span>
-          {' — '}
-          <span>
-            {projectName}
-          </span>
-        </h1>
+        <div className="projectcard-title_project_card">
+          <Breadcrumbs
+            items={[
+              { label: 'Проекты', to: '/projects', preserveSearch: true },
+              { label: projectName },
+            ]}
+          />
+        </div>
         {canManageProjectActions && (
           <button
             className="save-changes-btn_project_card"
