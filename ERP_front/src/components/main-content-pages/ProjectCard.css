@@ -358,6 +358,8 @@
 }
 
 .projectcard-avatar_project_card {
+  position: relative;
+  overflow: hidden;
   width: 4vh;
   height: 4vh;
   border-radius: 50%;

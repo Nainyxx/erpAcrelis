@@ -430,6 +430,8 @@
 }
 
 .avatar {
+  position: relative;
+  overflow: hidden;
   width: 3.6vh;
   height: 3.6vh;
   border-radius: 50%;
