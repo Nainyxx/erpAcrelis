@@ -5,7 +5,7 @@ import { clearTokens, fetchStaffById } from "../../services/api";
 import { AvatarPhoto } from "../shared/AvatarPhoto";
 import './Header.css';
 
-function Header({ currentUser }) {
+function Header({ currentUser, mobileSidebarOpen, onMobileSidebarToggle }) {
     const navigate = useNavigate();
     const [userAvatar, setUserAvatar] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -41,6 +41,17 @@ function Header({ currentUser }) {
 
     return (
         <header className="HeaderCont">
+            <button
+                type="button"
+                className={`header-burger${mobileSidebarOpen ? ' header-burger--open' : ''}`}
+                aria-label={mobileSidebarOpen ? 'Закрыть меню' : 'Открыть меню'}
+                aria-expanded={Boolean(mobileSidebarOpen)}
+                onClick={onMobileSidebarToggle}
+            >
+                <span className="header-burger-line" />
+                <span className="header-burger-line" />
+                <span className="header-burger-line" />
+            </button>
             <div className="navCont">
 
                 <button

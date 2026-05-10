@@ -4,6 +4,59 @@
     display: flex;
     align-items: center;
     padding: 0 2vh;
+    gap: 1.2vh;
+}
+
+.header-burger {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 0.45vh;
+    width: 4.4vh;
+    height: 4.4vh;
+    min-width: 40px;
+    min-height: 40px;
+    padding: 0;
+    border: none;
+    border-radius: 10px;
+    background: #e8f8fa;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.2s ease;
+}
+
+.header-burger:hover {
+    background: #b2e9ef;
+}
+
+.header-burger-line {
+    display: block;
+    width: 2.2vh;
+    min-width: 18px;
+    height: 0.22vh;
+    min-height: 2px;
+    border-radius: 1px;
+    background: #333;
+    transition: transform 0.25s ease, opacity 0.2s ease;
+}
+
+.header-burger--open .header-burger-line:nth-child(1) {
+    transform: translateY(calc(0.45vh + 0.11vh)) rotate(45deg);
+}
+
+.header-burger--open .header-burger-line:nth-child(2) {
+    opacity: 0;
+}
+
+.header-burger--open .header-burger-line:nth-child(3) {
+    transform: translateY(calc(-0.45vh - 0.11vh)) rotate(-45deg);
+}
+
+@media (max-width: 768px) {
+    .header-burger {
+        display: flex;
+    }
 }
 
 .logo {

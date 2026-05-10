@@ -399,13 +399,18 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 4px 12px;
+  flex: 0 0 98px;
+  width: 98px;
+  min-width: 98px;
+  box-sizing: border-box;
+  padding: 4px 10px;
   border-radius: 999px;
   font-family: inherit;
   font-size: 15px;
   font-weight: 400;
   line-height: normal;
   letter-spacing: 0;
+  white-space: nowrap;
 }
 
 .operations-card__badge--income {
@@ -428,7 +433,12 @@
 .operations-card__date {
   display: inline-flex;
   align-items: center;
-  padding: 5px 12px;
+  justify-content: center;
+  flex: 0 0 200px;
+  width: 200px;
+  min-width: 200px;
+  box-sizing: border-box;
+  padding: 5px 8px;
   border-radius: 999px;
   background: #f3f3f5;
   font-family: inherit;
@@ -437,6 +447,7 @@
   line-height: normal;
   letter-spacing: 0;
   color: #8e8e95;
+  white-space: nowrap;
 }
 
 .operations-card__folder {

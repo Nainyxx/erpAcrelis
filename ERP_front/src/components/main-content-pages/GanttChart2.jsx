@@ -746,21 +746,7 @@ const GanttChart = ({ useMockData = false }) => {
                         {/* Кружок слева - УВЕЛИЧЕННЫЙ с галочкой при статусе completed */}
                         <div className="task-status-circle_gantt_class">
                           {task.isCompleted && (
-                            <svg 
-                              width="16" 
-                              height="16" 
-                              viewBox="0 0 24 24" 
-                              fill="none"
-                              style={{ display: 'block' }}
-                            >
-                              <path 
-                                d="M20 6L9 17L4 12" 
-                                stroke="#4ECDC4" 
-                                strokeWidth="3" 
-                                strokeLinecap="round" 
-                                strokeLinejoin="round"
-                              />
-                            </svg>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ display: 'block' }}><path d="M20 6L9 17L4 12" stroke="#4ECDC4" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg>
                           )}
                         </div>
                         

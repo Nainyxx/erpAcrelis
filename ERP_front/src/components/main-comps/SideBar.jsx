@@ -11,7 +11,7 @@ import MyTasksIcon from "../../assets/sidebar-mytasks.svg";
 import AccountingIcon from "../../assets/sidebar-accounting.svg";
 import StaffIcon from "../../assets/sidebar-staff.svg";
 
-function SideBar() {
+function SideBar({ onAfterNavigate }) {
   const navigate = useNavigate();
 
   const menuItems = [
@@ -55,6 +55,7 @@ function SideBar() {
         sessionStorage.removeItem(PROJECTS_NAV_QUERY_STORAGE_KEY);
       } catch (_) { }
       navigate("/projects");
+      onAfterNavigate?.();
       return;
     }
     if (itemId === "mytasks") {
@@ -62,9 +63,11 @@ function SideBar() {
         sessionStorage.removeItem(MY_TASKS_NAV_QUERY_STORAGE_KEY);
       } catch (_) { }
       navigate("/my-tasks");
+      onAfterNavigate?.();
       return;
     }
     navigate(path);
+    onAfterNavigate?.();
   };
 
   const activePage = getActivePage();

@@ -135,25 +135,7 @@ const StaffList = ({ useMockData = false }) => {
       />
       <label className="staff-search">
         <span className="staff-search__icon" aria-hidden="true">
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z"
-              stroke="#5b7a7a"
-              strokeWidth="1.75"
-            />
-            <path
-              d="M16.5 16.5 21 21"
-              stroke="#5b7a7a"
-              strokeWidth="1.75"
-              strokeLinecap="round"
-            />
-          </svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" stroke="#5b7a7a" strokeWidth="1.75" /><path d="M16.5 16.5 21 21" stroke="#5b7a7a" strokeWidth="1.75" strokeLinecap="round" /></svg>
         </span>
         <input
           type="search"

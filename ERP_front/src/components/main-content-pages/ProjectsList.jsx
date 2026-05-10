@@ -13,6 +13,7 @@ import {
 import CreateEntityModal from '../shared/CreateEntityModal';
 import { Breadcrumbs } from '../shared/Breadcrumbs';
 import { PageLoading } from '../shared/PageLoading';
+import { useSyncedUrlSearch } from '../shared/useSyncedUrlSearch';
 import { AvatarPhoto } from '../shared/AvatarPhoto';
 import './ProjectsList.css';
 
@@ -22,15 +23,6 @@ const PROJECT_STATUS = [
   { id: 'all', label: 'Все статусы' },
   ...PROJECT_STATUS_OPTIONS,
 ];
-
-const normalizeQueryForCompare = (searchStr) => {
-  const raw = (searchStr || '').replace(/^\?/, '');
-  const p = new URLSearchParams(raw);
-  return [...p.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([k, v]) => `${k}=${v}`)
-    .join('&');
-};
 
 const buildProjectsQueryString = (selectedType, selectedStatus, searchQuery) => {
   const params = new URLSearchParams();
@@ -104,27 +96,13 @@ const ProjectsList = ({ useMockData = false, showNotification }) => {
     setSearchInput(next.searchQuery);
   }, [location.search]);
 
-  useEffect(() => {
-    const built = buildProjectsQueryString(
-      selectedType,
-      selectedStatus,
-      searchQuery
-    );
-    const nextSearch = built ? `?${built}` : '';
-    if (normalizeQueryForCompare(location.search) === normalizeQueryForCompare(nextSearch)) {
-      try {
-        sessionStorage.setItem(PROJECTS_NAV_QUERY_STORAGE_KEY, nextSearch);
-      } catch (_) { }
-      return;
-    }
-    try {
-      sessionStorage.setItem(PROJECTS_NAV_QUERY_STORAGE_KEY, nextSearch);
-    } catch (_) { }
-    navigate({ pathname: '/projects', search: nextSearch }, { replace: true });
-    // Не добавлять location.search в deps: при переходе на /projects без query
-    // первый эффект обновит state, этот эффект должен сработать уже с новым state.
-    // Иначе в том же проходе остаётся старый state и navigate снова подставляет старые фильтры.
-  }, [selectedType, selectedStatus, searchQuery, navigate]);
+  useSyncedUrlSearch({
+    pathname: '/projects',
+    sessionStorageKey: PROJECTS_NAV_QUERY_STORAGE_KEY,
+    getQueryString: () =>
+      buildProjectsQueryString(selectedType, selectedStatus, searchQuery),
+    syncDeps: [selectedType, selectedStatus, searchQuery]
+  });
 
   // Загрузка проектов
   const loadProjects = async () => {
@@ -408,10 +386,7 @@ const ProjectsList = ({ useMockData = false, showNotification }) => {
 
           <div className="filter-group projects-toolbar-search-wrap">
             <span className="projects-toolbar-search-icon" aria-hidden="true">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" stroke="#6b6f78" strokeWidth="1.75" />
-                <path d="M16.5 16.5 21 21" stroke="#6b6f78" strokeWidth="1.75" strokeLinecap="round" />
-              </svg>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" stroke="#6b6f78" strokeWidth="1.75" /><path d="M16.5 16.5 21 21" stroke="#6b6f78" strokeWidth="1.75" strokeLinecap="round" /></svg>
             </span>
             <input
               id="projects-search"

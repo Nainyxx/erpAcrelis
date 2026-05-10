@@ -1,5 +1,5 @@
 // ERP_front/src/App.jsx
-import { Routes, Route, Navigate, useParams, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import './App.css';
 
@@ -79,15 +79,58 @@ function PrivateRoute({ children }) {
 
 // Главный Layout для защищенных страниц
 function MainLayout({ children, currentUser }) {
+  const location = useLocation();
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    setMobileSidebarOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!mobileSidebarOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [mobileSidebarOpen]);
+
+  useEffect(() => {
+    if (!mobileSidebarOpen) return;
+    const onKey = (e) => {
+      if (e.key === 'Escape') setMobileSidebarOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [mobileSidebarOpen]);
+
   return (
     <>
       <div className='header-container'>
-        <Header currentUser={currentUser} />
+        <Header
+          currentUser={currentUser}
+          mobileSidebarOpen={mobileSidebarOpen}
+          onMobileSidebarToggle={() => setMobileSidebarOpen((o) => !o)}
+        />
       </div>
 
+      {mobileSidebarOpen && (
+        <button
+          type="button"
+          className="sidebar-mobile-backdrop"
+          aria-label="Закрыть меню"
+          onClick={() => setMobileSidebarOpen(false)}
+        />
+      )}
+
       <div className='main-container'>
-        <div className="sidebar-wrapper">
-          <SideBar currentUser={currentUser} />
+        <div
+          className={`sidebar-wrapper${mobileSidebarOpen ? ' sidebar-wrapper--mobile-open' : ''}`}
+        >
+          <SideBar
+            currentUser={currentUser}
+            onAfterNavigate={() => setMobileSidebarOpen(false)}
+          />
         </div>
 
         <div className='content-wrapper'>

@@ -16,6 +16,7 @@ import { PROJECT_ACTIONS_ALLOWED_ROLES } from '../../constants/roles';
 import CreateEntityModal from '../shared/CreateEntityModal';
 import { Breadcrumbs } from '../shared/Breadcrumbs';
 import { PageLoading } from '../shared/PageLoading';
+import { useSyncedUrlSearch } from '../shared/useSyncedUrlSearch';
 
 // Константы статусов задач
 const TASK_STATUS_MAP = {
@@ -36,16 +37,6 @@ const EmptyTasksInboxIcon = () => (
 const EmptyTasksSearchIcon = () => (
   <svg className="mytasks-empty-state__icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="1.5" /><path d="M16 16l4.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /><path d="M8.2 11h5.6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.45" /></svg>
 );
-
-/** Сравнение query без учёта порядка ключей */
-const normalizeQueryForCompare = (searchStr) => {
-  const raw = (searchStr || '').replace(/^\?/, '');
-  const p = new URLSearchParams(raw);
-  return [...p.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([k, v]) => `${k}=${v}`)
-    .join('&');
-};
 
 /** Собирает query для /my-tasks (performer, performerName, status, director, project, …) */
 const buildMyTasksQueryString = (
@@ -208,11 +199,21 @@ const MyTasks = ({ useMockData = false }) => {
     setSelectedProject(projectParam != null && projectParam !== '' ? projectParam : 'all');
   }, [location.search]);
 
-  // Держим адрес в соответствии с фильтрами (как в ссылке performer + performerName + …)
-  useEffect(() => {
-    if (selectedPerformer === '') return;
-
-    const built = buildMyTasksQueryString(
+  useSyncedUrlSearch({
+    pathname: '/my-tasks',
+    sessionStorageKey: MY_TASKS_NAV_QUERY_STORAGE_KEY,
+    skip: selectedPerformer === '',
+    getQueryString: () =>
+      buildMyTasksQueryString(
+        selectedPerformer,
+        selectedStatus,
+        selectedDirector,
+        selectedProject,
+        performers,
+        directorFilterOptions,
+        projectFilterOptions
+      ),
+    syncDeps: [
       selectedPerformer,
       selectedStatus,
       selectedDirector,
@@ -220,28 +221,8 @@ const MyTasks = ({ useMockData = false }) => {
       performers,
       directorFilterOptions,
       projectFilterOptions
-    );
-    const nextSearch = built ? `?${built}` : '';
-    if (normalizeQueryForCompare(location.search) === normalizeQueryForCompare(nextSearch)) {
-      try {
-        sessionStorage.setItem(MY_TASKS_NAV_QUERY_STORAGE_KEY, nextSearch);
-      } catch (_) { }
-      return;
-    }
-    try {
-      sessionStorage.setItem(MY_TASKS_NAV_QUERY_STORAGE_KEY, nextSearch);
-    } catch (_) { }
-    navigate({ pathname: '/my-tasks', search: nextSearch }, { replace: true });
-  }, [
-    selectedPerformer,
-    selectedStatus,
-    selectedDirector,
-    selectedProject,
-    performers,
-    directorFilterOptions,
-    projectFilterOptions,
-    navigate
-  ]);
+    ]
+  });
 
   // Загрузка задач при изменении фильтров или страницы
   useEffect(() => {

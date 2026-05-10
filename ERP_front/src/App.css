@@ -27,6 +27,12 @@ body {
   width: 25vh;
   flex-shrink: 0;
   background: #FFFFFF;
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  height: 100vh;
+  min-height: 100vh;
+  z-index: 11;
 }
 
 .content-wrapper {
@@ -96,6 +102,64 @@ body {
 }
 
 @media (max-width: 768px) {
+  .header-container {
+    left: 0;
+    width: 100%;
+    z-index: 108;
+  }
+
+  .main-container {
+    position: relative;
+  }
+
+  .sidebar-wrapper {
+    width: 0;
+    flex: 0 0 0;
+    min-width: 0;
+    position: static;
+    height: auto;
+    min-height: 0;
+    background: transparent;
+    z-index: auto;
+    overflow: visible;
+  }
+
+  .sidebar-wrapper .SideBar {
+    position: fixed;
+    top: 10vh;
+    left: 0;
+    width: min(82vw, 300px);
+    height: calc(100vh - 10vh);
+    min-height: 0;
+    transform: translateX(-102%);
+    transition: transform 0.28s ease;
+    z-index: 107;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.1);
+    border-radius: 0 12px 12px 0;
+    background: #ffffff;
+  }
+
+  .sidebar-wrapper.sidebar-wrapper--mobile-open .SideBar {
+    transform: translateX(0);
+  }
+
+  .sidebar-mobile-backdrop {
+    position: fixed;
+    top: 10vh;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 106;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    background: rgba(0, 0, 0, 0.35);
+    cursor: pointer;
+    display: block;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
   .notifications-container {
     left: 1vh;
     right: 1vh;
