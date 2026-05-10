@@ -39,7 +39,7 @@ function StaffFinancesPage() {
         { label: 'Главная', to: '/projects', preserveSearch: true },
         { label: 'Операции', to: '/operations' },
         { label: 'Заработная плата', to: '/operations/finans' },
-        { label: 'Сотрудник' },
+        { label: staffFinancesEmployeeFullName },
     ];
 
     return (
