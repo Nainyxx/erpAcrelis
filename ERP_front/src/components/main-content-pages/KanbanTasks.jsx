@@ -15,7 +15,7 @@ import { AvatarPhoto } from '../shared/AvatarPhoto';
 const KanbanTasks = ({ useMockData = false }) => {
   const navigate = useNavigate();
   const { projectId } = useParams();
-
+  
   const [tasks, setTasks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
