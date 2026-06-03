@@ -255,6 +255,7 @@ const ProjectCard = ({ useMockData = false }) => {
       const staffList = staffListResult.employees || [];
       setAllStaff(staffList);
     } catch (error) {
+      console.error('ProjectCard loadStaffList:', error?.message || error);
     }
   };
 
@@ -479,7 +480,7 @@ const ProjectCard = ({ useMockData = false }) => {
       }, 100);
 
     } catch (error) {
-
+      console.error('ProjectCard handleDownloadFile:', error?.message || error);
       try {
         const a = document.createElement('a');
         a.href = fileUrl;
@@ -492,7 +493,7 @@ const ProjectCard = ({ useMockData = false }) => {
         setTimeout(() => {
           document.body.removeChild(a);
         }, 100);
-      } catch (fallbackError) {
+      } catch {
         alert('Не удалось скачать файл. Попробуйте позже или обратитесь к администратору.');
       }
     }
