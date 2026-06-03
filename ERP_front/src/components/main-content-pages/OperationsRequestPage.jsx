@@ -339,10 +339,6 @@ function OperationsRequestPage({ useMockData = false }) {
   };
 
   if (!canAccessHub) {
-    const staffId = localStorage.getItem('staff_id');
-    if (staffId) {
-      return <Navigate to={`/operations/finans/${staffId}`} replace />;
-    }
     return <Navigate to="/account" replace />;
   }
 

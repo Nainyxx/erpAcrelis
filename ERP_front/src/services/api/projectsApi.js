@@ -10,6 +10,6 @@ export async function downloadProjectFile(fileUrl) {
   return response.blob();
 }
 
-export async function deleteProjectFileById(fileId) {
-  await requestAuth(`staff/staff/${fileId}/`, { method: 'DELETE' });
+export async function deleteProjectFileById(projectId, fileId) {
+  await requestAuth(`projects/projects/${projectId}/files/${fileId}/`, { method: 'DELETE' });
 }

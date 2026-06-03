@@ -522,7 +522,7 @@ const ProjectCard = ({ useMockData = false }) => {
     }
 
     try {
-      await deleteProjectFileById(file.id);
+      await deleteProjectFileById(project.id, file.id);
 
       await loadProjectAndLogs();
     } catch (error) {

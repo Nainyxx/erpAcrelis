@@ -4,12 +4,14 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useNavigate, useParams, Link, useLocation } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
 import uploadCloudIcon from '../../assets/download-files.svg';
+import trashcanIcon from '../../assets/trashcan.svg';
 import {
     getTaskById,
     updateTask,
     uploadFileToTask,
     addCommentToTask,
-    getProjectById
+    getProjectById,
+    deleteTaskFileById
 } from '../../services/api';
 import { PROJECT_ACTIONS_ALLOWED_ROLES } from '../../constants/roles';
 import { TASK_STATUS_OPTIONS } from '../../constants/tasks';
@@ -866,24 +868,29 @@ const TaskCard = ({ useMockData = false }) => {
         }
     };
 
-    const handleFileDownload_task_card = (file) => {
-        if (!file.fileData || !file.fileData.file) {
-            alert('Ссылка на файл недоступна');
+    const handleDeleteFile_task_card = async (file) => {
+        if (!file?.id) {
+            alert('Не удалось определить файл для удаления');
             return;
         }
 
-        const a = document.createElement('a');
-        a.href = file.fileData.file;
-        a.download = file.name;
-        a.target = '_blank';
-        a.style.display = 'none';
+        const resolvedTaskId = task?.id || taskId;
+        if (!resolvedTaskId) {
+            alert('Не удалось определить задачу для удаления файла');
+            return;
+        }
 
-        document.body.appendChild(a);
-        a.click();
+        const isConfirmed = window.confirm(`Удалить файл "${file.fullName || file.name}"?`);
+        if (!isConfirmed) {
+            return;
+        }
 
-        setTimeout(() => {
-            document.body.removeChild(a);
-        }, 10);
+        try {
+            await deleteTaskFileById(resolvedTaskId, file.id);
+            setFiles((prev) => prev.filter((f) => f.id !== file.id));
+        } catch (error) {
+            alert('Не удалось удалить файл. Попробуйте позже.');
+        }
     };
 
     const groupCommentsByDate_task_card = () => {
@@ -1215,7 +1222,6 @@ const TaskCard = ({ useMockData = false }) => {
                                         key={file.id}
                                         className="file-item_task_card"
                                         title={file.fullName}
-                                        onClick={() => handleFileDownload_task_card(file)}
                                     >
                                         <div className="file-details_task_card">
                                             <span
@@ -1234,14 +1240,19 @@ const TaskCard = ({ useMockData = false }) => {
                                         </div>
                                         <div className="file-info_task_card">
                                             <button
+                                                type="button"
                                                 className="file-download_task_card"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    handleFileDownload_task_card(file);
+                                                    handleDeleteFile_task_card(file);
                                                 }}
-                                                title="Скачать файл"
+                                                title="Удалить файл"
                                             >
-                                                ↓
+                                                <img
+                                                    src={trashcanIcon}
+                                                    alt="Удалить файл"
+                                                    className="file-delete-icon_task_card"
+                                                />
                                             </button>
                                         </div>
                                     </div>

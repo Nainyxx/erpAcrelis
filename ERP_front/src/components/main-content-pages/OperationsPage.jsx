@@ -13,7 +13,6 @@ import {
   MOCK_OPERATIONS,
   OPERATION_TYPE_OPTIONS,
   PERIOD_OPTIONS,
-  REQUEST_TYPE_OPTIONS,
 } from './operationsPageMocks';
 import './OperationsPage.css';
 import { Breadcrumbs } from '../shared/Breadcrumbs';
@@ -208,7 +207,6 @@ function OperationsPage({ useMockData = false }) {
   const [operationType, setOperationType] = useState('all');
   const [projectId, setProjectId] = useState('all');
   const [period, setPeriod] = useState('all');
-  const [requestType, setRequestType] = useState('all');
   const [projectsLoaded, setProjectsLoaded] = useState([]);
 
   const [showCreateOperationModal, setShowCreateOperationModal] = useState(false);
@@ -256,10 +254,9 @@ function OperationsPage({ useMockData = false }) {
     return operationsSource.filter((op) => {
       if (operationType !== 'all' && op.type !== operationType) return false;
       if (projectId !== 'all' && String(op.projectId) !== projectId) return false;
-      if (requestType !== 'all' && op.requestType !== requestType) return false;
       return true;
     });
-  }, [operationType, projectId, requestType, operationsSource]);
+  }, [operationType, projectId, operationsSource]);
 
   const openCreateOperationModal = (type) => {
     setCreateError('');
@@ -336,7 +333,6 @@ function OperationsPage({ useMockData = false }) {
       paymentMethod: 'Безналичный',
       managerName,
       accountMasked: account?.label || '—',
-      requestType: 'other',
       files:
         attachedFiles.length > 0 ? attachedFiles.map((f) => ({ name: f.name })) : undefined
     };
@@ -349,14 +345,9 @@ function OperationsPage({ useMockData = false }) {
     setOperationType('all');
     setProjectId('all');
     setPeriod('all');
-    setRequestType('all');
   };
 
   if (!canAccessHub) {
-    const staffId = localStorage.getItem('staff_id');
-    if (staffId) {
-      return <Navigate to={`/operations/finans/${staffId}`} replace />;
-    }
     return <Navigate to="/account" replace />;
   }
 
@@ -465,38 +456,6 @@ function OperationsPage({ useMockData = false }) {
                 triggerAriaLabel="Период"
               />
             </div>
-
-            <div className="operations-filters__field operations-filters__field--request">
-              <SelectFilterDropdown
-                label="Заявка"
-                labelClassName="operations-filters__field-label"
-                options={REQUEST_TYPE_OPTIONS}
-                selectedId={requestType}
-                onSelectOption={(id) => setRequestType(id)}
-                triggerId="operations-filter-request"
-                className="operations-filters__dropdown"
-                triggerAriaLabel="Заявка"
-              />
-            </div>
-
-            <div className="operations-filters__field operations-filters__field--salary">
-              <span
-                className="operations-filters__field-label operations-filters__field-label--spacer"
-                aria-hidden="true"
-              >
-                {'\u00a0'}
-              </span>
-              <button
-                type="button"
-                className="operations-filters__chip"
-                aria-label="Перейти к разделу заработная плата"
-                onClick={() => navigate('/operations/finans')}
-              >
-                Заработная плата
-              </button>
-            </div>
-
-            <div className="operations-filters__grid-spacer" aria-hidden="true" />
           </div>
         </div>
       </section>

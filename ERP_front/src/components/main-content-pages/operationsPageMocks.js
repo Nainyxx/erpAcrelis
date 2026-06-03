@@ -40,7 +40,7 @@ export const REQUEST_TYPE_OPTIONS = [
   { id: 'other', label: 'Прочее' },
 ];
 
-/** @typedef {{ id: string, type: 'income'|'expense', amount: number, purpose: string, date: string, projectId: number, projectName: string, paymentMethod: string, managerName: string, accountMasked: string, requestType: 'salary'|'equipment'|'services'|'other', files?: { name: string }[] }} MockOperation */
+/** @typedef {{ id: string, type: 'income'|'expense', amount: number, purpose: string, date: string, projectId: number, projectName: string, paymentMethod: string, managerName: string, accountMasked: string, files?: { name: string }[] }} MockOperation */
 
 /** @type {MockOperation[]} */
 export const MOCK_OPERATIONS = [
@@ -55,7 +55,6 @@ export const MOCK_OPERATIONS = [
     paymentMethod: 'Безналичный',
     managerName: 'Иванов И.П.',
     accountMasked: '4081 **** **** 4081',
-    requestType: 'services',
     files: [{ name: 'договор.pdf' }, { name: 'счет.pdf' }],
   },
   {
@@ -69,7 +68,6 @@ export const MOCK_OPERATIONS = [
     paymentMethod: 'Безналичный',
     managerName: 'Петрова А.С.',
     accountMasked: '4070 **** **** 9012',
-    requestType: 'equipment',
     files: [{ name: 'накладная.pdf' }],
   },
   {
@@ -83,7 +81,6 @@ export const MOCK_OPERATIONS = [
     paymentMethod: 'Безналичный',
     managerName: 'Иванов И.П.',
     accountMasked: '4081 **** **** 4081',
-    requestType: 'other',
   },
   {
     id: 'op-4',
@@ -96,7 +93,6 @@ export const MOCK_OPERATIONS = [
     paymentMethod: 'Безналичный',
     managerName: 'Сидоров В.К.',
     accountMasked: '4070 **** **** 3311',
-    requestType: 'salary',
   },
   {
     id: 'op-5',
@@ -109,7 +105,6 @@ export const MOCK_OPERATIONS = [
     paymentMethod: 'Наличный',
     managerName: 'Петрова А.С.',
     accountMasked: '—',
-    requestType: 'other',
   },
   {
     id: 'op-6',
@@ -122,7 +117,6 @@ export const MOCK_OPERATIONS = [
     paymentMethod: 'Безналичный',
     managerName: 'Сидоров В.К.',
     accountMasked: '4081 **** **** 5522',
-    requestType: 'services',
     files: [{ name: 'акт.pdf' }, { name: 'счет.pdf' }],
   },
   {
@@ -136,7 +130,6 @@ export const MOCK_OPERATIONS = [
     paymentMethod: 'Безналичный',
     managerName: 'Сидоров В.К.',
     accountMasked: '4070 **** **** 9012',
-    requestType: 'services',
   },
   {
     id: 'op-8',
@@ -149,7 +142,6 @@ export const MOCK_OPERATIONS = [
     paymentMethod: 'Безналичный',
     managerName: 'Петрова А.С.',
     accountMasked: '4081 **** **** 4081',
-    requestType: 'other',
   },
   {
     id: 'op-9',
@@ -162,7 +154,6 @@ export const MOCK_OPERATIONS = [
     paymentMethod: 'Безналичный',
     managerName: 'Иванов И.П.',
     accountMasked: '4070 **** **** 1188',
-    requestType: 'equipment',
     files: [{ name: 'лицензия.pdf' }],
   },
   {
@@ -176,6 +167,5 @@ export const MOCK_OPERATIONS = [
     paymentMethod: 'Наличный',
     managerName: 'Иванов И.П.',
     accountMasked: '—',
-    requestType: 'other',
   },
 ];

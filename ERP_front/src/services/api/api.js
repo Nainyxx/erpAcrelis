@@ -4,6 +4,7 @@ import {
   buildSearchUrl,
   formDataFrom,
   refreshAccessToken,
+  requestAuth,
   requestAuthJson
 } from './httpClient';
 import {
@@ -769,6 +770,10 @@ export function uploadFileToTask(taskId, file, USE_MOCK_DATA) {
         body: formDataFrom({ file })
       })
   });
+}
+
+export async function deleteTaskFileById(taskId, fileId) {
+  await requestAuth(`tasks/${taskId}/files/${fileId}/`, { method: 'DELETE' });
 }
 
 export function addCommentToTask(taskId, commentData, USE_MOCK_DATA) {

@@ -169,9 +169,7 @@
 .operations-filters__grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-template-areas:
-    'op-type op-project op-period'
-    'op-request op-salary op-empty';
+  grid-template-areas: 'op-type op-project op-period';
   gap: 16px 20px;
   align-items: start;
   width: 75%;
@@ -189,24 +187,6 @@
 
 .operations-filters__field--period {
   grid-area: op-period;
-}
-
-.operations-filters__field--request {
-  grid-area: op-request;
-}
-
-.operations-filters__field--salary {
-  grid-area: op-salary;
-}
-
-.operations-filters__grid-spacer {
-  grid-area: op-empty;
-  min-width: 0;
-}
-
-.operations-filters__field-label--spacer {
-  visibility: hidden;
-  user-select: none;
 }
 
 .operations-filters__field {
@@ -290,57 +270,13 @@
   font-weight: 400;
 }
 
-.operations-filters__chip {
-  box-sizing: border-box;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  min-height: 46px;
-  margin: 0;
-  padding: 11px 14px;
-  text-align: center;
-  border: none;
-  border-radius: 10px;
-  background: #E7F6F6;
-  font-family: inherit;
-  font-size: 15px;
-  font-weight: 400;
-  line-height: normal;
-  letter-spacing: 0;
-  color: #5B5B5B;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  cursor: pointer;
-  transition: background 0.15s ease, filter 0.15s ease;
-}
-
-.operations-filters__chip:hover {
-  filter: brightness(0.97);
-}
-
-.operations-filters__chip:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px rgb(62 109 217 / 16%);
-}
-
-.operations-filters__chip.is-active {
-  background: #d5efec;
-  color: #1a1a1f;
-}
-
 @media (max-width: 900px) {
   .operations-filters__grid {
     width: 100%;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-template-areas:
       'op-type op-project'
-      'op-period op-period'
-      'op-request op-salary';
-  }
-
-  .operations-filters__grid-spacer {
-    display: none;
+      'op-period op-period';
   }
 }
 
@@ -350,9 +286,7 @@
     grid-template-areas:
       'op-type'
       'op-project'
-      'op-period'
-      'op-request'
-      'op-salary';
+      'op-period';
   }
 }
 
