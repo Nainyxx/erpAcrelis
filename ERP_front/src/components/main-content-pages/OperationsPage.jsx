@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { OPERATIONS_HUB_ALLOWED_ROLES } from '../../constants/roles';
+import { canAccessOperationsHub } from '../../constants/roles';
 import { downloadProjectFile, getProjects } from '../../services/api';
 import { SelectFilterDropdown } from '../shared/SelectFilterDropdown';
 import CreateEntityModal from '../shared/CreateEntityModal';
@@ -202,7 +202,7 @@ const emptyCreateForm = () => ({
 function OperationsPage({ useMockData = false }) {
   const navigate = useNavigate();
   const userRole = localStorage.getItem('role');
-  const canAccessHub = userRole && OPERATIONS_HUB_ALLOWED_ROLES.includes(userRole);
+  const canAccessHub = canAccessOperationsHub(userRole);
 
   const [operationType, setOperationType] = useState('all');
   const [projectId, setProjectId] = useState('all');
@@ -348,7 +348,7 @@ function OperationsPage({ useMockData = false }) {
   };
 
   if (!canAccessHub) {
-    return <Navigate to="/account" replace />;
+    return <Navigate to="/projects" replace />;
   }
 
   const breadcrumbItems = [

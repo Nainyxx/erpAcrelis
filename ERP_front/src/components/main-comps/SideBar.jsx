@@ -4,6 +4,7 @@ import {
   MY_TASKS_NAV_QUERY_STORAGE_KEY,
   PROJECTS_NAV_QUERY_STORAGE_KEY,
 } from "../../constants/navigationKeys";
+import { canAccessOperationsHub } from "../../constants/roles";
 import './SideBar.css';
 import AcrelisLogo from "../../assets/acrelis-logo.svg";
 import ProjectsIcon from "../../assets/sidebar-projects.svg";
@@ -13,11 +14,14 @@ import StaffIcon from "../../assets/sidebar-staff.svg";
 
 function SideBar({ onAfterNavigate }) {
   const navigate = useNavigate();
+  const showOperations = canAccessOperationsHub(localStorage.getItem("role"));
 
   const menuItems = [
     { id: "projects", name: "Проекты", icon: ProjectsIcon, path: "/projects" },
     { id: "mytasks", name: "Мои задачи", icon: MyTasksIcon, path: "/my-tasks" },
-    { id: "operations", name: "Операции", icon: AccountingIcon, path: "/operations" },
+    ...(showOperations
+      ? [{ id: "operations", name: "Операции", icon: AccountingIcon, path: "/operations" }]
+      : []),
     { id: "staff", name: "Сотрудники", icon: StaffIcon, path: "/staff" }
   ];
 

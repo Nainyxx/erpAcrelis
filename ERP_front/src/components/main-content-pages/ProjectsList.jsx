@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getProjects, createProject } from '../../services/api';
 import { PROJECTS_NAV_QUERY_STORAGE_KEY } from '../../constants/navigationKeys';
-import { PROJECT_ACTIONS_ALLOWED_ROLES } from '../../constants/roles';
+import { PROJECT_ACTIONS_ALLOWED_ROLES, canAccessOperationsHub } from '../../constants/roles';
 import {
   PROJECT_STATUS_OPTIONS,
   PROJECT_TYPE_OPTIONS,
@@ -60,6 +60,7 @@ const ProjectsList = ({ useMockData = false, showNotification }) => {
   const location = useLocation();
   const userRole = localStorage.getItem('role');
   const canCreateProject = PROJECT_ACTIONS_ALLOWED_ROLES.includes(userRole);
+  const canAccessOperations = canAccessOperationsHub(userRole);
 
   const initialFromQuery = parseFiltersFromSearch(location.search);
 
@@ -411,9 +412,11 @@ const ProjectsList = ({ useMockData = false, showNotification }) => {
               Создать проект
             </button>
           )}
-          <button type="button" className="btn-operations" onClick={() => navigate('/operations')}>
-            Операции
-          </button>
+          {canAccessOperations && (
+            <button type="button" className="btn-operations" onClick={() => navigate('/operations')}>
+              Операции
+            </button>
+          )}
         </div>
       </div>
 

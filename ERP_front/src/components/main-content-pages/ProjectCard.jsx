@@ -44,8 +44,6 @@ const ProjectCard = ({ useMockData = false }) => {
   const [projectType, setProjectType] = useState('');
   const [price, setPrice] = useState('');
   const [customer, setCustomer] = useState('');
-  const [projectHours, setProjectHours] = useState('');
-  const [projectHoursDone, setProjectHoursDone] = useState('0');
   const [projectStatus, setProjectStatus] = useState('');
   const [changes, setChanges] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -340,14 +338,6 @@ const ProjectCard = ({ useMockData = false }) => {
       if (customer !== project.customer && customer.trim() !== '') {
         updateData.customer = customer;
       }
-
-      if (projectHours !== project.hours && projectHours.trim() !== '') {
-        const hoursNum = parseInt(projectHours);
-        if (!isNaN(hoursNum)) {
-          updateData.hours = hoursNum;
-        }
-      }
-
 
       if (Object.keys(updateData).length > 0) {
         await updateProject(project.id, updateData, useMockData);
@@ -644,8 +634,6 @@ const ProjectCard = ({ useMockData = false }) => {
       setProjectType(projectData.type_display || projectData.typeLabel || projectData.type || '');
       setPrice(projectData.price || '');
       setCustomer(projectData.customer || '');
-      setProjectHours(projectData.hours?.toString() || '0');
-      setProjectHoursDone(projectData.hoursDone?.toString() || '0');
 
       const statusLabel = projectData.status_display || getProjectStatusLabel(projectData.status);
       setProjectStatus(statusLabel);
@@ -738,40 +726,28 @@ const ProjectCard = ({ useMockData = false }) => {
           <div className="main-cards-section_project_card">
             <div className="top-row_project_card">
               <div className="projectcard-tile_project_card">
-                <div className="project-dates-hours-grid_project_card">
-                  <div className="project-dates-column_project_card">
-                    <div className="date-item_project_card">
-                      <span className="date-label_project_card">Начало проекта</span>
-                      <span
-                        className="date-value1_project_card editable_project_card"
-                        contentEditable
-                        suppressContentEditableWarning
-                        onBlur={(e) => setStartDate(e.target.textContent)}
-                      >
-                        {formatDateForDisplay(startDate)}
-                      </span>
-                    </div>
-                    <div className="date-item_project_card">
-                      <span className="date-label_project_card">Дедлайн</span>
-                      <span
-                        className="date-value_project_card deadline_project_card editable_project_card"
-                        contentEditable
-                        suppressContentEditableWarning
-                        onBlur={(e) => setDeadline(e.target.textContent)}
-                      >
-                        {formatDateForDisplay(deadline)}
-                      </span>
-                    </div>
+                <div className="project-dates-column_project_card">
+                  <div className="date-item_project_card">
+                    <span className="date-label_project_card">Начало проекта</span>
+                    <span
+                      className="date-value1_project_card editable_project_card"
+                      contentEditable
+                      suppressContentEditableWarning
+                      onBlur={(e) => setStartDate(e.target.textContent)}
+                    >
+                      {formatDateForDisplay(startDate)}
+                    </span>
                   </div>
-                  <div className="project-hours-column_project_card">
-                    <div className="date-item_project_card">
-                      <span className="date-label_project_card">Выделено:</span>
-                      <span className="date-value1_project_card">{projectHours || '0'} ч</span>
-                    </div>
-                    <div className="date-item_project_card">
-                      <span className="date-label_project_card">Использовано:</span>
-                      <span className="date-value_project_card deadline_project_card">{projectHoursDone || '0'} ч</span>
-                    </div>
+                  <div className="date-item_project_card">
+                    <span className="date-label_project_card">Дедлайн</span>
+                    <span
+                      className="date-value_project_card deadline_project_card editable_project_card"
+                      contentEditable
+                      suppressContentEditableWarning
+                      onBlur={(e) => setDeadline(e.target.textContent)}
+                    >
+                      {formatDateForDisplay(deadline)}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -808,17 +784,6 @@ const ProjectCard = ({ useMockData = false }) => {
 
             <div className="middle-row_project_card">
               <div className="projectcard-tile_project_card">
-                <div className="info-item_project_card">
-                  <span className="info-label_project_card">Часы на проект</span>
-                  <span
-                    className="project-hours_project_card editable_project_card"
-                    contentEditable
-                    suppressContentEditableWarning
-                    onBlur={(e) => setProjectHours(e.target.textContent)}
-                  >
-                    {projectHours || '0'}
-                  </span>
-                </div>
                 <div className="info-item_project_card">
                   <span className="info-label_project_card">Бюджет проекта</span>
                   <span

@@ -1284,7 +1284,7 @@ const TaskCard = ({ useMockData = false }) => {
 
                     {/* Колонка 3: 3 отдельных прямоугольника с информацией */}
                     <div className="column-section_task_card">
-                        {/* Прямоугольник 1: Даты, проект, часы (данные с API) */}
+                        {/* Прямоугольник 1: Даты и проект */}
                         <div className="info-rectangle_task_card">
                             <div className="task-meta-columns_task_card">
                                 <div className="date-item_task_card task-meta-col_task_card">
@@ -1329,12 +1329,6 @@ const TaskCard = ({ useMockData = false }) => {
                                                 {task.project_name}
                                             </span>
                                         )}
-                                    </div>
-                                    <div className="date-row_task_card">
-                                        <span className="date-label_task_card">Часы работы</span>
-                                    </div>
-                                    <div className="date-row_task_card">
-                                        <span className="date-value_task_card">{task.hours}</span>
                                     </div>
                                 </div>
                             </div>
